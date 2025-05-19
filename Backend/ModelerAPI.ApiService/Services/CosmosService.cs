@@ -209,5 +209,22 @@ namespace ModelerAPI.ApiService.Services
             }
         }
 
+        public async Task<bool> DeleteEdgeAsync(string id)
+        {
+            try
+            {
+                // Delete the edge using Gremlin query
+                var gremlinQuery = $"g.E('{id}').drop()";
+                await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting edge: {ex.Message}");
+                return false;
+            }
+        }
+
+
     }
 }

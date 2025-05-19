@@ -15,6 +15,7 @@
           <th>Target</th>
           <th>Type</th>
           <th>Created</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -24,6 +25,11 @@
           <td>{{ edge.target }}</td>
           <td>{{ edge.edgeType }}</td>
           <td>{{ edge.createdAt | date }}</td>
+          <td>
+            <button class="btn btn-danger btn-sm" (click)="deleteEdge(edge.id)">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -33,3 +39,5 @@
     No connections available. Create a connection to get started.
   </div>
 </div>
+
+

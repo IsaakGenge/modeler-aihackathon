@@ -57,10 +57,22 @@ namespace ModelerAPI.ApiService.Controllers
 
         // DELETE: api/edge/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteEdge(string id)
+        public async Task<IActionResult> DeleteEdge(string id)
         {
-            // Logic to delete an edge - to be implemented
-            return NoContent();
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Edge ID is required");
+            }
+
+            var result = await _cosmosService.DeleteEdgeAsync(id);
+            if (result)
+            {
+                return NoContent();
+            }
+            else
+            {
+                return NotFound($"Edge with ID {id} could not be deleted or does not exist");
+            }
         }
     }
 }

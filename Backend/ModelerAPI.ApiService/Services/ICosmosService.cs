@@ -9,5 +9,7 @@ namespace ModelerAPI.ApiService.Services
         Task<Edge> CreateEdgeAsync(Edge edge);
         Task<List<Edge>> GetEdges();
         Task<bool> DeleteNodeAsync(string id);
+        Task<bool> DeleteEdgeAsync(string id);
     }
 }
+

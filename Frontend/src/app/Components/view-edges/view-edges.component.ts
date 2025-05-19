@@ -16,6 +16,7 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   error: string | null = null;
   private edgeCreatedSubscription: Subscription = new Subscription();
+  private edgeDeletedSubscription: Subscription = new Subscription();
 
   constructor(private edgeService: EdgeService) { }
 
@@ -27,11 +28,17 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     this.edgeCreatedSubscription = this.edgeService.edgeCreated$.subscribe(() => {
       this.getEdges();
     });
+
+    // Subscribe to edge deletion events
+    this.edgeDeletedSubscription = this.edgeService.edgeDeleted$.subscribe(() => {
+      this.getEdges();
+    });
   }
 
   ngOnDestroy(): void {
-    // Clean up subscription to prevent memory leaks
+    // Clean up subscriptions to prevent memory leaks
     this.edgeCreatedSubscription.unsubscribe();
+    this.edgeDeletedSubscription.unsubscribe();
   }
 
   getEdges(): void {
@@ -48,4 +55,24 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  deleteEdge(id: string): void {
+    if (confirm('Are you sure you want to delete this connection?')) {
+      this.loading = true;
+      this.edgeService.deleteEdge(id).subscribe({
+        next: () => {
+          this.edgeService.notifyEdgeDeleted();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = 'Failed to delete connection';
+          this.loading = false;
+          console.error('Error deleting edge:', err);
+        }
+      });
+    }
+  }
 }
+
+
+
