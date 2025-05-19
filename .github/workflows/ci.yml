@@ -41,7 +41,7 @@ jobs:
           reporttypes: 'HtmlInline_AzurePipelines;Cobertura'
           
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-report
           path: coveragereport
@@ -121,7 +121,7 @@ jobs:
           npm test -- --watch=false --no-progress --browsers=ChromeHeadlessCI --karma-config=karma.conf.js
         
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-test-results
           path: Frontend/coverage
@@ -133,7 +133,7 @@ jobs:
     
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         
       - name: Display structure of downloaded files
         run: ls -R
@@ -157,7 +157,7 @@ jobs:
           echo "- Coverage report available in artifacts" >> test-summary.md
           
       - name: Upload test summary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-summary
           path: test-summary.md
