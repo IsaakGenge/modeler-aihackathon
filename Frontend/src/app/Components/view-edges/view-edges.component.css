@@ -4,44 +4,70 @@
   transition: color 0.3s ease;
 }
 
-/* Direct, simple dark theme styles with hard-coded colors as fallback */
-body.dark-theme .table {
+/* More specific selectors for dark theme styling */
+body.dark-theme .edge-container .table,
+.dark-theme .table {
   background-color: #1e1e1e !important;
   color: rgba(255, 255, 255, 0.87) !important;
   border-color: #333 !important;
 }
 
-  body.dark-theme .table thead,
-  body.dark-theme .table th {
+  /* Header styling */
+  body.dark-theme .edge-container .table thead,
+  body.dark-theme .edge-container .table th,
+  .dark-theme .table thead,
+  .dark-theme .table th {
     background-color: #181818 !important;
     color: rgba(255, 255, 255, 0.87) !important;
     border-color: #333 !important;
   }
 
-  body.dark-theme .table tbody tr {
+  /* Target each row element directly */
+  body.dark-theme .edge-container .table > tbody > tr,
+  .dark-theme .table > tbody > tr {
     background-color: #1e1e1e !important;
     color: rgba(255, 255, 255, 0.87) !important;
     border-color: #333 !important;
   }
 
-    body.dark-theme .table tbody tr:nth-of-type(odd) {
+    /* Target odd rows */
+    body.dark-theme .edge-container .table > tbody > tr:nth-of-type(odd),
+    .dark-theme .table > tbody > tr:nth-of-type(odd) {
       background-color: #181818 !important;
     }
 
-    body.dark-theme .table tbody tr:hover {
+    /* Hover state for rows */
+    body.dark-theme .edge-container .table > tbody > tr:hover,
+    .dark-theme .table > tbody > tr:hover {
       background-color: rgba(255, 255, 255, 0.1) !important;
     }
 
-  body.dark-theme .table td {
-    color: rgba(255, 255, 255, 0.87) !important;
-    border-color: #333 !important;
-  }
+    /* Table cell styling */
+    body.dark-theme .edge-container .table > tbody > tr > td,
+    .dark-theme .table > tbody > tr > td {
+      color: rgba(255, 255, 255, 0.87) !important;
+      border-color: #333 !important;
+      background-color: inherit !important; /* Ensure cells inherit the row's background */
+    }
 
-  /* Ensure text in table cells is properly colored */
-  body.dark-theme .table .card-text,
-  body.dark-theme .table .card-title {
-    color: rgba(255, 255, 255, 0.87) !important;
-  }
+/* Bootstrap specific overrides */
+body.dark-theme .edge-container .table-hover > tbody > tr,
+.dark-theme .table-hover > tbody > tr {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-theme .edge-container .table-striped > tbody > tr,
+.dark-theme .table-striped > tbody > tr {
+  background-color: #1e1e1e !important;
+}
+
+/* Ensure text in table cells is properly colored */
+body.dark-theme .edge-container .table .card-text,
+body.dark-theme .edge-container .table .card-title,
+.dark-theme .table .card-text,
+.dark-theme .table .card-title {
+  color: rgba(255, 255, 255, 0.87) !important;
+}
 
 /* Light theme table styles are handled by Bootstrap defaults */
 

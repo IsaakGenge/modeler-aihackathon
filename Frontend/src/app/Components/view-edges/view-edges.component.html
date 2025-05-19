@@ -1,5 +1,5 @@
 <!-- Frontend/src/app/Components/view-edges/view-edges.component.html -->
-<div class="edge-container mt-4">
+<div class="edge-container mt-4" [ngClass]="(isDarkMode$ | async) ? 'dark-theme' : ''">
   <h2>Current Connections</h2>
 
   <div *ngIf="loading" class="text-center my-3">
@@ -20,7 +20,7 @@
   </div>
 
   <div *ngIf="edgeData && edgeData.length > 0" class="edge-data">
-    <table class="table table-striped table-hover">
+    <table class="table table-hover">
       <thead>
         <tr>
           <th>From</th>
