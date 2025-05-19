@@ -8,7 +8,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class NodeService {
-  private apiUrl = `${environment.apiBaseUrl}/node`;
+  private apiUrl = `${environment.apiBaseUrl}/node`; 
   private nodeCreatedSubject = new Subject<void>();
   private nodeDeletedSubject = new Subject<void>();
 
