@@ -5,5 +5,6 @@ namespace ModelerAPI.ApiService.Services
     public interface ICosmosService
     {
         Task<Node> CreateNodeAsync(Node node);
+        Task<List<Node>> GetNodes();
     }
 }

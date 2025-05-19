@@ -10,7 +10,7 @@ namespace ModelerAPI.ApiService.Models
         /// <summary>
         /// Unique identifier for the node
         /// </summary>
-        public string Id { get; set; }
+        public string? Id { get; set; }
         
         /// <summary>
         /// Name of the node

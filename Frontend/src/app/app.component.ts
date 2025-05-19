@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NodeService } from './Services/node.service';
+import { CreateNodeComponent } from './Components/create-node/create-node.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CreateNodeComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -26,7 +26,7 @@ export class AppComponent implements OnInit {
     this.loading = true;
     this.nodeService.getNodes().subscribe({
       next: (data) => {
-        this.nodeData = data.message;
+        this.nodeData = data;
         this.loading = false;
       },
       error: (err) => {

@@ -14,4 +14,8 @@ export class NodeService {
   getNodes(): Observable<any> {
     return this.http.get<any>(this.nodeAPI);
   }
+
+  createNode(node: any): Observable<any> {
+    return this.http.post<any>(this.nodeAPI, node);
+  }
 }

@@ -1,3 +1,5 @@
+using ModelerAPI.ApiService.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -20,6 +22,8 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+builder.Services.AddSingleton<ICosmosService, CosmosService>();
+
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
@@ -39,8 +43,3 @@ app.MapDefaultEndpoints();
 app.UseCors();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

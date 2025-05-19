@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
 using ModelerAPI.ApiService.Services;
 
@@ -17,17 +18,29 @@ namespace ModelerAPI.ApiService.Controllers
 
         // GET: api/node
         [HttpGet]
-        public IActionResult GetNodes()
-        {
-            // Logic to get nodes
-            return Ok(new { message = "Get all nodes" });
+        public async Task<IActionResult> GetNodes()
+        {          
+            if (CosmosService == null )
+            {
+                return NotFound();
+            }
+            var nodes = await CosmosService.GetNodes();
+            if (nodes == null || nodes.Count() == 0)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return Ok(nodes);
+            }
+
         }
         // POST: api/node
         [HttpPost]
         public async Task<IActionResult> CreateNode([FromBody] Node node)
         {
             // Store in Cosmos DB
-            await CosmosService.CreateNodeAsync(node);
+            await CosmosService.CreateNodeAsync(node as Node);
             return CreatedAtAction(nameof(GetNodes), new { id = node.Id }, node);
         }
         // PUT: api/node/{id}
