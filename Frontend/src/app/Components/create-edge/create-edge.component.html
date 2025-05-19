@@ -56,11 +56,11 @@
       <select id="edgeType" formControlName="edgeType"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['edgeType'].errors }">
-        <option value="default">Default</option>
-        <option value="related">Related</option>
-        <option value="belongs_to">Belongs To</option>
-        <option value="contains">Contains</option>
-        <option value="depends_on">Depends On</option>
+        <option value="Default">Default</option>
+        <option value="Related">Related</option>
+        <option value="Belongs To">Belongs To</option>
+        <option value="Contains">Contains</option>
+        <option value="Depends On">Depends On</option>
       </select>
       <div *ngIf="submitted && f['edgeType'].errors" class="invalid-feedback">
         <div *ngIf="f['edgeType'].errors['required']">Connection Type is required</div>

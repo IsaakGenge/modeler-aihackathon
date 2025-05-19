@@ -1,9 +1,7 @@
 /* Frontend/src/app/Components/create-edge/create-edge.component.css */
 .container {
-  background-color: #f8f9fa;
-  padding: 20px;
+  padding: 0;
   border-radius: 5px;
-  margin-top: 20px;
 }
 
 .form-group {
