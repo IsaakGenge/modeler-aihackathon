@@ -1,0 +1,20 @@
+/* Frontend/src/app/Components/create-edge/create-edge.component.css */
+.container {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.btn {
+  margin-right: 10px;
+}
+
+.alert {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}

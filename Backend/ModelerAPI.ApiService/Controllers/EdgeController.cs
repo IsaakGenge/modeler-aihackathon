@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using ModelerAPI.ApiService.Models;
+using ModelerAPI.ApiService.Services;
 
 namespace ModelerAPI.ApiService.Controllers
 {
@@ -7,32 +8,58 @@ namespace ModelerAPI.ApiService.Controllers
     [ApiController]
     public class EdgeController : ControllerBase
     {
+        private readonly ICosmosService _cosmosService;
+
+        public EdgeController(ICosmosService cosmosService)
+        {
+            _cosmosService = cosmosService;
+        }
+
         // GET: api/edge
         [HttpGet]
-        public IActionResult GetEdges()
+        public async Task<IActionResult> GetEdges()
         {
-            // Logic to get edges
-            return Ok(new { message = "Get all edges" });
+            if (_cosmosService == null)
+            {
+                return NotFound();
+            }
+
+            var edges = await _cosmosService.GetEdges();
+            if (edges == null || !edges.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(edges);
         }
+
         // POST: api/edge
         [HttpPost]
-        public IActionResult CreateEdge([FromBody] object edge)
+        public async Task<IActionResult> CreateEdge([FromBody] Edge edge)
         {
-            // Logic to create an edge
-            return CreatedAtAction(nameof(GetEdges), new { id = 1 }, edge);
+            if (edge == null || string.IsNullOrEmpty(edge.Source) || string.IsNullOrEmpty(edge.Target))
+            {
+                return BadRequest("Edge must have valid source and target node IDs");
+            }
+
+            // Store in Cosmos DB
+            var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
+            return CreatedAtAction(nameof(GetEdges), new { id = createdEdge.Id }, createdEdge);
         }
+
         // PUT: api/edge/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateEdge(int id, [FromBody] object edge)
+        public IActionResult UpdateEdge(string id, [FromBody] Edge edge)
         {
-            // Logic to update an edge
+            // Logic to update an edge - to be implemented
             return NoContent();
         }
+
         // DELETE: api/edge/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteEdge(int id)
+        public IActionResult DeleteEdge(string id)
         {
-            // Logic to delete an edge
+            // Logic to delete an edge - to be implemented
             return NoContent();
         }
     }

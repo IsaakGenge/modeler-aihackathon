@@ -1,0 +1,14 @@
+/* Frontend/src/app/Components/view-edges/view-edges.component.css */
+.edge-container {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.table {
+  margin-top: 15px;
+}
+
+.alert {
+  margin-top: 15px;
+}

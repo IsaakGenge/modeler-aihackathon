@@ -1,11 +1,11 @@
-﻿namespace ModelerAPI.ApiService.Services
+﻿namespace ModelerAPI.ApiService.Models
 {
     public class Edge
     {
         /// <summary>
         /// Unique identifier for the edge
         /// </summary>
-        public string Id { get; set; }
+        public string? Id { get; set; }
         /// <summary>
         /// Source node ID
         /// </summary>

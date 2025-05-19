@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NodeService } from '../../Services/node.service';
+import { NodeService } from '../../Services/Node/node.service';
 
 interface Node {
   id: string;

@@ -6,5 +6,7 @@ namespace ModelerAPI.ApiService.Services
     {
         Task<Node> CreateNodeAsync(Node node);
         Task<List<Node>> GetNodes();
+        Task<Edge> CreateEdgeAsync(Edge edge);
+        Task<List<Edge>> GetEdges();
     }
 }

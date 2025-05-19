@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NodeService } from '../../Services/node.service';
+import { NodeService } from '../../Services/Node/node.service';
 import { Subscription } from 'rxjs';
 
 @Component({

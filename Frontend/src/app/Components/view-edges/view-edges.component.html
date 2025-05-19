@@ -1,1 +1,35 @@
-<p>view-edges works!</p>
+<!-- Frontend/src/app/Components/view-edges/view-edges.component.html -->
+<div class="edge-container mt-4">
+  <h2>Current Connections</h2>
+
+  <div *ngIf="loading">Loading connection data...</div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div *ngIf="edgeData && edgeData.length > 0" class="edge-data">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Source</th>
+          <th>Target</th>
+          <th>Type</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let edge of edgeData">
+          <td>{{ edge.id }}</td>
+          <td>{{ edge.source }}</td>
+          <td>{{ edge.target }}</td>
+          <td>{{ edge.edgeType }}</td>
+          <td>{{ edge.createdAt | date }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="edgeData && edgeData.length === 0" class="alert alert-info">
+    No connections available. Create a connection to get started.
+  </div>
+</div>

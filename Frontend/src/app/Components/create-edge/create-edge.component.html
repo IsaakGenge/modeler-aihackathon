@@ -1,1 +1,63 @@
-<p>create-edge works!</p>
+<!-- Frontend/src/app/Components/create-edge/create-edge.component.html -->
+<div class="container">
+  <h2>Create New Connection (Edge)</h2>
+
+  <div *ngIf="success" class="alert alert-success">
+    Connection created successfully!
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+  </div>
+
+  <div *ngIf="loading">Loading nodes...</div>
+
+  <form [formGroup]="edgeForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="source">Source Node *</label>
+      <select formControlName="source"
+              class="form-control"
+              [ngClass]="{ 'is-invalid': submitted && f['source'].errors }">
+        <option value="">Select source node</option>
+        <option *ngFor="let node of nodes" [value]="node.id">{{ node.name || 'Unnamed Node' }} ({{ node.id }})</option>
+      </select>
+      <div *ngIf="submitted && f['source'].errors" class="invalid-feedback">
+        <div *ngIf="f['source'].errors['required']">Source node is required</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="target">Target Node *</label>
+      <select formControlName="target"
+              class="form-control"
+              [ngClass]="{ 'is-invalid': submitted && f['target'].errors }">
+        <option value="">Select target node</option>
+        <option *ngFor="let node of nodes" [value]="node.id">{{ node.name || 'Unnamed Node' }} ({{ node.id }})</option>
+      </select>
+      <div *ngIf="submitted && f['target'].errors" class="invalid-feedback">
+        <div *ngIf="f['target'].errors['required']">Target node is required</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="edgeType">Connection Type</label>
+      <select formControlName="edgeType"
+              class="form-control"
+              [ngClass]="{ 'is-invalid': submitted && f['edgeType'].errors }">
+        <option value="default">Default</option>
+        <option value="related">Related</option>
+        <option value="belongs_to">Belongs To</option>
+        <option value="contains">Contains</option>
+        <option value="depends_on">Depends On</option>
+      </select>
+      <div *ngIf="submitted && f['edgeType'].errors" class="invalid-feedback">
+        <div *ngIf="f['edgeType'].errors['required']">Connection Type is required</div>
+      </div>
+    </div>
+
+    <div class="form-group mt-3">
+      <button type="submit" class="btn btn-primary">Create Connection</button>
+      <button type="button" class="btn btn-secondary ms-2" (click)="resetForm()">Reset</button>
+    </div>
+  </form>
+</div>
