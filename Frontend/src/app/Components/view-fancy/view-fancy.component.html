@@ -1,7 +1,40 @@
 <div class="container-fluid">
   <div class="row">
-    <div class="col-12">
-      <div class="card">
+    <!-- Left Panel for Node and Edge Creation -->
+    <div class="col-md-3 mb-3">
+      <div class="card" [ngClass]="(isDarkMode$ | async) ? 'bg-dark text-white' : ''">
+        <div class="card-header">
+          <h2>Graph Editor</h2>
+        </div>
+        <div class="card-body">
+          <!-- NgbNav for Create Node and Create Edge -->
+          <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs"
+              [ngClass]="(isDarkMode$ | async) ? 'dark-mode-tabs' : ''">
+            <li [ngbNavItem]="1">
+              <a ngbNavLink>Create Node</a>
+              <ng-template ngbNavContent>
+                <div class="tab-pane-content">
+                  <app-create-node></app-create-node>
+                </div>
+              </ng-template>
+            </li>
+            <li [ngbNavItem]="2">
+              <a ngbNavLink>Create Connection</a>
+              <ng-template ngbNavContent>
+                <div class="tab-pane-content">
+                  <app-create-edge></app-create-edge>
+                </div>
+              </ng-template>
+            </li>
+          </ul>
+          <div [ngbNavOutlet]="nav" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel for Graph Visualization -->
+    <div class="col-md-9">
+      <div class="card" [ngClass]="(isDarkMode$ | async) ? 'bg-dark text-white' : ''">
         <div class="card-header">
           <h2>Graph Visualization</h2>
         </div>

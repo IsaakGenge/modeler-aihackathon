@@ -5,3 +5,82 @@
   border: 1px solid #dee2e6;
   border-radius: 4px;
 }
+
+/* Dark mode styles for graph container */
+.bg-dark .graph-container {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+/* Left panel styling */
+.tab-content {
+  padding-top: 15px;
+}
+
+/* Override for component containers to fit in the left panel */
+:host ::ng-deep .component-container {
+  padding: 0;
+}
+
+  :host ::ng-deep .component-container h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+
+/* Make the left panel scrollable if content is too tall */
+.card-body {
+  max-height: 650px;
+  overflow-y: auto;
+}
+
+/* Dark mode tab styles */
+.dark-mode-tabs {
+  border-bottom-color: #444;
+}
+
+  .dark-mode-tabs .nav-item .nav-link {
+    color: #adb5bd;
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+    .dark-mode-tabs .nav-item .nav-link:hover {
+      color: #fff;
+      border-color: #444 #444 transparent;
+    }
+
+    .dark-mode-tabs .nav-item .nav-link.active {
+      color: #fff;
+      font-weight: bold;
+      background-color: transparent;
+      border-color: #444 #444 #343a40;
+    }
+
+/* Tab pane content padding */
+.tab-pane-content {
+  padding-top: 15px;
+}
+
+/* Adjust for mobile devices */
+@media (max-width: 767.98px) {
+  .graph-container {
+    height: 400px;
+  }
+}
+
+/* Dark mode scrollbar styles */
+.bg-dark::-webkit-scrollbar {
+  width: 10px;
+}
+
+.bg-dark::-webkit-scrollbar-track {
+  background: #343a40;
+}
+
+.bg-dark::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+  .bg-dark::-webkit-scrollbar-thumb:hover {
+    background: #666;
+  }

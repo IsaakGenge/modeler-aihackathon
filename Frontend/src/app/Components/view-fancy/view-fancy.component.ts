@@ -1,71 +1,107 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import cytoscape from 'cytoscape';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
-import { Subscription, forkJoin, of } from 'rxjs';
+import { ThemeService } from '../../Services/Theme/theme.service';
+import { Subscription, forkJoin, of, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
+import { CreateNodeComponent } from '../create-node/create-node.component';
+import { CreateEdgeComponent } from '../create-edge/create-edge.component';
+import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-view-fancy',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    CreateNodeComponent,
+    CreateEdgeComponent,
+    NgbNavModule
+  ],
   templateUrl: './view-fancy.component.html',
   styleUrl: './view-fancy.component.css'
 })
-export class ViewFancyComponent implements OnInit, OnDestroy {
+export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('cyContainer', { static: true }) private cyContainer!: ElementRef;
   private cy: any;
   loading: boolean = false;
   error: string | null = null;
   warning: string | null = null;
+  activeTab = 1; // Default active tab (1 for node panel, 2 for edge panel)
+  isDarkMode$: Observable<boolean>;
 
-  private edgeCreatedSubscription: Subscription = new Subscription();
-  private edgeDeletedSubscription: Subscription = new Subscription();
-  private nodeChangedSubscription: Subscription = new Subscription();
+  private subscriptions: Subscription = new Subscription();
 
   constructor(
     private edgeService: EdgeService,
-    private nodeService: NodeService
-  ) { }
+    private nodeService: NodeService,
+    private themeService: ThemeService
+  ) {
+    this.isDarkMode$ = this.themeService.isDarkMode$;
+  }
 
   ngOnInit(): void {
     this.loadGraphData();
+    this.setupEventSubscriptions();
+  }
+
+  // Separate method to set up event subscriptions for better organization
+  private setupEventSubscriptions(): void {
+    // Subscribe to node creation events
+    this.subscriptions.add(
+      this.nodeService.nodeCreated$.subscribe(() => {
+        console.log('Node created event received');
+        this.loadGraphData();
+      })
+    );
+
+    // Subscribe to node deletion events
+    this.subscriptions.add(
+      this.nodeService.nodeDeleted$.subscribe(() => {
+        console.log('Node deleted event received');
+        this.loadGraphData();
+      })
+    );
 
     // Subscribe to edge creation events
-    this.edgeCreatedSubscription = this.edgeService.edgeCreated$.subscribe(() => {
-      this.loadGraphData();
-    });
+    this.subscriptions.add(
+      this.edgeService.edgeCreated$.subscribe(() => {
+        console.log('Edge created event received');
+        this.loadGraphData();
+      })
+    );
 
     // Subscribe to edge deletion events
-    this.edgeDeletedSubscription = this.edgeService.edgeDeleted$.subscribe(() => {
-      this.loadGraphData();
-    });
-
-    // Subscribe to node changes (created or deleted)
-    this.nodeChangedSubscription = this.nodeService.nodeCreated$.subscribe(() => {
-      this.loadGraphData();
-    });
-
-    this.nodeChangedSubscription.add(
-      this.nodeService.nodeDeleted$.subscribe(() => {
+    this.subscriptions.add(
+      this.edgeService.edgeDeleted$.subscribe(() => {
+        console.log('Edge deleted event received');
         this.loadGraphData();
       })
     );
   }
 
+  ngAfterViewInit(): void {
+    // Any post-view initialization can go here if needed
+  }
+
   ngOnDestroy(): void {
-    // Clean up subscriptions to prevent memory leaks
-    this.edgeCreatedSubscription.unsubscribe();
-    this.edgeDeletedSubscription.unsubscribe();
-    this.nodeChangedSubscription.unsubscribe();
+    // Clean up all subscriptions to prevent memory leaks
+    this.subscriptions.unsubscribe();
+
+    // Clean up cytoscape instance
+    if (this.cy) {
+      this.cy.destroy();
+    }
   }
 
   loadGraphData(): void {
     this.loading = true;
     this.error = null;
     this.warning = null;
+
+    console.log('Loading graph data...');
 
     // Use forkJoin to get both edges and nodes in parallel with error handling
     forkJoin({
@@ -93,6 +129,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy {
       )
     }).subscribe({
       next: (result) => {
+        console.log('Graph data loaded:', result);
         this.initializeCytoscape(result.nodes, result.edges);
         this.loading = false;
       },
@@ -105,6 +142,8 @@ export class ViewFancyComponent implements OnInit, OnDestroy {
   }
 
   private initializeCytoscape(nodes: any[], edges: any[]): void {
+    console.log('Initializing cytoscape with nodes:', nodes.length, 'edges:', edges.length);
+
     // Convert API data to Cytoscape format
     const cytoscapeNodes = nodes.map(node => ({
       data: {
@@ -116,8 +155,8 @@ export class ViewFancyComponent implements OnInit, OnDestroy {
     const cytoscapeEdges = edges.map(edge => ({
       data: {
         id: edge.id,
-        source: edge.source, // Updated from sourceNodeId
-        target: edge.target, // Updated from targetNodeId
+        source: edge.source,
+        target: edge.target,
         label: edge.edgeType || this.generateEdgeLabel(edge.source, edge.target)
       }
     }));
