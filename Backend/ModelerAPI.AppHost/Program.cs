@@ -1,5 +1,3 @@
-using Google.Protobuf.WellKnownTypes;
-
 var builder = DistributedApplication.CreateBuilder(args);
 var apiService = builder.AddProject<Projects.ModelerAPI_ApiService>("apiservice");
 

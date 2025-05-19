@@ -14,7 +14,7 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
   - [Running the Application](#running-the-application)
 - [API Reference](#api-reference)
 - [Development](#development)
-- [License](#license)
+
 
 ## Features
 
@@ -74,37 +74,55 @@ The application consists of:
    - Gremlin Port: 65400 (this is the default Gremlin port in the emulator)
    - Default Master Key: `C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==`
    
-
 ### Configuration
 
-1. The default connection strings for the Cosmos DB Emulator are already configured in `CosmosService.cs`
-   - The default endpoint is `https://localhost:8081`
-   - The default master key is `C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==`
-   - The Gremlin connection is configured to use port 65400 and database path `/dbs/db1/colls/coll1`
+#### Application Settings
 
-2. If you used different database or container names, update the connection settings in `CosmosService.cs`
+The application uses the standard .NET configuration system with the Options pattern. All configuration settings are stored in `appsettings.json` and can be overridden in environment-specific files like `appsettings.Development.json`.
 
-3. Set the environment variable `ASPIRE_ALLOW_UNSECURED_TRANSPORT=true` for local development:
+1. **Cosmos DB Settings**
+
+   Connection settings for Cosmos DB are configured in the `CosmosDb` section:
+   "CosmosDb": { "EndpointUrl": "https://localhost:8081", "PrimaryKey": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==", "DatabaseName": "db1", "ContainerName": "coll1", "GremlinHostname": "localhost", "GremlinPort": 65400, "GremlinUsername": "/dbs/db1/colls/coll1", "GremlinPassword": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==" }
+   
+   These settings are mapped to the `CosmosDbSettings` class and injected into services via dependency injection.
+
+2. **CORS Settings**
+
+   Cross-Origin Resource Sharing settings are configured in the `Cors` section:
+
+   "Cors": { "AllowedOrigins": ["http://localhost:4200"] }
+   These settings control which origins can access the API and are mapped to the `CorsSettings` class.
+
+3. **Customizing Settings**
+
+   To customize these settings for your environment:
+   
+   - Update the corresponding values in `appsettings.json` or `appsettings.Development.json`
+   - For production deployments, use environment variables or secrets management
+   - The connection values shown above are for the local Cosmos DB Emulator
+
+4. **Environment Variables**
+
+   Set the environment variable `ASPIRE_ALLOW_UNSECURED_TRANSPORT=true` for local development:
    - In Windows, run Command Prompt as Administrator and enter:
       setx ASPIRE_ALLOW_UNSECURED_TRANSPORT true
-
-      
+   
 ### Running the Application
 
 1. Clone this repository
 2. Navigate to the project directory
 3. Ensure the Cosmos DB Emulator is running (check the notification icon in your system tray)
 4. Run the application using .NET Aspire:
-   dotnet run --project Backend/ModelerAPI.AppHost
+dotnet run --project Backend/ModelerAPI.AppHost
 
-   
 ## API Reference
 
 ### Node Endpoints
 
 - **GET /api/node** - Retrieve all nodes
 - **POST /api/node** - Create a new node
-  { "id": "node1", "name": "Example Node", "nodeType": "custom" }
+  { "name": "Example Node", "nodeType": "custom" }
 - - **PUT /api/node/{id}** - Update an existing node
 - **DELETE /api/node/{id}** - Delete a node
 
@@ -112,6 +130,8 @@ The application consists of:
 
 - **GET /api/edge** - Retrieve all edges
 - **POST /api/edge** - Create a new edge between nodes
+- { "source": "nodeId1", "target": "nodeId2", "edgeType": "related" }
+
 - **PUT /api/edge/{id}** - Update an existing edge
 - **DELETE /api/edge/{id}** - Delete an edge
 
@@ -123,6 +143,11 @@ The application consists of:
 - **ModelerAPI.AppHost** - .NET Aspire host application
 - **Frontend** - Web-based user interface
 
+### Configuration Classes
+
+- **CosmosDbSettings** - Configuration for Cosmos DB and Gremlin connections
+- **CorsSettings** - Configuration for CORS policies
+
 ### Adding New Features
 
 To add a new feature:
@@ -131,3 +156,6 @@ To add a new feature:
 2. Add necessary methods to the `ICosmosService` interface
 3. Implement the methods in the `CosmosService` class
 4. Create or update controllers to expose the functionality via API endpoints
+
+  
+   

@@ -1,4 +1,6 @@
 using ModelerAPI.ApiService.Services;
+using ModelerAPI.ApiService.Configuration;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,17 +15,30 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
 
+// Configure CosmosDB settings
+builder.Services.Configure<CosmosDbSettings>(
+    builder.Configuration.GetSection(CosmosDbSettings.SectionName));
+
+// Configure CORS settings
+builder.Services.Configure<CorsSettings>(
+    builder.Configuration.GetSection(CorsSettings.SectionName));
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:4200") // Frontend app URL
+        var corsSettings = builder.Configuration
+            .GetSection(CorsSettings.SectionName)
+            .Get<CorsSettings>();
+
+        policy.WithOrigins(corsSettings?.AllowedOrigins ?? new[] { "http://localhost:4200" })
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
-builder.Services.AddSingleton<ICosmosService, CosmosService>();
 
+// Register CosmosService as a singleton with the configured settings
+builder.Services.AddSingleton<ICosmosService, CosmosService>();
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
@@ -34,10 +49,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
-
 app.MapControllers();
-
 app.MapDefaultEndpoints();
 // Make sure to use CORS in the app configuration
 app.UseCors();

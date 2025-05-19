@@ -2,6 +2,9 @@
 using Gremlin.Net.Structure.IO.GraphSON;
 using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
+using ModelerAPI.ApiService.Configuration;
+using Microsoft.Extensions.Options;
+
 namespace ModelerAPI.ApiService.Services
 {
     public class CosmosService : ICosmosService
@@ -9,15 +12,23 @@ namespace ModelerAPI.ApiService.Services
         private readonly CosmosClient CosmosClient;
         private readonly Container Container;
         private readonly GremlinClient GremlinClient;
+        private readonly CosmosDbSettings _settings;
 
-        public CosmosService()
+        public CosmosService(IOptions<CosmosDbSettings> cosmosSettings)
         {
-            // Cosmos DB Emulator connection
-            CosmosClient = new CosmosClient("https://localhost:8081", "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==");
-            Container = CosmosClient.GetContainer("model", "graph");
+            _settings = cosmosSettings.Value;
 
-            // Gremlin API connection (Cosmos DB Gremlin endpoint)
-            var server = new GremlinServer(hostname: "localhost", port: 65400, username: "/dbs/db1/colls/coll1", password: "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==");
+            // Cosmos DB Emulator connection using configuration
+            CosmosClient = new CosmosClient(_settings.EndpointUrl, _settings.PrimaryKey);
+            Container = CosmosClient.GetContainer(_settings.DatabaseName, _settings.ContainerName);
+
+            // Gremlin API connection (Cosmos DB Gremlin endpoint) using configuration
+            var server = new GremlinServer(
+                hostname: _settings.GremlinHostname,
+                port: _settings.GremlinPort,
+                username: _settings.GremlinUsername,
+                password: _settings.GremlinPassword);
+
             var messageSerializer = new GraphSON2MessageSerializer();
             GremlinClient = new GremlinClient(server, messageSerializer);
         }
@@ -181,8 +192,5 @@ namespace ModelerAPI.ApiService.Services
             await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
             return edge;
         }
-
     }
 }
-
-
