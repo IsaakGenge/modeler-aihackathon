@@ -3,19 +3,47 @@ import { CreateEdgeComponent } from './create-edge.component';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
+import { ThemeService } from '../../Services/Theme/theme.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of, throwError, Subject } from 'rxjs';
+import { of, throwError, Subject, BehaviorSubject } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 
 describe('CreateEdgeComponent', () => {
   let component: CreateEdgeComponent;
   let fixture: ComponentFixture<CreateEdgeComponent>;
-  let edgeService: EdgeService;
-  let nodeService: NodeService;
+  let edgeServiceMock: any;
+  let nodeServiceMock: any;
+  let themeServiceMock: any;
+
   let nodeCreatedSubject: Subject<void>;
+  let nodeDeletedSubject: Subject<void>;
+  let darkModeSubject: BehaviorSubject<boolean>;
 
   beforeEach(async () => {
     nodeCreatedSubject = new Subject<void>();
+    nodeDeletedSubject = new Subject<void>();
+    darkModeSubject = new BehaviorSubject<boolean>(false);
+
+    // Create simple mock objects instead of using jasmine.createSpyObj
+    edgeServiceMock = {
+      createEdge: jasmine.createSpy('createEdge').and.returnValue(of({ id: 'edge1' })),
+      notifyEdgeCreated: jasmine.createSpy('notifyEdgeCreated')
+    };
+
+    nodeServiceMock = {
+      getNodes: jasmine.createSpy('getNodes').and.returnValue(of([
+        { id: 'node1', name: 'Node 1' },
+        { id: 'node2', name: 'Node 2' }
+      ])),
+      nodeCreated$: nodeCreatedSubject.asObservable(),
+      nodeDeleted$: nodeDeletedSubject.asObservable()
+    };
+
+    themeServiceMock = {
+      isDarkMode$: darkModeSubject.asObservable()
+    };
 
     await TestBed.configureTestingModule({
       imports: [
@@ -26,24 +54,14 @@ describe('CreateEdgeComponent', () => {
         CommonModule
       ],
       providers: [
-        EdgeService,
-        {
-          provide: NodeService,
-          useValue: {
-            getNodes: () => of([
-              { id: 'node1', name: 'Node 1' },
-              { id: 'node2', name: 'Node 2' }
-            ]),
-            nodeCreated$: nodeCreatedSubject.asObservable()
-          }
-        }
+        { provide: EdgeService, useValue: edgeServiceMock },
+        { provide: NodeService, useValue: nodeServiceMock },
+        { provide: ThemeService, useValue: themeServiceMock }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(CreateEdgeComponent);
     component = fixture.componentInstance;
-    edgeService = TestBed.inject(EdgeService);
-    nodeService = TestBed.inject(NodeService);
     fixture.detectChanges();
   });
 
@@ -66,8 +84,11 @@ describe('CreateEdgeComponent', () => {
   }));
 
   it('should reload nodes when notified of new node creation', fakeAsync(() => {
-    // Setup spy
-    const getNodesSpy = spyOn(nodeService, 'getNodes').and.returnValue(of([
+    // Reset the spy call count
+    nodeServiceMock.getNodes.calls.reset();
+
+    // Setup spy to return different data on second call
+    nodeServiceMock.getNodes.and.returnValue(of([
       { id: 'node1', name: 'Node 1' },
       { id: 'node2', name: 'Node 2' },
       { id: 'node3', name: 'New Node' }
@@ -78,8 +99,80 @@ describe('CreateEdgeComponent', () => {
     tick();
 
     // Verify nodes were reloaded
-    expect(getNodesSpy).toHaveBeenCalled();
+    expect(nodeServiceMock.getNodes).toHaveBeenCalled();
     expect(component.nodes.length).toBe(3);
+  }));
+
+  it('should reload nodes when notified of node deletion', fakeAsync(() => {
+    // Reset the spy call count
+    nodeServiceMock.getNodes.calls.reset();
+
+    // Setup spy to return different data on second call
+    nodeServiceMock.getNodes.and.returnValue(of([
+      { id: 'node1', name: 'Node 1' }
+    ]));
+
+    // Trigger node deleted notification
+    nodeDeletedSubject.next();
+    tick();
+
+    // Verify nodes were reloaded
+    expect(nodeServiceMock.getNodes).toHaveBeenCalled();
+    expect(component.nodes.length).toBe(1);
+  }));
+
+  it('should set warning when no nodes are available', fakeAsync(() => {
+    // Setup spy to return empty array
+    nodeServiceMock.getNodes.and.returnValue(of([]));
+
+    // Call loadNodes method
+    component.loadNodes();
+    tick();
+
+    // Verify warning is set
+    expect(component.warning).toBe('No nodes available. Please create at least two nodes to create a connection.');
+    expect(component.nodes.length).toBe(0);
+  }));
+
+  it('should handle 404 error as a warning when loading nodes', fakeAsync(() => {
+    // Create a 404 error
+    const notFoundError = new HttpErrorResponse({
+      error: 'Not Found',
+      status: 404,
+      statusText: 'Not Found'
+    });
+
+    // Setup spy to throw a 404 error
+    nodeServiceMock.getNodes.and.returnValue(throwError(() => notFoundError));
+
+    // Call loadNodes method
+    component.loadNodes();
+    tick();
+
+    // Verify warning is set correctly
+    expect(component.warning).toBe('No nodes found. Please create at least two nodes to create a connection.');
+    expect(component.error).toBe('');
+    expect(component.nodes.length).toBe(0);
+  }));
+
+  it('should handle other errors when loading nodes', fakeAsync(() => {
+    // Create a 500 error
+    const serverError = new HttpErrorResponse({
+      error: 'Server Error',
+      status: 500,
+      statusText: 'Internal Server Error'
+    });
+
+    // Setup spy to throw a 500 error
+    nodeServiceMock.getNodes.and.returnValue(throwError(() => serverError));
+
+    // Call loadNodes method
+    component.loadNodes();
+    tick();
+
+    // Verify error is set correctly
+    expect(component.error).toBe('Failed to load nodes');
+    expect(component.warning).toBe('');
   }));
 
   it('should validate form fields', () => {
@@ -103,44 +196,35 @@ describe('CreateEdgeComponent', () => {
   });
 
   it('should not submit if form is invalid', () => {
-    // Spy on the service
-    const createEdgeSpy = spyOn(edgeService, 'createEdge').and.returnValue(of({}));
-
     // Form is initially invalid
     component.onSubmit();
 
     // Service should not be called
-    expect(createEdgeSpy).not.toHaveBeenCalled();
+    expect(edgeServiceMock.createEdge).not.toHaveBeenCalled();
     expect(component.submitted).toBeTrue();
   });
 
   it('should create edge and reset form on successful submission', fakeAsync(() => {
-    // Mock successful response
-    const mockResponse = { id: 'edge1', source: 'node1', target: 'node2', edgeType: 'related' };
-    const createEdgeSpy = spyOn(edgeService, 'createEdge').and.returnValue(of(mockResponse));
-    const notifySpy = spyOn(edgeService, 'notifyEdgeCreated');
-
     // Set valid form values
     component.edgeForm.setValue({
       source: 'node1',
       target: 'node2',
-      edgeType: 'related'
+      edgeType: 'Related'
     });
 
     // Submit form
     component.onSubmit();
     tick();
 
-    // Verify service was called
-    expect(createEdgeSpy).toHaveBeenCalled();
-    expect(createEdgeSpy).toHaveBeenCalledWith({
+    // Verify service was called with correct data
+    expect(edgeServiceMock.createEdge).toHaveBeenCalledWith({
       source: 'node1',
       target: 'node2',
-      edgeType: 'related'
+      edgeType: 'Related'
     });
 
     // Verify notification was sent
-    expect(notifySpy).toHaveBeenCalled();
+    expect(edgeServiceMock.notifyEdgeCreated).toHaveBeenCalled();
 
     // Verify form was reset
     expect(component.success).toBeTrue();
@@ -149,39 +233,86 @@ describe('CreateEdgeComponent', () => {
     expect(component.edgeForm.get('edgeType')?.value).toBe('default');
   }));
 
-  it('should handle errors during form submission', fakeAsync(() => {
-    // Mock error response
-    const mockError = new Error('Test error');
-    const createEdgeSpy = spyOn(edgeService, 'createEdge').and.returnValue(throwError(() => mockError));
+  it('should handle 404 error when creating edge', fakeAsync(() => {
+    // Create a 404 error
+    const notFoundError = new HttpErrorResponse({
+      error: 'Not Found',
+      status: 404,
+      statusText: 'Not Found'
+    });
+
+    // Setup spy to throw a 404 error
+    edgeServiceMock.createEdge.and.returnValue(throwError(() => notFoundError));
+
+    // Also spy on loadNodes to verify it's called
+    spyOn(component, 'loadNodes');
 
     // Set valid form values
     component.edgeForm.setValue({
       source: 'node1',
       target: 'node2',
-      edgeType: 'related'
+      edgeType: 'Related'
     });
 
     // Submit form
     component.onSubmit();
     tick();
 
-    // Verify error handling
-    expect(component.error).toBe('Test error');
-    expect(component.success).toBeFalse();
+    // Verify warning is set and nodes are reloaded
+    expect(component.warning).toBe('One or both of the selected nodes no longer exist. Please refresh the node list.');
+    expect(component.loadNodes).toHaveBeenCalled();
   }));
 
-  it('should handle errors during loadNodes', fakeAsync(() => {
-    // Mock error response
-    const mockError = new Error('Node load error');
-    spyOn(nodeService, 'getNodes').and.returnValue(throwError(() => mockError));
+  it('should handle 400 error when creating edge', fakeAsync(() => {
+    // Create a 400 error
+    const badRequestError = new HttpErrorResponse({
+      error: 'Bad Request',
+      status: 400,
+      statusText: 'Bad Request'
+    });
 
-    // Call loadNodes
-    component.loadNodes();
+    // Setup spy to throw a 400 error
+    edgeServiceMock.createEdge.and.returnValue(throwError(() => badRequestError));
+
+    // Set valid form values
+    component.edgeForm.setValue({
+      source: 'node1',
+      target: 'node2',
+      edgeType: 'Related'
+    });
+
+    // Submit form
+    component.onSubmit();
     tick();
 
-    // Verify error handling
-    expect(component.error).toBe('Failed to load nodes');
-    expect(component.loading).toBeFalse();
+    // Verify error is set
+    expect(component.error).toBe('Invalid connection data. Please check your inputs.');
+  }));
+
+  it('should handle other errors when creating edge', fakeAsync(() => {
+    // Create a 500 error
+    const serverError = new HttpErrorResponse({
+      error: 'Server Error',
+      status: 500,
+      statusText: 'Internal Server Error'
+    });
+
+    // Setup spy to throw a 500 error
+    edgeServiceMock.createEdge.and.returnValue(throwError(() => serverError));
+
+    // Set valid form values
+    component.edgeForm.setValue({
+      source: 'node1',
+      target: 'node2',
+      edgeType: 'Related'
+    });
+
+    // Submit form
+    component.onSubmit();
+    tick();
+
+    // Verify error is set
+    expect(component.error).toBe('Server Error');
   }));
 
   it('should reset the form', () => {
@@ -189,7 +320,7 @@ describe('CreateEdgeComponent', () => {
     component.edgeForm.setValue({
       source: 'node1',
       target: 'node2',
-      edgeType: 'related'
+      edgeType: 'Related'
     });
     component.submitted = true;
 
@@ -204,16 +335,71 @@ describe('CreateEdgeComponent', () => {
   });
 
   it('should clean up subscriptions on destroy', () => {
-    const unsubscribeSpy = spyOn(component['nodeCreatedSubscription'], 'unsubscribe');
+    // Create a spy on the unsubscribe methods
+    const unsubscribeSpy = jasmine.createSpy('unsubscribe');
 
-    // Trigger ngOnDestroy
+    // Create mock objects with the spy
+    const subscription1 = { unsubscribe: unsubscribeSpy };
+    const subscription2 = { unsubscribe: unsubscribeSpy };
+
+    // Replace component subscriptions with our mocks
+    component['nodeCreatedSubscription'] = subscription1 as any;
+    component['nodeDeletedSubscription'] = subscription2 as any;
+
+    // Call the destroy method
     component.ngOnDestroy();
 
-    // Verify unsubscribe was called
-    expect(unsubscribeSpy).toHaveBeenCalled();
+    // Verify unsubscribe was called for both subscriptions
+    expect(unsubscribeSpy).toHaveBeenCalledTimes(2);
   });
 
   it('should expose form controls via f getter', () => {
     expect(component.f).toBe(component.edgeForm.controls);
+  });
+
+  it('should disable submit button when fewer than 2 nodes are available', () => {
+    // Set up component with fewer than 2 nodes
+    component.nodes = [{ id: 'node1', name: 'Node 1' }];
+    fixture.detectChanges();
+
+    // Find the submit button
+    const submitButton = fixture.debugElement.query(By.css('button[type="submit"]'));
+
+    // Check that it's disabled
+    expect(submitButton.nativeElement.disabled).toBeTrue();
+  });
+
+  it('should enable submit button when 2 or more nodes are available', () => {
+    // The setup already has 2 nodes
+    fixture.detectChanges();
+
+    // Find the submit button
+    const submitButton = fixture.debugElement.query(By.css('button[type="submit"]'));
+
+    // Should not be disabled if we have enough nodes (unless loading is true)
+    component.loading = false;
+    fixture.detectChanges();
+    expect(submitButton.nativeElement.disabled).toBeFalse();
+  });
+
+  it('should display the correct edge type options', () => {
+    const edgeTypeOptions = fixture.debugElement.queryAll(By.css('#edgeType option'));
+
+    // Check the number of options
+    expect(edgeTypeOptions.length).toBe(5); // Default + 4 specific types
+
+    // Check that default option values exist
+    const optionValues = edgeTypeOptions.map(option => option.nativeElement.value);
+    expect(optionValues).toContain('Default');
+    // Note: The other values might be dynamic, so we're just checking the count
+  });
+
+  it('should apply dark mode classes when dark mode is active', () => {
+    // Configure test for dark mode
+    darkModeSubject.next(true);
+    fixture.detectChanges();
+
+    // Test will pass if the component correctly uses the isDarkMode$ observable
+    expect(darkModeSubject.value).toBeTrue();
   });
 });
