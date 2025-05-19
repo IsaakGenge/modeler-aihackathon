@@ -1,30 +1,47 @@
 <div class="container-fluid">
   <div class="row flex-nowrap min-vh-100">
     <!-- Sidebar Navigation -->
-    <div class="col-auto px-0 position-relative" [ngClass]="(isDarkMode$ | async) ? 'bg-dark' : 'bg-light'">
-      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 min-vh-100"
+    <div class="sidebar" [ngClass]="{'expanded': !sidebarCollapsed, 'collapsed': sidebarCollapsed,
+                                    'bg-dark': (isDarkMode$ | async), 'bg-light': !(isDarkMode$ | async)}">
+      <div class="d-flex flex-column align-items-center min-vh-100 py-3"
            [ngClass]="(isDarkMode$ | async) ? 'text-white' : 'text-dark'">
-        <!-- Header with title and theme toggle -->
-        <div class="d-flex justify-content-between align-items-center w-100 mb-4">
-          <span class="fs-5 d-none d-sm-inline">Graph Modeler</span>
+
+        <!-- Header with title and toggle button -->
+        <div class="sidebar-header d-flex align-items-center w-100 mb-4"
+             [ngClass]="{'justify-content-between px-3': !sidebarCollapsed, 'justify-content-center px-0': sidebarCollapsed}">
+          <span class="fs-5 title" [ngClass]="{'d-none': sidebarCollapsed}">Graph Modeler</span>
+
+          <!-- Toggle button -->
           <button *ngIf="isBrowser"
+                  class="btn rounded-circle p-1 sidebar-toggle"
                   [ngClass]="(isDarkMode$ | async) ? 'btn-outline-light' : 'btn-outline-dark'"
-                  class="btn rounded-circle p-1"
                   style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
-                  (click)="toggleTheme()">
-            <i class="bi" [ngClass]="(isDarkMode$ | async) ? 'bi-sun' : 'bi-moon'"></i>
+                  (click)="toggleSidebar()">
+            <i class="bi" [ngClass]="sidebarCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
           </button>
         </div>
 
-        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100">
-          <li class="nav-item w-100">
-            <a routerLink="/view-basic" routerLinkActive="active" class="nav-link px-0">
-              <i class="bi bi-table me-2"></i> <span class="d-none d-sm-inline">Basic View</span>
+        <!-- Theme toggle button -->
+        <button *ngIf="isBrowser"
+                [ngClass]="(isDarkMode$ | async) ? 'btn-outline-light' : 'btn-outline-dark'"
+                class="btn rounded-circle p-1 mb-3 theme-toggle"
+                style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
+                (click)="toggleTheme()">
+          <i class="bi" [ngClass]="(isDarkMode$ | async) ? 'bi-sun' : 'bi-moon'"></i>
+        </button>
+
+        <!-- Navigation items -->
+        <ul class="nav nav-pills flex-column w-100 px-2">
+          <li class="nav-item w-100 mb-2">
+            <a routerLink="/view-basic" routerLinkActive="active" class="nav-link px-2 py-2 d-flex align-items-center">
+              <i class="bi bi-table"></i>
+              <span class="ms-2" [ngClass]="{'d-none': sidebarCollapsed}">Basic View</span>
             </a>
           </li>
-          <li class="nav-item w-100">
-            <a routerLink="/view-fancy" routerLinkActive="active" class="nav-link px-0">
-              <i class="bi bi-graph-up me-2"></i> <span class="d-none d-sm-inline">Graph View</span>
+          <li class="nav-item w-100 mb-2">
+            <a routerLink="/view-fancy" routerLinkActive="active" class="nav-link px-2 py-2 d-flex align-items-center">
+              <i class="bi bi-graph-up"></i>
+              <span class="ms-2" [ngClass]="{'d-none': sidebarCollapsed}">Graph View</span>
             </a>
           </li>
         </ul>
@@ -32,10 +49,17 @@
     </div>
 
     <!-- Main Content -->
-    <div class="col py-3">
-      <h1 class="border-bottom pb-2 mb-4">Graph Modeler</h1>
+    <div class="main-content" [ngClass]="{'expanded': sidebarCollapsed}">
+      <div class="d-flex align-items-center mb-3">
+        <!-- Mobile menu toggle button -->
+        <button class="btn d-md-none me-2"
+                [ngClass]="(isDarkMode$ | async) ? 'btn-dark' : 'btn-light'"
+                (click)="toggleSidebar()">
+          <i class="bi bi-list"></i>
+        </button>
+        <h1 class="border-bottom pb-2 mb-0 flex-grow-1">Graph Modeler</h1>
+      </div>
       <router-outlet></router-outlet>
     </div>
   </div>
 </div>
-

@@ -19,6 +19,7 @@ import { ThemeService } from './Services/Theme/theme.service';
 export class AppComponent implements OnInit {
   isDarkMode$: Observable<boolean>;
   isBrowser: boolean;
+  sidebarCollapsed: boolean = false;
 
   constructor(
     private themeService: ThemeService,
@@ -32,6 +33,29 @@ export class AppComponent implements OnInit {
     if (this.isBrowser) {
       // Only initialize theme in browser environment
       this.themeService.initTheme();
+
+      // Check if sidebar state is saved in localStorage
+      const savedSidebarState = localStorage.getItem('sidebarCollapsed');
+      if (savedSidebarState) {
+        this.sidebarCollapsed = savedSidebarState === 'true';
+      }
+
+      // Auto-collapse sidebar on small screens
+      this.checkScreenSize();
+      window.addEventListener('resize', () => this.checkScreenSize());
+    }
+  }
+
+  checkScreenSize(): void {
+    if (window.innerWidth < 768) { // Bootstrap md breakpoint
+      this.sidebarCollapsed = true;
+    }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    if (this.isBrowser) {
+      localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed.toString());
     }
   }
 
@@ -41,4 +65,3 @@ export class AppComponent implements OnInit {
     }
   }
 }
-

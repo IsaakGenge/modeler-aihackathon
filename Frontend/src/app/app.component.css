@@ -1,8 +1,101 @@
-/* Just adding styles that might not be covered by Bootstrap */
+/* Sidebar styling */
+.sidebar {
+  position: fixed;
+  height: 100vh;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  overflow-x: hidden;
+  transition: width 0.3s ease;
+}
+
+  .sidebar.expanded {
+    width: 250px;
+  }
+
+  .sidebar.collapsed {
+    width: 60px;
+  }
+
+.sidebar-header {
+  min-height: 50px;
+}
+
+/* Theme toggle button alignment */
+.theme-toggle {
+  text-align: center;
+}
+
+.sidebar.collapsed .theme-toggle {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+/* Center all buttons and icons when collapsed */
+.sidebar.collapsed .sidebar-header,
+.sidebar.collapsed .theme-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Adjust icons and text in the sidebar */
+.sidebar.collapsed .nav-link {
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+  .sidebar.collapsed .nav-link i {
+    font-size: 1.25rem;
+    margin: 0 !important;
+  }
+
+.sidebar.expanded .nav-link i {
+  font-size: 1rem;
+}
+
+/* Main content styling */
+.main-content {
+  margin-left: 250px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+  width: calc(100% - 250px);
+}
+
+  .main-content.expanded {
+    margin-left: 60px;
+    width: calc(100% - 60px);
+  }
+
+/* Navigation styles */
 .nav-pills .nav-link.active {
   background-color: #3498db;
 }
 
 .nav-link:hover {
   background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* For mobile screens */
+@media (max-width: 767.98px) {
+  .sidebar.collapsed {
+    width: 0;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .sidebar.expanded {
+    width: 250px;
+  }
+
+  .main-content, .main-content.expanded {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Ensure icons are visible in dark mode */
+.bg-dark .bi {
+  color: white;
 }
