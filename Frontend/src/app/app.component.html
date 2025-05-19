@@ -4,30 +4,6 @@
   <!-- Create Node Component -->
   <app-create-node></app-create-node>
 
-  <div class="node-container mt-4">
-    <h2>Current Nodes</h2>
-
-    <div *ngIf="loading">Loading node data...</div>
-
-    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-
-    <div *ngIf="nodeData && nodeData.length > 0" class="node-data">
-      <div class="row">
-        <div *ngFor="let node of nodeData" class="col-md-4 mb-3">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">{{ node.name || 'Unnamed Node' }}</h5>
-              <p class="card-text">ID: {{ node.id }}</p>
-              <p class="card-text">Type: {{ node.nodeType }}</p>
-              <p class="card-text">Created: {{ node.createdAt | date }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div *ngIf="nodeData && nodeData.length === 0" class="alert alert-info">
-      No nodes available. Create a node to get started.
-    </div>
-  </div>
+  <!-- View Nodes Component -->
+  <app-view-nodes></app-view-nodes>
 </div>

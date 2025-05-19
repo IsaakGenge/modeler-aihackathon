@@ -1,13 +1,16 @@
+// Frontend/src/app/Services/node.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NodeService {
-
   private nodeAPI = "http://localhost:5447/api/node";
+  private nodeCreatedSubject = new Subject<void>();
+
+  nodeCreated$ = this.nodeCreatedSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
@@ -17,5 +20,9 @@ export class NodeService {
 
   createNode(node: any): Observable<any> {
     return this.http.post<any>(this.nodeAPI, node);
+  }
+
+  notifyNodeCreated(): void {
+    this.nodeCreatedSubject.next();
   }
 }

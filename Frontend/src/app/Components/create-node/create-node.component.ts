@@ -29,7 +29,7 @@ export class CreateNodeComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.nodeForm = this.formBuilder.group({      
+    this.nodeForm = this.formBuilder.group({
       name: ['', [Validators.required]],
       nodeType: ['default', [Validators.required]]
     });
@@ -60,6 +60,8 @@ export class CreateNodeComponent implements OnInit {
         next: (response) => {
           this.success = true;
           this.resetForm();
+          // Notify other components that a node has been created
+          this.nodeService.notifyNodeCreated();
         },
         error: (error) => {
           this.error = error.message || 'An error occurred while creating the node.';

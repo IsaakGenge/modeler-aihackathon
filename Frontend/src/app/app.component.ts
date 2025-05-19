@@ -1,39 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NodeService } from './Services/node.service';
 import { CreateNodeComponent } from './Components/create-node/create-node.component';
+import { ViewNodesComponent } from './Components/view-nodes/view-nodes.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, CreateNodeComponent],
+  imports: [CommonModule, CreateNodeComponent, ViewNodesComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'Frontend';
-  nodeData: any[] = [];
-  loading: boolean = false;
-  error: string | null = null;
-
-  constructor(private nodeService: NodeService) { }
-
-  ngOnInit(): void {
-    this.GetNodes();
-  }
-
-  GetNodes(): void {
-    this.loading = true;
-    this.nodeService.getNodes().subscribe({
-      next: (data) => {
-        this.nodeData = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load node data';
-        this.loading = false;
-        console.error('Error fetching node data:', err);
-      }
-    });
-  }
 }
