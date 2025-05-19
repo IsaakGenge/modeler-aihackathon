@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch:
+    
+permissions:
+ contents: read
+ issues: read
+ checks: write
+ pull-requests: write
 
 jobs:
   build-and-test-backend:
