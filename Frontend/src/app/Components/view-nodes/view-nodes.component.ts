@@ -15,15 +15,20 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   error: string | null = null;
   private nodeCreatedSubscription: Subscription = new Subscription();
+  private nodeDeletedSubscription: Subscription = new Subscription();
 
   constructor(private nodeService: NodeService) { }
 
   ngOnInit(): void {
-    // Get nodes on component initialization
     this.getNodes();
 
     // Subscribe to node creation events
     this.nodeCreatedSubscription = this.nodeService.nodeCreated$.subscribe(() => {
+      this.getNodes();
+    });
+
+    // Subscribe to node deletion events
+    this.nodeDeletedSubscription = this.nodeService.nodeDeleted$.subscribe(() => {
       this.getNodes();
     });
   }
@@ -31,6 +36,7 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Clean up subscription to prevent memory leaks
     this.nodeCreatedSubscription.unsubscribe();
+    this.nodeDeletedSubscription.unsubscribe();
   }
 
   getNodes(): void {
@@ -46,5 +52,22 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
         console.error('Error fetching node data:', err);
       }
     });
+  }
+
+  deleteNode(id: string): void {
+    if (confirm('Are you sure you want to delete this node?')) {
+      this.loading = true;
+      this.nodeService.deleteNode(id).subscribe({
+        next: () => {
+          this.nodeService.notifyNodeDeleted();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = 'Failed to delete node';
+          this.loading = false;
+          console.error('Error deleting node:', err);
+        }
+      });
+    }
   }
 }

@@ -52,10 +52,23 @@ namespace ModelerAPI.ApiService.Controllers
         }
         // DELETE: api/node/{id}
         [HttpDelete("{id}")]
-        public IActionResult DeleteNode(int id)
+        public async Task<IActionResult> DeleteNode(string id)
         {
-            // Logic to delete a node
-            return NoContent();
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("Node ID is required");
+            }
+
+            var result = await CosmosService.DeleteNodeAsync(id);
+            if (result)
+            {
+                return NoContent();
+            }
+            else
+            {
+                return NotFound($"Node with ID {id} could not be deleted or does not exist");
+            }
         }
+
     }
 }

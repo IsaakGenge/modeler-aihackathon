@@ -192,5 +192,22 @@ namespace ModelerAPI.ApiService.Services
             await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
             return edge;
         }
+
+        public async Task<bool> DeleteNodeAsync(string id)
+        {
+            try
+            {
+                // Delete the node using Gremlin query
+                var gremlinQuery = $"g.V('{id}').drop()";
+                await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting node: {ex.Message}");
+                return false;
+            }
+        }
+
     }
 }

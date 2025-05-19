@@ -14,6 +14,11 @@
             <p class="card-text">ID: {{ node.id }}</p>
             <p class="card-text">Type: {{ node.nodeType }}</p>
             <p class="card-text">Created: {{ node.createdAt | date }}</p>
+            <div class="card-actions mt-2">
+              <button class="btn btn-danger btn-sm" (click)="deleteNode(node.id)">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </div>
           </div>
         </div>
       </div>

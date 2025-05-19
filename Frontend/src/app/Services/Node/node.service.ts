@@ -25,4 +25,17 @@ export class NodeService {
   notifyNodeCreated(): void {
     this.nodeCreatedSubject.next();
   }
+
+  deleteNode(id: string): Observable<any> {
+    return this.http.delete<any>(`${this.nodeAPI}/${id}`);
+  }
+
+  // Also add a subject for node deletion events
+  private nodeDeletedSubject = new Subject<void>();
+  nodeDeleted$ = this.nodeDeletedSubject.asObservable();
+
+  notifyNodeDeleted(): void {
+    this.nodeDeletedSubject.next();
+  }
+
 }
