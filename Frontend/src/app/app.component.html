@@ -1,20 +1,28 @@
-<div class="container">
-  <h1>Graph Modeler</h1>
-
-  <div class="row">
-    <div class="col-md-6">
-      <!-- Create Node Component -->
-      <app-create-node></app-create-node>
+<div class="container-fluid">
+  <div class="row flex-nowrap min-vh-100">
+    <!-- Sidebar Navigation -->
+    <div class="col-auto px-0 bg-dark">
+      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 text-white min-vh-100">
+        <span class="fs-5 d-none d-sm-inline mb-4">Graph Modeler</span>
+        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100">
+          <li class="nav-item w-100">
+            <a routerLink="/view-basic" routerLinkActive="active" class="nav-link px-0 text-white">
+              <i class="bi bi-table me-2"></i> <span class="d-none d-sm-inline">Basic View</span>
+            </a>
+          </li>
+          <li class="nav-item w-100">
+            <a routerLink="/view-fancy" routerLinkActive="active" class="nav-link px-0 text-white">
+              <i class="bi bi-graph-up me-2"></i> <span class="d-none d-sm-inline">Graph View</span>
+            </a>
+          </li>
+        </ul>
+      </div>
     </div>
-    <div class="col-md-6">
-      <!-- Create Edge Component -->
-      <app-create-edge></app-create-edge>
+
+    <!-- Main Content -->
+    <div class="col py-3">
+      <h1 class="border-bottom pb-2 mb-4">Graph Modeler</h1>
+      <router-outlet></router-outlet>
     </div>
   </div>
-
-  <!-- View Nodes Component -->
-  <app-view-nodes></app-view-nodes>
-
-  <!-- View Edges Component -->
-  <app-view-edges></app-view-edges>
 </div>

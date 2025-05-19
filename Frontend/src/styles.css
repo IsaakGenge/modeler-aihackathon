@@ -1,1 +1,134 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles to complement Bootstrap */
+body {
+  background-color: #f8f9fa;
+}
+
+/* Enhanced Navigation Sidebar */
+.container-fluid .col-auto.px-0 {
+  width: 280px !important; /* Larger width for the sidebar */
+  background-color: #1a2f4a !important; /* Rich dark blue background */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15); /* Add shadow for depth */
+  transition: all 0.3s ease; /* Smooth transitions */
+}
+
+/* Nav header styling */
+.d-flex .fs-5 {
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  text-align: center;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Navigation item styling */
+.nav-pills .nav-item {
+  margin-bottom: 0.5rem;
+}
+
+.nav-pills .nav-link {
+  border-radius: 6px;
+  padding: 0.75rem 1rem !important;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 500;
+}
+
+  .nav-pills .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    transform: translateX(5px);
+  }
+
+  .nav-pills .nav-link.active {
+    background-color: #3498db !important;
+    color: white !important;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    transform: translateX(5px);
+  }
+
+.nav-link i {
+  font-size: 1.2rem;
+  margin-right: 10px !important;
+}
+
+/* Main content adjustments to work with wider sidebar */
+.container-fluid .col.py-3 {
+  transition: all 0.3s ease;
+}
+
+/* Custom card styling */
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: none;
+}
+
+.card-header {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* Custom button styling */
+.btn-primary {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+  .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+  }
+
+/* Custom table styling */
+.table th {
+  background-color: #f8f9fa;
+}
+
+/* Responsive adjustments for the enhanced sidebar */
+@media (max-width: 992px) {
+  .container-fluid .col-auto.px-0 {
+    width: 240px !important; /* Slightly smaller on medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .container-fluid .col-auto.px-0 {
+    width: 100% !important;
+    height: auto !important;
+    min-height: unset !important;
+  }
+
+  .d-flex.flex-column {
+    min-height: unset !important;
+    padding: 1rem !important;
+  }
+
+  .nav-pills {
+    flex-direction: row !important;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+    .nav-pills .nav-item {
+      width: auto !important;
+      margin: 0.25rem !important;
+    }
+
+    .nav-pills .nav-link:hover,
+    .nav-pills .nav-link.active {
+      transform: none;
+    }
+
+  .d-flex .fs-5 {
+    margin-bottom: 0.5rem !important;
+    text-align: center;
+    width: 100%;
+  }
+
+  .d-none.d-sm-inline {
+    display: inline !important;
+  }
+}

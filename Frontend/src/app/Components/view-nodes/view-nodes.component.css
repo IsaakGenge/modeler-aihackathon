@@ -1,12 +1,6 @@
-.node-container {
-  margin-top: 20px;
+/* Any custom styling not covered by Bootstrap */
+.loading-spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
 }
-
-.card {
-  transition: transform 0.2s;
-}
-
-  .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
