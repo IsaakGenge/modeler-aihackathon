@@ -188,7 +188,7 @@ namespace ModelerAPI.ApiService.Services
             edge.Id = Guid.NewGuid().ToString();
 
             // Use the EdgeType property as the edge label instead of generic 'edge'
-            var gremlinQuery = $"g.V('{edge.Source}').addE('{edge.EdgeType}').property('id', '{edge.Id}').property('pkey','1').to(g.V('{edge.Target}'))";
+            var gremlinQuery = $"g.V('{edge.Target}').addE('{edge.EdgeType}').property('id', '{edge.Id}').property('pkey','1').to(g.V('{edge.Source}'))";
             await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
             return edge;
         }
