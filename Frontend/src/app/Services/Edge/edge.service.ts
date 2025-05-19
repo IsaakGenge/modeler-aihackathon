@@ -2,12 +2,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EdgeService {
-  private edgeAPI = "http://localhost:5447/api/edge";
+  private apiUrl = `${environment.apiBaseUrl}/edge`;
   private edgeCreatedSubject = new Subject<void>();
   private edgeDeletedSubject = new Subject<void>();
 
@@ -17,15 +18,15 @@ export class EdgeService {
   constructor(private http: HttpClient) { }
 
   getEdges(): Observable<any> {
-    return this.http.get<any>(this.edgeAPI);
+    return this.http.get<any>(this.apiUrl);
   }
 
   createEdge(edge: any): Observable<any> {
-    return this.http.post<any>(this.edgeAPI, edge);
+    return this.http.post<any>(this.apiUrl, edge);
   }
 
   deleteEdge(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.edgeAPI}/${id}`);
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
 
   notifyEdgeCreated(): void {
@@ -36,4 +37,5 @@ export class EdgeService {
     this.edgeDeletedSubject.next();
   }
 }
+
 

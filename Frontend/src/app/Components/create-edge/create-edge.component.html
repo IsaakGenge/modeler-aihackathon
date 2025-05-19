@@ -1,48 +1,60 @@
 <!-- Frontend/src/app/Components/create-edge/create-edge.component.html -->
 <div class="container">
-  <h2>Create New Connection (Edge)</h2>
+  <h2>Create New Connection</h2>
 
   <div *ngIf="success" class="alert alert-success">
+    <i class="bi bi-check-circle-fill me-2"></i>
     Connection created successfully!
   </div>
 
   <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
     {{ error }}
   </div>
 
-  <div *ngIf="loading">Loading nodes...</div>
+  <div *ngIf="warning" class="alert alert-warning">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    {{ warning }}
+  </div>
+
+  <div *ngIf="loading" class="d-flex align-items-center mb-3">
+    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <span>Loading nodes...</span>
+  </div>
 
   <form [formGroup]="edgeForm" (ngSubmit)="onSubmit()">
-    <div class="form-group">
-      <label for="source">Source Node *</label>
-      <select formControlName="source"
-              class="form-control"
+    <div class="form-group mb-3">
+      <label for="source" class="form-label">Source Node *</label>
+      <select id="source" formControlName="source"
+              class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['source'].errors }">
         <option value="">Select source node</option>
-        <option *ngFor="let node of nodes" [value]="node.id">{{ node.name || 'Unnamed Node' }} ({{ node.id }})</option>
+        <option *ngFor="let node of nodes" [value]="node.id">{{ node.name || 'Unnamed Node' }}</option>
       </select>
       <div *ngIf="submitted && f['source'].errors" class="invalid-feedback">
         <div *ngIf="f['source'].errors['required']">Source node is required</div>
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="target">Target Node *</label>
-      <select formControlName="target"
-              class="form-control"
+    <div class="form-group mb-3">
+      <label for="target" class="form-label">Target Node *</label>
+      <select id="target" formControlName="target"
+              class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['target'].errors }">
         <option value="">Select target node</option>
-        <option *ngFor="let node of nodes" [value]="node.id">{{ node.name || 'Unnamed Node' }} ({{ node.id }})</option>
+        <option *ngFor="let node of nodes" [value]="node.id">{{ node.name || 'Unnamed Node' }}</option>
       </select>
       <div *ngIf="submitted && f['target'].errors" class="invalid-feedback">
         <div *ngIf="f['target'].errors['required']">Target node is required</div>
       </div>
     </div>
 
-    <div class="form-group">
-      <label for="edgeType">Connection Type</label>
-      <select formControlName="edgeType"
-              class="form-control"
+    <div class="form-group mb-3">
+      <label for="edgeType" class="form-label">Connection Type</label>
+      <select id="edgeType" formControlName="edgeType"
+              class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['edgeType'].errors }">
         <option value="default">Default</option>
         <option value="related">Related</option>
@@ -56,7 +68,7 @@
     </div>
 
     <div class="form-group mt-3">
-      <button type="submit" class="btn btn-primary">Create Connection</button>
+      <button type="submit" class="btn btn-primary" [disabled]="loading || nodes.length < 2">Create Connection</button>
       <button type="button" class="btn btn-secondary ms-2" (click)="resetForm()">Reset</button>
     </div>
   </form>

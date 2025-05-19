@@ -1,19 +1,36 @@
 <div class="node-container mt-4">
   <h2>Current Nodes</h2>
 
-  <div *ngIf="loading">Loading node data...</div>
+  <div *ngIf="loading" class="d-flex align-items-center">
+    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <span>Loading node data...</span>
+  </div>
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {{ error }}
+  </div>
+
+  <div *ngIf="warning" class="alert alert-warning">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    {{ warning }}
+  </div>
 
   <div *ngIf="nodeData && nodeData.length > 0" class="node-data">
     <div class="row">
       <div *ngFor="let node of nodeData" class="col-md-4 mb-3">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">{{ node.name || 'Unnamed Node' }}</h5>
-            <p class="card-text">ID: {{ node.id }}</p>
-            <p class="card-text">Type: {{ node.nodeType }}</p>
-            <p class="card-text">Created: {{ node.createdAt | date }}</p>
+            <h5 class="card-title"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                [title]="'ID: ' + node.id">
+              {{ node.name || 'Unnamed Node' }}
+            </h5>
+            <p class="card-text"><small class="text-muted">Type: {{ node.nodeType }}</small></p>
+            <p class="card-text"><small class="text-muted">Created: {{ node.createdAt | date }}</small></p>
             <div class="card-actions mt-2">
               <button class="btn btn-danger btn-sm" (click)="deleteNode(node.id)">
                 <i class="bi bi-trash"></i> Delete
@@ -25,7 +42,9 @@
     </div>
   </div>
 
-  <div *ngIf="nodeData && nodeData.length === 0" class="alert alert-info">
+  <div *ngIf="!loading && !error && !warning && nodeData && nodeData.length === 0" class="alert alert-info">
+    <i class="bi bi-info-circle-fill me-2"></i>
     No nodes available. Create a node to get started.
   </div>
 </div>
+

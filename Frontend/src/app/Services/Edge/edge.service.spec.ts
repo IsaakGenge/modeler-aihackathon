@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-
 import { EdgeService } from './edge.service';
+import { environment } from '../../../environments/environment';
 
 describe('EdgeService', () => {
   let service: EdgeService;
   let httpMock: HttpTestingController;
-  const apiUrl = 'http://localhost:5447/api/edge';
+  const apiUrl = `${environment.apiBaseUrl}/edge`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({

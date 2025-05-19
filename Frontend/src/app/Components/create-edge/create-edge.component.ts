@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { Subscription } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface Edge {
   id?: string;
@@ -26,9 +27,11 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   submitted = false;
   success = false;
   error = '';
+  warning = '';
   nodes: any[] = [];
   loading = false;
   private nodeCreatedSubscription: Subscription = new Subscription();
+  private nodeDeletedSubscription: Subscription = new Subscription();
 
   constructor(
     private formBuilder: FormBuilder,
@@ -49,24 +52,44 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.nodeCreatedSubscription = this.nodeService.nodeCreated$.subscribe(() => {
       this.loadNodes();
     });
+
+    // Also subscribe to node deletion events
+    this.nodeDeletedSubscription = this.nodeService.nodeDeleted$.subscribe(() => {
+      this.loadNodes();
+    });
   }
 
   ngOnDestroy(): void {
-    // Clean up subscription to prevent memory leaks
+    // Clean up subscriptions to prevent memory leaks
     this.nodeCreatedSubscription.unsubscribe();
+    this.nodeDeletedSubscription.unsubscribe();
   }
 
   loadNodes(): void {
     this.loading = true;
+    this.error = '';
+    this.warning = '';
+
     this.nodeService.getNodes().subscribe({
       next: (data) => {
         this.nodes = data;
         this.loading = false;
+
+        if (data.length === 0) {
+          this.warning = 'No nodes available. Please create at least two nodes to create a connection.';
+        }
       },
-      error: (err) => {
-        this.error = 'Failed to load nodes';
+      error: (err: HttpErrorResponse) => {
         this.loading = false;
-        console.error('Error fetching nodes:', err);
+
+        if (err.status === 404) {
+          // Handle 404 as a warning not an error
+          this.warning = 'No nodes found. Please create at least two nodes to create a connection.';
+          this.nodes = [];
+        } else {
+          this.error = 'Failed to load nodes';
+          console.error('Error fetching nodes:', err);
+        }
       }
     });
   }
@@ -79,6 +102,7 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.submitted = true;
     this.success = false;
     this.error = '';
+    this.warning = '';
 
     // stop here if form is invalid
     if (this.edgeForm.invalid) {
@@ -99,8 +123,17 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
           // Notify other components that an edge has been created
           this.edgeService.notifyEdgeCreated();
         },
-        error: (error) => {
-          this.error = error.message || 'An error occurred while creating the edge.';
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 404) {
+            this.warning = 'One or both of the selected nodes no longer exist. Please refresh the node list.';
+            // Auto refresh the node list
+            this.loadNodes();
+          } else if (error.status === 400) {
+            this.error = 'Invalid connection data. Please check your inputs.';
+          } else {
+            this.error = error.message || 'An error occurred while creating the connection.';
+          }
+          console.error('Error creating edge:', error);
         }
       });
   }

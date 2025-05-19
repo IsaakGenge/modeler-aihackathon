@@ -2,17 +2,29 @@
 <div class="edge-container mt-4">
   <h2>Current Connections</h2>
 
-  <div *ngIf="loading">Loading connection data...</div>
+  <div *ngIf="loading" class="text-center my-3">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading connection data...</p>
+  </div>
 
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {{ error }}
+  </div>
+
+  <div *ngIf="warning" class="alert alert-warning">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    {{ warning }}
+  </div>
 
   <div *ngIf="edgeData && edgeData.length > 0" class="edge-data">
-    <table class="table table-striped">
-      <thead>
+    <table class="table table-striped table-hover">
+      <thead class="table-light">
         <tr>
-          <th>ID</th>
-          <th>Source</th>
-          <th>Target</th>
+          <th>From</th>
+          <th>To</th>
           <th>Type</th>
           <th>Created</th>
           <th>Actions</th>
@@ -20,13 +32,16 @@
       </thead>
       <tbody>
         <tr *ngFor="let edge of edgeData">
-          <td>{{ edge.id }}</td>
-          <td>{{ edge.source }}</td>
-          <td>{{ edge.target }}</td>
+          <td>{{ getNodeName(edge.source) }}</td>
+          <td>{{ getNodeName(edge.target) }}</td>
           <td>{{ edge.edgeType }}</td>
           <td>{{ edge.createdAt | date }}</td>
           <td>
-            <button class="btn btn-danger btn-sm" (click)="deleteEdge(edge.id)">
+            <button class="btn btn-danger btn-sm"
+                    (click)="deleteEdge(edge.id)"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    [title]="'ID: ' + edge.id">
               <i class="bi bi-trash"></i> Delete
             </button>
           </td>
@@ -35,9 +50,9 @@
     </table>
   </div>
 
-  <div *ngIf="edgeData && edgeData.length === 0" class="alert alert-info">
+  <div *ngIf="!loading && !error && !warning && edgeData && edgeData.length === 0" class="alert alert-info">
+    <i class="bi bi-info-circle-fill me-2"></i>
     No connections available. Create a connection to get started.
   </div>
 </div>
-
 

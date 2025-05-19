@@ -2,24 +2,27 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NodeService {
-  private nodeAPI = "http://localhost:5447/api/node";
+  private apiUrl = `${environment.apiBaseUrl}/node`;
   private nodeCreatedSubject = new Subject<void>();
+  private nodeDeletedSubject = new Subject<void>();
 
   nodeCreated$ = this.nodeCreatedSubject.asObservable();
+  nodeDeleted$ = this.nodeDeletedSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
   getNodes(): Observable<any> {
-    return this.http.get<any>(this.nodeAPI);
+    return this.http.get<any>(this.apiUrl);
   }
 
   createNode(node: any): Observable<any> {
-    return this.http.post<any>(this.nodeAPI, node);
+    return this.http.post<any>(this.apiUrl, node);
   }
 
   notifyNodeCreated(): void {
@@ -27,15 +30,11 @@ export class NodeService {
   }
 
   deleteNode(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.nodeAPI}/${id}`);
+    return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
-
-  // Also add a subject for node deletion events
-  private nodeDeletedSubject = new Subject<void>();
-  nodeDeleted$ = this.nodeDeletedSubject.asObservable();
 
   notifyNodeDeleted(): void {
     this.nodeDeletedSubject.next();
   }
-
 }
+
