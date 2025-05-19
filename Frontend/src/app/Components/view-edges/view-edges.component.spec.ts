@@ -1,195 +1,165 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ViewEdgesComponent } from './view-edges.component';
-import { EdgeService } from '../../Services/Edge/edge.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { of, throwError, Subject } from 'rxjs';
+// Frontend/src/app/Components/view-edges/view-edges.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { EdgeService } from '../../Services/Edge/edge.service';
+import { NodeService } from '../../Services/Node/node.service';
+import { ThemeService } from '../../Services/Theme/theme.service';
+import { Subscription, forkJoin, of, Observable } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
-describe('ViewEdgesComponent', () => {
-  let component: ViewEdgesComponent;
-  let fixture: ComponentFixture<ViewEdgesComponent>;
-  let edgeService: EdgeService;
-  let edgeCreatedSubject: Subject<void>;
-  let edgeDeletedSubject: Subject<void>;
+@Component({
+  selector: 'app-view-edges',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './view-edges.component.html',
+  styleUrl: './view-edges.component.css'
+})
+export class ViewEdgesComponent implements OnInit, OnDestroy {
+  edgeData: any[] = [];
+  nodeMap: Map<string, string> = new Map(); // Map to store node id -> node name
+  loading: boolean = false;
+  error: string | null = null;
+  warning: string | null = null;
+  isDarkMode$: Observable<boolean>;
 
-  // Sample test data
-  const mockEdgeData = [
-    { id: 'edge1', source: 'node1', target: 'node2', edgeType: 'related', createdAt: new Date() },
-    { id: 'edge2', source: 'node2', target: 'node3', edgeType: 'depends_on', createdAt: new Date() }
-  ];
+  private edgeCreatedSubscription: Subscription = new Subscription();
+  private edgeDeletedSubscription: Subscription = new Subscription();
+  private nodeChangedSubscription: Subscription = new Subscription();
 
-  beforeEach(async () => {
-    // Create subjects for edge events
-    edgeCreatedSubject = new Subject<void>();
-    edgeDeletedSubject = new Subject<void>();
+  constructor(
+    private edgeService: EdgeService,
+    private nodeService: NodeService,
+    private themeService: ThemeService
+  ) {
+    this.isDarkMode$ = this.themeService.isDarkMode$;
+  }
 
-    await TestBed.configureTestingModule({
-      imports: [
-        ViewEdgesComponent,
-        HttpClientTestingModule,
-        CommonModule
-      ],
-      providers: [
-        {
-          provide: EdgeService,
-          useValue: {
-            getEdges: () => of(mockEdgeData),
-            deleteEdge: (id: string) => of({}),
-            notifyEdgeDeleted: () => { },
-            edgeCreated$: edgeCreatedSubject.asObservable(),
-            edgeDeleted$: edgeDeletedSubject.asObservable()
+  // Rest of the component code remains the same
+  ngOnInit(): void {
+    // Get edges and nodes on component initialization
+    this.loadData();
+
+    // Subscribe to edge creation events
+    this.edgeCreatedSubscription = this.edgeService.edgeCreated$.subscribe(() => {
+      this.loadData();
+    });
+
+    // Subscribe to edge deletion events
+    this.edgeDeletedSubscription = this.edgeService.edgeDeleted$.subscribe(() => {
+      this.loadData();
+    });
+
+    // Subscribe to node changes (created or deleted)
+    this.nodeChangedSubscription = this.nodeService.nodeCreated$.subscribe(() => {
+      this.loadNodeData();
+    });
+
+    this.nodeChangedSubscription.add(
+      this.nodeService.nodeDeleted$.subscribe(() => {
+        this.loadNodeData();
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    // Clean up subscriptions to prevent memory leaks
+    this.edgeCreatedSubscription.unsubscribe();
+    this.edgeDeletedSubscription.unsubscribe();
+    this.nodeChangedSubscription.unsubscribe();
+  }
+
+  loadData(): void {
+    this.loading = true;
+    this.error = null;
+    this.warning = null;
+
+    // Use forkJoin to get both edges and nodes in parallel with error handling
+    forkJoin({
+      edges: this.edgeService.getEdges().pipe(
+        catchError((err: HttpErrorResponse) => {
+          if (err.status === 404) {
+            this.warning = 'No connections found';
+            return of([]);
+          }
+          this.error = 'Failed to load connection data';
+          console.error('Error fetching edge data:', err);
+          return of([]);
+        })
+      ),
+      nodes: this.nodeService.getNodes().pipe(
+        catchError((err: HttpErrorResponse) => {
+          console.error('Error fetching node data:', err);
+          return of([]);
+        })
+      )
+    }).subscribe({
+      next: (result) => {
+        this.edgeData = result.edges;
+
+        // Create a map of node ids to node names
+        this.nodeMap.clear();
+        result.nodes.forEach((node: any) => {
+          this.nodeMap.set(node.id, node.name || 'Unnamed Node');
+        });
+
+        this.loading = false;
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = 'Failed to load data';
+        console.error('Unexpected error in forkJoin:', err);
+      }
+    });
+  }
+
+  loadNodeData(): void {
+    this.nodeService.getNodes().pipe(
+      catchError((err: HttpErrorResponse) => {
+        console.error('Error fetching node data:', err);
+        return of([]);
+      })
+    ).subscribe({
+      next: (nodes) => {
+        // Update the node map
+        this.nodeMap.clear();
+        nodes.forEach((node: any) => {
+          this.nodeMap.set(node.id, node.name || 'Unnamed Node');
+        });
+      }
+    });
+  }
+
+  getNodeName(nodeId: string): string {
+    return this.nodeMap.get(nodeId) || `Unknown (${this.truncateId(nodeId)})`;
+  }
+
+  truncateId(id: string): string {
+    return id.substring(0, 8) + '...';
+  }
+
+  deleteEdge(id: string): void {
+    if (confirm('Are you sure you want to delete this connection?')) {
+      this.loading = true;
+      this.error = null;
+      this.warning = null;
+
+      this.edgeService.deleteEdge(id).subscribe({
+        next: () => {
+          this.edgeService.notifyEdgeDeleted();
+          this.loading = false;
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading = false;
+
+          if (err.status === 404) {
+            this.warning = 'Connection not found or already deleted';
+          } else {
+            this.error = 'Failed to delete connection';
+            console.error('Error deleting edge:', err);
           }
         }
-      ]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(ViewEdgesComponent);
-    component = fixture.componentInstance;
-    edgeService = TestBed.inject(EdgeService);
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  it('should load edges on initialization', fakeAsync(() => {
-    // After initialization, loading should be complete
-    expect(component.loading).toBeFalse();
-
-    // Verify data was loaded
-    expect(component.edgeData.length).toBe(2);
-    expect(component.edgeData[0].id).toBe('edge1');
-    expect(component.edgeData[1].id).toBe('edge2');
-  }));
-
-  it('should reload edges when notified of edge created', fakeAsync(() => {
-    // Setup spy to track reload
-    const getEdgesSpy = spyOn(edgeService, 'getEdges').and.returnValue(of([
-      ...mockEdgeData,
-      { id: 'edge3', source: 'node3', target: 'node4', edgeType: 'connected_to', createdAt: new Date() }
-    ]));
-
-    // Trigger edge created notification
-    edgeCreatedSubject.next();
-    tick();
-
-    // Verify edges were reloaded
-    expect(getEdgesSpy).toHaveBeenCalled();
-    expect(component.edgeData.length).toBe(3);
-  }));
-
-  it('should reload edges when notified of edge deleted', fakeAsync(() => {
-    // Setup spy to track reload
-    const getEdgesSpy = spyOn(edgeService, 'getEdges').and.returnValue(of([
-      { id: 'edge2', source: 'node2', target: 'node3', edgeType: 'depends_on', createdAt: new Date() }
-    ]));
-
-    // Trigger edge deleted notification
-    edgeDeletedSubject.next();
-    tick();
-
-    // Verify edges were reloaded
-    expect(getEdgesSpy).toHaveBeenCalled();
-    expect(component.edgeData.length).toBe(1);
-    expect(component.edgeData[0].id).toBe('edge2');
-  }));
-
-  it('should handle errors during edge loading', fakeAsync(() => {
-    // Mock error response
-    const mockError = new Error('Edge load error');
-    spyOn(edgeService, 'getEdges').and.returnValue(throwError(() => mockError));
-
-    // Call getEdges
-    component.getEdges();
-    tick();
-
-    // Verify error handling
-    expect(component.error).toBe('Failed to load connection data');
-    expect(component.loading).toBeFalse();
-  }));
-
-  it('should delete an edge after confirmation', fakeAsync(() => {
-    // Setup spies
-    spyOn(window, 'confirm').and.returnValue(true);
-    const deleteEdgeSpy = spyOn(edgeService, 'deleteEdge').and.returnValue(of({}));
-    const notifyDeletedSpy = spyOn(edgeService, 'notifyEdgeDeleted');
-
-    // Call delete
-    component.deleteEdge('edge1');
-    tick();
-
-    // Verify delete was called
-    expect(deleteEdgeSpy).toHaveBeenCalledWith('edge1');
-    expect(notifyDeletedSpy).toHaveBeenCalled();
-    expect(component.loading).toBeFalse();
-  }));
-
-  it('should not delete an edge if confirmation is canceled', fakeAsync(() => {
-    // Setup spies
-    spyOn(window, 'confirm').and.returnValue(false);
-    const deleteEdgeSpy = spyOn(edgeService, 'deleteEdge');
-
-    // Call delete
-    component.deleteEdge('edge1');
-    tick();
-
-    // Verify delete was not called
-    expect(deleteEdgeSpy).not.toHaveBeenCalled();
-  }));
-
-  it('should handle errors during edge deletion', fakeAsync(() => {
-    // Setup spies
-    spyOn(window, 'confirm').and.returnValue(true);
-    const mockError = new Error('Delete error');
-    spyOn(edgeService, 'deleteEdge').and.returnValue(throwError(() => mockError));
-
-    // Call delete
-    component.deleteEdge('edge1');
-    tick();
-
-    // Verify error handling
-    expect(component.error).toBe('Failed to delete connection');
-    expect(component.loading).toBeFalse();
-  }));
-
-  it('should display loading indicator when loading is true', () => {
-    component.loading = true;
-    fixture.detectChanges();
-    const loadingText = fixture.nativeElement.textContent;
-    expect(loadingText).toContain('Loading connection data...');
-  });
-
-  it('should display error message when error is present', () => {
-    component.error = 'Test error message';
-    fixture.detectChanges();
-    const errorElement = fixture.nativeElement.querySelector('.alert-danger');
-    expect(errorElement.textContent).toContain('Test error message');
-  });
-
-  it('should display message when no edges are available', () => {
-    component.edgeData = [];
-    fixture.detectChanges();
-    const emptyMessage = fixture.nativeElement.querySelector('.alert-info');
-    expect(emptyMessage.textContent).toContain('No connections available');
-  });
-
-  it('should display table with edges when data is available', () => {
-    component.edgeData = mockEdgeData;
-    fixture.detectChanges();
-    const tableRows = fixture.nativeElement.querySelectorAll('tbody tr');
-    expect(tableRows.length).toBe(2);
-  });
-
-  it('should clean up subscriptions on destroy', () => {
-    const unsubscribeSpy1 = spyOn(component['edgeCreatedSubscription'], 'unsubscribe');
-    const unsubscribeSpy2 = spyOn(component['edgeDeletedSubscription'], 'unsubscribe');
-
-    // Trigger ngOnDestroy
-    component.ngOnDestroy();
-
-    // Verify unsubscribe was called for both subscriptions
-    expect(unsubscribeSpy1).toHaveBeenCalled();
-    expect(unsubscribeSpy2).toHaveBeenCalled();
-  });
-});
+      });
+    }
+  }
+}

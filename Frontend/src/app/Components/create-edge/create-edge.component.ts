@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
-import { Subscription } from 'rxjs';
+import { ThemeService } from '../../Services/Theme/theme.service';
+import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface Edge {
@@ -30,14 +31,19 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   warning = '';
   nodes: any[] = [];
   loading = false;
+  isDarkMode$: Observable<boolean>;
+
   private nodeCreatedSubscription: Subscription = new Subscription();
   private nodeDeletedSubscription: Subscription = new Subscription();
 
   constructor(
     private formBuilder: FormBuilder,
     private edgeService: EdgeService,
-    private nodeService: NodeService
-  ) { }
+    private nodeService: NodeService,
+    private themeService: ThemeService
+  ) {
+    this.isDarkMode$ = this.themeService.isDarkMode$;
+  }
 
   ngOnInit(): void {
     this.edgeForm = this.formBuilder.group({

@@ -1,17 +1,29 @@
 <div class="container-fluid">
   <div class="row flex-nowrap min-vh-100">
     <!-- Sidebar Navigation -->
-    <div class="col-auto px-0 bg-dark">
-      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 text-white min-vh-100">
-        <span class="fs-5 d-none d-sm-inline mb-4">Graph Modeler</span>
+    <div class="col-auto px-0 position-relative" [ngClass]="(isDarkMode$ | async) ? 'bg-dark' : 'bg-light'">
+      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 min-vh-100"
+           [ngClass]="(isDarkMode$ | async) ? 'text-white' : 'text-dark'">
+        <!-- Header with title and theme toggle -->
+        <div class="d-flex justify-content-between align-items-center w-100 mb-4">
+          <span class="fs-5 d-none d-sm-inline">Graph Modeler</span>
+          <button *ngIf="isBrowser"
+                  [ngClass]="(isDarkMode$ | async) ? 'btn-outline-light' : 'btn-outline-dark'"
+                  class="btn rounded-circle p-1"
+                  style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
+                  (click)="toggleTheme()">
+            <i class="bi" [ngClass]="(isDarkMode$ | async) ? 'bi-sun' : 'bi-moon'"></i>
+          </button>
+        </div>
+
         <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start w-100">
           <li class="nav-item w-100">
-            <a routerLink="/view-basic" routerLinkActive="active" class="nav-link px-0 text-white">
+            <a routerLink="/view-basic" routerLinkActive="active" class="nav-link px-0">
               <i class="bi bi-table me-2"></i> <span class="d-none d-sm-inline">Basic View</span>
             </a>
           </li>
           <li class="nav-item w-100">
-            <a routerLink="/view-fancy" routerLinkActive="active" class="nav-link px-0 text-white">
+            <a routerLink="/view-fancy" routerLinkActive="active" class="nav-link px-0">
               <i class="bi bi-graph-up me-2"></i> <span class="d-none d-sm-inline">Graph View</span>
             </a>
           </li>
@@ -26,3 +38,4 @@
     </div>
   </div>
 </div>
+

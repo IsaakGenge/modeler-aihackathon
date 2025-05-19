@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NodeService } from '../../Services/Node/node.service';
+import { ThemeService } from '../../Services/Theme/theme.service';
+import { Observable } from 'rxjs';
 
 interface Node {
   id: string;
@@ -22,11 +24,15 @@ export class CreateNodeComponent implements OnInit {
   submitted = false;
   success = false;
   error = '';
+  isDarkMode$: Observable<boolean>;
 
   constructor(
     private formBuilder: FormBuilder,
-    private nodeService: NodeService
-  ) { }
+    private nodeService: NodeService,
+    private themeService: ThemeService
+  ) {
+    this.isDarkMode$ = this.themeService.isDarkMode$;
+  }
 
   ngOnInit(): void {
     this.nodeForm = this.formBuilder.group({

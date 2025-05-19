@@ -1,1 +1,51 @@
-/* Any custom styling not covered by Bootstrap */
+/* Frontend/src/app/Components/view-edges/view-edges.component.css */
+.edge-container h2 {
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+/* Direct, simple dark theme styles with hard-coded colors as fallback */
+body.dark-theme .table {
+  background-color: #1e1e1e !important;
+  color: rgba(255, 255, 255, 0.87) !important;
+  border-color: #333 !important;
+}
+
+  body.dark-theme .table thead,
+  body.dark-theme .table th {
+    background-color: #181818 !important;
+    color: rgba(255, 255, 255, 0.87) !important;
+    border-color: #333 !important;
+  }
+
+  body.dark-theme .table tbody tr {
+    background-color: #1e1e1e !important;
+    color: rgba(255, 255, 255, 0.87) !important;
+    border-color: #333 !important;
+  }
+
+    body.dark-theme .table tbody tr:nth-of-type(odd) {
+      background-color: #181818 !important;
+    }
+
+    body.dark-theme .table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+  body.dark-theme .table td {
+    color: rgba(255, 255, 255, 0.87) !important;
+    border-color: #333 !important;
+  }
+
+  /* Ensure text in table cells is properly colored */
+  body.dark-theme .table .card-text,
+  body.dark-theme .table .card-title {
+    color: rgba(255, 255, 255, 0.87) !important;
+  }
+
+/* Light theme table styles are handled by Bootstrap defaults */
+
+/* Table transitions */
+.table, .table * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

@@ -101,7 +101,12 @@ export class ViewNodesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initializeTooltips(): void {
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    // Check if we're in a browser environment
+    if (typeof document !== 'undefined') {
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+      if (tooltipTriggerList.length > 0 && typeof bootstrap !== 'undefined') {
+        [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+      }
+    }
   }
 }

@@ -29,8 +29,8 @@
                 [title]="'ID: ' + node.id">
               {{ node.name || 'Unnamed Node' }}
             </h5>
-            <p class="card-text"><small class="text-muted">Type: {{ node.nodeType }}</small></p>
-            <p class="card-text"><small class="text-muted">Created: {{ node.createdAt | date }}</small></p>
+            <p class="card-text"><small class="theme-secondary-text">Type: {{ node.nodeType }}</small></p>
+            <p class="card-text"><small class="theme-secondary-text">Created: {{ node.createdAt | date }}</small></p>
             <div class="card-actions mt-2">
               <button class="btn btn-danger btn-sm" (click)="deleteNode(node.id)">
                 <i class="bi bi-trash"></i> Delete
@@ -47,4 +47,3 @@
     No nodes available. Create a node to get started.
   </div>
 </div>
-

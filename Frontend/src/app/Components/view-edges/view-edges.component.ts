@@ -3,7 +3,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
-import { Subscription, forkJoin, of } from 'rxjs';
+import { ThemeService } from '../../Services/Theme/theme.service';
+import { Subscription, forkJoin, of, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -20,15 +21,21 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   error: string | null = null;
   warning: string | null = null;
+  isDarkMode$: Observable<boolean>;
+
   private edgeCreatedSubscription: Subscription = new Subscription();
   private edgeDeletedSubscription: Subscription = new Subscription();
   private nodeChangedSubscription: Subscription = new Subscription();
 
   constructor(
     private edgeService: EdgeService,
-    private nodeService: NodeService
-  ) { }
+    private nodeService: NodeService,
+    private themeService: ThemeService
+  ) {
+    this.isDarkMode$ = this.themeService.isDarkMode$;
+  }
 
+  // Rest of the component code remains the same
   ngOnInit(): void {
     // Get edges and nodes on component initialization
     this.loadData();
@@ -156,4 +163,3 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     }
   }
 }
-
