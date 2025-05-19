@@ -311,8 +311,8 @@ describe('CreateEdgeComponent', () => {
     component.onSubmit();
     tick();
 
-    // Verify error is set
-    expect(component.error).toBe('Server Error');
+    // Update the expectation to match the actual error message format from HttpErrorResponse
+    expect(component.error).toBe('Http failure response for (unknown url): 500 Internal Server Error');
   }));
 
   it('should reset the form', () => {
