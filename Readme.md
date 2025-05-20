@@ -5,6 +5,12 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
 ## Table of Contents
 
 - [Features](#features)
+  - [Core Graph Database Technology](#core-graph-database-technology)
+  - [Advanced Graph Generation](#advanced-graph-generation)
+  - [Rich Type System](#rich-type-system)
+  - [Interactive Visualization](#interactive-visualization)
+  - [Developer-Friendly API](#developer-friendly-api)
+  - [User Interface](#user-interface)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
@@ -13,16 +19,60 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
   - [Configuration](#configuration)
   - [Running the Application](#running-the-application)
 - [API Reference](#api-reference)
+- [Swagger Documentation](#swagger-documentation)
 - [Development](#development)
-
 
 ## Features
 
-- Create, read, update, and delete nodes in a graph database
-- Create, read, update, and delete relationships (edges) between nodes
-- Integration with Azure Cosmos DB for persistent storage
-- Gremlin API for graph traversal and queries
-- .NET Aspire distributed application architecture
+### Core Graph Database Technology
+- **Complete Graph Management** with full CRUD operations for nodes and edges
+- **Persistent Storage** via Azure Cosmos DB with Gremlin API support
+- **RESTful API** for programmatic access to all graph operations
+- **Gremlin Query Support** for advanced graph traversal and analysis
+
+### Advanced Graph Generation
+- **Intelligent Plant Simulation Engine** 
+  - Creates realistic industrial plant topologies with boilers, pumps, valves, and more
+  - Automatically establishes logical process flows and control relationships
+  - Simulates monitoring systems and sensor integrations
+- **Versatile Graph Strategies**
+  - Random Graph - For general-purpose network modeling
+  - Star Graph - Hub-and-spoke structures for centralized systems
+  - Chain Graph - Linear sequential processes and workflows
+
+### Rich Type System
+- **Specialized Node Types**
+  - Industrial components (boilers, pumps, valves, etc.)
+  - Generic entities (person, place, thing, concept)
+  - Structural elements (hub, satellite, chain)
+- **Semantic Edge Types**
+  - Industrial relationships (flowTo, controls, monitors, heats, cools)
+  - Generic connections (related, belongs, contains, depends)
+  - Sequential links (next)
+
+### Interactive Visualization
+- **Cytoscape-powered Graph Rendering** with multiple layout algorithms:
+  - Hierarchical (breadthfirst)
+  - Circular
+  - Grid
+  - Concentric
+  - Force-directed (cose)
+  - Random
+- **Intelligent Visual Styling** based on node and edge types
+- **Interactive Graph Controls** for zooming, panning, and reorganizing
+- **Dark Mode Support** for comfortable viewing
+
+### Developer-Friendly API
+- **Comprehensive Swagger Documentation** with interactive testing
+- **TypeScript-ready Models** for frontend integration
+- **XML-documented Endpoints** for IntelliSense and documentation generation
+- **.NET 9 + Aspire** architecture for modern, distributed applications
+
+### User Interface
+- **Graph Manager Component** for intuitive graph interaction
+- **Node and Edge Creation Tools** with type selection
+- **Responsive Layout** that adapts to different screen sizes
+- **View Controls** for customizing the graph presentation
 
 ## Architecture
 
@@ -32,9 +82,11 @@ The application consists of:
   - RESTful API endpoints for node and edge management
   - Cosmos DB service abstraction for data access
   - Gremlin client integration for graph operations
+  - Model generation strategies for different graph types
   
 - **Frontend** (NPM-based web application)
   - User interface for interacting with the graph model
+  - Cytoscape-based graph visualization
   - References the backend API service
 
 ## Prerequisites
@@ -83,14 +135,14 @@ The application uses the standard .NET configuration system with the Options pat
 1. **Cosmos DB Settings**
 
    Connection settings for Cosmos DB are configured in the `CosmosDb` section:
-   "CosmosDb": { "EndpointUrl": "https://localhost:8081", "PrimaryKey": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==", "DatabaseName": "db1", "ContainerName": "coll1", "GremlinHostname": "localhost", "GremlinPort": 65400, "GremlinUsername": "/dbs/db1/colls/coll1", "GremlinPassword": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==" }
    
+1. "CosmosDb": { "EndpointUrl": "https://localhost:8081", "PrimaryKey": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==", "DatabaseName": "db1", "ContainerName": "coll1", "GremlinHostname": "localhost", "GremlinPort": 65400, "GremlinUsername": "/dbs/db1/colls/coll1", "GremlinPassword": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==" }
+     
    These settings are mapped to the `CosmosDbSettings` class and injected into services via dependency injection.
 
 2. **CORS Settings**
 
    Cross-Origin Resource Sharing settings are configured in the `Cors` section:
-
    "Cors": { "AllowedOrigins": ["http://localhost:4200"] }
    These settings control which origins can access the API and are mapped to the `CorsSettings` class.
 
@@ -113,8 +165,9 @@ The application uses the standard .NET configuration system with the Options pat
 1. Clone this repository
 2. Navigate to the project directory
 3. Ensure the Cosmos DB Emulator is running (check the notification icon in your system tray)
-4. Run the application using .NET Aspire:
-dotnet run --project Backend/ModelerAPI.AppHost
+4. Run the application using .NET Aspire:  dotnet run --project Backend/ModelerAPI.AppHost
+
+
 
 ## API Reference
 
@@ -122,8 +175,8 @@ dotnet run --project Backend/ModelerAPI.AppHost
 
 - **GET /api/node** - Retrieve all nodes
 - **POST /api/node** - Create a new node
-  { "name": "Example Node", "nodeType": "custom" }
-- - **PUT /api/node/{id}** - Update an existing node
+- { "name": "Example Node", "nodeType": "custom" }
+- **PUT /api/node/{id}** - Update an existing node
 - **DELETE /api/node/{id}** - Delete a node
 
 ### Edge Endpoints
@@ -131,9 +184,38 @@ dotnet run --project Backend/ModelerAPI.AppHost
 - **GET /api/edge** - Retrieve all edges
 - **POST /api/edge** - Create a new edge between nodes
 - { "source": "nodeId1", "target": "nodeId2", "edgeType": "related" }
-
+  
 - **PUT /api/edge/{id}** - Update an existing edge
 - **DELETE /api/edge/{id}** - Delete an edge
+
+### Types Endpoints
+
+- **GET /api/types/nodes** - Retrieve all available node types with styling properties
+- **GET /api/types/edges** - Retrieve all available edge types with styling properties
+
+## Swagger Documentation
+
+The API includes comprehensive Swagger/OpenAPI documentation that provides:
+
+- Interactive API documentation
+- Ability to test API endpoints directly from the UI
+- Parameter descriptions and sample request/response data
+- Authentication information
+
+To access the Swagger UI:
+
+1. Start the application in development mode
+2. Navigate to the root URL of the API service http://localhost:5447/index.html
+3. The Swagger UI will be displayed automatically at the application's root
+
+The Swagger documentation includes:
+
+- API title: Modeler API
+- Version: v1
+- Description: Graph modeling API for creating and managing graph models
+- Contact information for API support
+
+The API documentation is generated from XML comments in the codebase, ensuring the documentation is always up-to-date with the implementation.
 
 ## Development
 
@@ -142,6 +224,30 @@ dotnet run --project Backend/ModelerAPI.AppHost
 - **ModelerAPI.ApiService** - Main API service with controllers and models
 - **ModelerAPI.AppHost** - .NET Aspire host application
 - **Frontend** - Web-based user interface
+
+### Node and Edge Types
+
+The application includes predefined node and edge types for various graph modeling scenarios:
+
+#### Node Types by Category:
+
+- **Plant**: Boiler, Pump, Furnace, HeatExchanger, Valve, Tank, Pipe, Sensor, ControlSystem, Turbine, Condenser, Filter, Compressor, CoolingTower
+- **Random**: Person, Place, Thing, Concept
+- **Star**: Hub, Satellite
+- **Chain**: Chain
+
+#### Edge Types by Category:
+
+- **Plant**: FlowTo, ConnectedTo, ControlledBy, Controls, Monitors, Heats, Cools, Pressurizes, Filters, Supplies, ReceivesFrom, PumpsTo, RegulatesFlowTo
+- **Random**: Related, Belongs, Contains, Depends
+- **Chain**: Next
+
+### ModelGenerator Strategies
+
+The application supports multiple graph generation strategies:
+
+- **PlantGraphStrategy**: Creates industrial plant simulations with appropriate components and connections
+- Other strategies for generating different graph types (Random, Star, Chain)
 
 ### Configuration Classes
 
@@ -158,4 +264,5 @@ To add a new feature:
 4. Create or update controllers to expose the functionality via API endpoints
 
   
+
    
