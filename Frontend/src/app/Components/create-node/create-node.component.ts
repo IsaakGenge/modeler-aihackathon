@@ -6,14 +6,7 @@ import { NodeService } from '../../Services/Node/node.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { Observable } from 'rxjs';
-
-interface Node {
-  id?: string;
-  name: string;
-  nodeType: string;
-  graphId: string;
-  createdAt?: Date;
-}
+import { Node } from '../../Models/node.model';
 
 @Component({
   selector: 'app-create-node',

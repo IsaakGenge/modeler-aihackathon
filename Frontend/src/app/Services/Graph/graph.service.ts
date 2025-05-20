@@ -5,19 +5,7 @@ import { BehaviorSubject, Observable, Subject, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { isPlatformBrowser } from '@angular/common';
-
-// Interface for graphs received from the backend
-export interface Graph {
-  id: string;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-// Interface for creating a new graph
-export interface CreateGraphDto {
-  name: string;
-}
+import { Graph, CreateGraphDto } from '../../Models/graph.model';
 
 @Injectable({
   providedIn: 'root'

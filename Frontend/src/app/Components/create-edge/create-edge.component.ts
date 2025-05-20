@@ -8,15 +8,8 @@ import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-
-interface Edge {
-  id?: string;
-  source: string;
-  target: string;
-  edgeType: string;
-  graphId: string;
-  createdAt?: Date;
-}
+import { Edge } from '../../Models/edge.model';
+import { Node } from '../../Models/node.model';
 
 @Component({
   selector: 'app-create-edge',
@@ -31,7 +24,7 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   success = false;
   error = '';
   warning = '';
-  nodes: any[] = [];
+  nodes: Node[] = [];
   loading = false;
   isDarkMode$: Observable<boolean>;
 

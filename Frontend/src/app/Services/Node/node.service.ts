@@ -4,6 +4,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { GraphService } from '../Graph/graph.service';
+import { Node } from '../../Models/node.model';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class NodeService {
     private graphService: GraphService
   ) { }
 
-  getNodes(graphId?: string): Observable<any> {
+  getNodes(graphId?: string): Observable<Node[]> {
     // Use provided graphId or fallback to the current graph from service
     const targetGraphId = graphId || this.graphService.currentGraphId;
 
@@ -30,16 +31,16 @@ export class NodeService {
       params = params.set('graphId', targetGraphId);
     }
 
-    return this.http.get<any>(this.apiUrl, { params });
+    return this.http.get<Node[]>(this.apiUrl, { params });
   }
 
-  createNode(node: any): Observable<any> {
+  createNode(node: Node): Observable<Node> {
     // Add the graphId to the node if not already present
     if (!node.graphId && this.graphService.currentGraphId) {
       node.graphId = this.graphService.currentGraphId;
     }
 
-    return this.http.post<any>(this.apiUrl, node);
+    return this.http.post<Node>(this.apiUrl, node);
   }
 
   notifyNodeCreated(): void {
