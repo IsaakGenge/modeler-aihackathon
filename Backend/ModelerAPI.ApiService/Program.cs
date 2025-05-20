@@ -39,6 +39,7 @@ builder.Services.AddCors(options =>
 
 // Register CosmosService as a singleton with the configured settings
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
+builder.Services.AddSingleton<ModelGenerator>();
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

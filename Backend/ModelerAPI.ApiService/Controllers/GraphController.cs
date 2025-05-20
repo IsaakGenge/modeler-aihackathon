@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ModelerAPI.ApiService.Models;
+using ModelerAPI.ApiService.Services;
 
 namespace ModelerAPI.ApiService.Controllers
 {
@@ -9,11 +10,13 @@ namespace ModelerAPI.ApiService.Controllers
     {
         private readonly ICosmosService _cosmosService;
         private readonly ILogger<GraphController> _logger;
+        private readonly ModelGenerator _modelGenerator;
 
-        public GraphController(ICosmosService cosmosService, ILogger<GraphController> logger)
+        public GraphController(ICosmosService cosmosService, ILogger<GraphController> logger, ModelGenerator modelGenerator)
         {
             _cosmosService = cosmosService ?? throw new ArgumentNullException(nameof(cosmosService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _modelGenerator = modelGenerator ?? throw new ArgumentNullException(nameof(modelGenerator));
         }
 
         /// <summary>
@@ -273,6 +276,93 @@ namespace ModelerAPI.ApiService.Controllers
                     $"An error occurred while deleting the graph: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Generates a new graph using the model generator with the specified parameters
+        /// </summary>
+        /// <param name="strategy">The graph generation strategy to use: random, star, chain, or complete</param>
+        /// <param name="nodeCount">Number of nodes to generate</param>
+        /// <param name="name">Optional name for the graph (auto-generated if not provided)</param>
+        /// <returns>Information about the generated graph</returns>
+        [HttpGet("generate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GenerateGraphAsync(
+            [FromQuery] string strategy = "random",
+            [FromQuery] int nodeCount = 10,
+            [FromQuery] string? name = null)
+        {
+            try
+            {
+                _logger.LogInformation("Generating graph with strategy: {Strategy}, NodeCount: {NodeCount}, Name: {Name}",
+                    strategy, nodeCount, name ?? "auto-generated");
+
+                // Validate parameters
+                if (nodeCount < 1)
+                {
+                    return BadRequest("Node count must be at least 1");
+                }
+
+              
+                
+                // Generate the graph
+                var (graphId, generatedNodes, generatedEdges) = await _modelGenerator.GenerateGraphAsync(strategy, nodeCount, name);
+
+                // Return information about the generated graph
+                var result = new
+                {
+                    GraphId = graphId,
+                    Strategy = strategy,
+                    NodeCount = generatedNodes,
+                    EdgeCount = generatedEdges,
+                    Links = new
+                    {
+                        Self = $"{Request.Scheme}://{Request.Host}/api/Graph/generate",
+                        Graph = $"{Request.Scheme}://{Request.Host}/api/Graph/{graphId}"
+                    }
+                };
+
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument when generating graph");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating graph with strategy: {Strategy}, NodeCount: {NodeCount}",
+                    strategy, nodeCount);
+
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"An error occurred while generating the graph: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Gets all available graph generation strategies
+        /// </summary>
+        /// <returns>A list of available strategies</returns>
+        [HttpGet("strategies")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult GetAvailableStrategies()
+        {
+            try
+            {
+                _logger.LogInformation("Getting available graph generation strategies");
+
+                var strategies = _modelGenerator.GetAvailableStrategies();
+                return Ok(strategies);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available graph generation strategies");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"An error occurred while retrieving graph strategies: {ex.Message}");
+            }
+        }
+
     }
 }
 
