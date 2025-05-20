@@ -10,6 +10,8 @@ import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Edge } from '../../Models/edge.model';
 import { Node } from '../../Models/node.model';
+import { EdgeType } from '../../Models/edge-type.model';
+
 
 @Component({
   selector: 'app-create-edge',
@@ -27,6 +29,7 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   nodes: Node[] = [];
   loading = false;
   isDarkMode$: Observable<boolean>;
+  edgeTypes = Object.values(EdgeType);
 
   private nodeCreatedSubscription: Subscription = new Subscription();
   private nodeDeletedSubscription: Subscription = new Subscription();

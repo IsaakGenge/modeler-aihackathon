@@ -7,6 +7,8 @@ import { ThemeService } from '../../Services/Theme/theme.service';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { Observable } from 'rxjs';
 import { Node } from '../../Models/node.model';
+import { NodeType } from '../../Models/node-type.model';
+
 
 @Component({
   selector: 'app-create-node',
@@ -22,6 +24,7 @@ export class CreateNodeComponent implements OnInit {
   error = '';
   warning = '';
   isDarkMode$: Observable<boolean>;
+  nodeTypes = Object.values(NodeType);
 
   constructor(
     private formBuilder: FormBuilder,

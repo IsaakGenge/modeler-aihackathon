@@ -29,11 +29,7 @@
       <select formControlName="nodeType"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['nodeType'].errors }">
-        <option value="Default">Default</option>
-        <option value="Person">Person</option>
-        <option value="Place">Place</option>
-        <option value="Thing">Thing</option>
-        <option value="Concept">Concept</option>
+        <option *ngFor="let type of nodeTypes" [value]="type">{{type}}</option>
       </select>
       <div *ngIf="submitted && f['nodeType'].errors" class="invalid-feedback">
         <div *ngIf="f['nodeType'].errors['required']">Node Type is required</div>
