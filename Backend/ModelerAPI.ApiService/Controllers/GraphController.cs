@@ -122,16 +122,40 @@ namespace ModelerAPI.ApiService.Controllers
                 graph.PartitionKey = graph.Id;  // Using ID as the partition key value
 
                 // Create the item, passing both the object and the partition key value
-                var createdGraph = await _cosmosService.CreateItemAsync(graph, graph.Id);
+                try
+                {
+                    var createdGraph = await _cosmosService.CreateItemAsync(graph, graph.Id);
 
-                return CreatedAtAction(nameof(GetGraphByIdAsync), new { id = createdGraph.Id }, createdGraph);
+                    // Log successful creation for debugging
+                    _logger.LogInformation("Successfully created graph: {GraphId}, {GraphName}",
+                        createdGraph.Id, createdGraph.Name);
+
+                    // Construct the location URI manually to ensure it's correct
+                    var locationUri = $"{Request.Scheme}://{Request.Host}/api/Graph/{createdGraph.Id}";
+
+                    // Return 201 Created with the created resource and location header
+                    return Created(locationUri, createdGraph);
+                }
+                catch (Exception innerEx)
+                {
+                    _logger.LogError(innerEx, "Error in Cosmos Service while creating graph: {Message}", innerEx.Message);
+                    throw; // Re-throw to be caught by outer exception handler
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating graph with name: {Name}. Message: {Message}",
                     graph?.Name, ex.Message);
+
+                // Return both the error message and any inner exception messages
+                string errorDetails = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorDetails += $" Inner error: {ex.InnerException.Message}";
+                }
+
                 return StatusCode(StatusCodes.Status500InternalServerError,
-                    $"An error occurred while creating the graph: {ex.Message}");
+                    $"An error occurred while creating the graph: {errorDetails}");
             }
         }
 

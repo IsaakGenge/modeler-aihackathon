@@ -53,6 +53,7 @@ export class GraphManagerComponent implements OnInit {
 
     this.graphService.getGraphs().subscribe({
       next: (data) => {
+        console.log('Loaded graphs:', data); // Debug logging
         this.graphs = data;
         this.loading = false;
 
@@ -61,13 +62,13 @@ export class GraphManagerComponent implements OnInit {
         }
       },
       error: (err: HttpErrorResponse) => {
+        console.error('Error loading graphs:', err); // Debug logging
         this.loading = false;
         if (err.status === 404) {
           this.warning = 'No graphs found. Create your first graph to get started.';
           this.graphs = [];
         } else {
-          this.error = 'Failed to load graphs';
-          console.error('Error fetching graphs:', err);
+          this.error = `Failed to load graphs: ${err.message}`;
         }
       }
     });
@@ -88,22 +89,39 @@ export class GraphManagerComponent implements OnInit {
       name: this.graphForm.value.name
     };
 
+    this.loading = true; // Show loading state
     this.graphService.createGraph(newGraph)
       .subscribe({
         next: (response) => {
+          console.log('Graph created successfully:', response);
           this.success = true;
           this.resetForm();
-          this.loadGraphs();
-          // Notify other components that a graph has been created
-          this.graphService.notifyGraphCreated();
+
+          // Add a small delay before reloading the graph list
+          // This gives the backend time to complete any async operations
+          setTimeout(() => {
+            this.loadGraphs();
+            this.graphService.notifyGraphCreated();
+            this.loading = false;
+          }, 500);
         },
         error: (error: HttpErrorResponse) => {
-          if (error.status === 400) {
-            this.error = 'Invalid graph data. Please check your inputs.';
+          this.loading = false;
+          // Detailed error logging
+          console.error('Error creating graph:', error);
+
+          if (error.status === 500) {
+            // Extract and display the server error message if available
+            const serverError = error.error && typeof error.error === 'string'
+              ? error.error
+              : (error.error?.message || 'Unknown server error');
+
+            this.error = `Server error (500): ${serverError}`;
+          } else if (error.status === 400) {
+            this.error = `Bad request: ${error.error || 'Invalid input data'}`;
           } else {
             this.error = error.message || 'An error occurred while creating the graph.';
           }
-          console.error('Error creating graph:', error);
         }
       });
   }
@@ -123,17 +141,22 @@ export class GraphManagerComponent implements OnInit {
 
     const graphName = name || 'this graph';
     if (confirm(`Are you sure you want to delete the graph "${graphName}"? This will also delete all associated nodes and edges.`)) {
+      this.loading = true;
       this.graphService.deleteGraph(id).subscribe({
         next: () => {
-          this.loadGraphs();
-          this.graphService.notifyGraphDeleted();
+          setTimeout(() => {
+            this.loadGraphs();
+            this.graphService.notifyGraphDeleted();
+            this.loading = false;
+          }, 500);
         },
         error: (err: HttpErrorResponse) => {
+          this.loading = false;
           if (err.status === 404) {
             this.warning = 'Graph not found or already deleted';
             this.loadGraphs();
           } else {
-            this.error = 'Failed to delete graph';
+            this.error = `Failed to delete graph: ${err.message}`;
             console.error('Error deleting graph:', err);
           }
         }
@@ -151,5 +174,10 @@ export class GraphManagerComponent implements OnInit {
 
   isSelected(graph: Graph): boolean {
     return !!graph && !!graph.id && this.graphService.currentGraphId === graph.id;
+  }
+
+  // Method to manually refresh the graph list
+  refreshGraphs(): void {
+    this.loadGraphs();
   }
 }

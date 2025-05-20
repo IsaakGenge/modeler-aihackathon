@@ -188,3 +188,8 @@
 .dark-mode .loading {
     color: #6ea8fe;
 }
+
+.alert-sm {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+}

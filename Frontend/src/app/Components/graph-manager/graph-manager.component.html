@@ -1,7 +1,7 @@
 <!-- Frontend/src/app/Components/graph-manager/graph-manager.component.html -->
-<div class="graph-manager" [class.dark-mode]="(isDarkMode$ | async)">
-  <!-- Only show this header when used as a standalone page -->
-  <div *ngIf="!embedded" class="standalone-header mb-4">
+<!-- Only show this section when not embedded -->
+<div *ngIf="!embedded" class="graph-manager" [class.dark-mode]="(isDarkMode$ | async)">
+  <div class="standalone-header mb-4">
     <h2 class="mb-3">Graph Management</h2>
     <p class="lead">
       Create and manage your graphs. A graph is a container for related nodes and connections.
@@ -29,6 +29,7 @@
       </div>
 
       <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
         Create Graph
       </button>
 
@@ -39,12 +40,21 @@
   </div>
 
   <!-- Graph List -->
-  <div class="graph-list">
-    <h4>Your Graphs</h4>
+  <div class="graph-list mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0">Your Graphs</h4>
+      <button class="btn btn-outline-secondary btn-sm" (click)="refreshGraphs()" [disabled]="loading">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Refresh
+      </button>
+    </div>
 
     <div *ngIf="loading" class="loading">Loading graphs...</div>
     <div *ngIf="warning" class="alert alert-warning">{{ warning }}</div>
-    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+    <div *ngIf="error" class="alert alert-danger">
+      {{ error }}
+      <button *ngIf="error.includes('Failed to load')" class="btn btn-sm btn-outline-danger ms-2" (click)="refreshGraphs()">Try Again</button>
+    </div>
 
     <table *ngIf="graphs.length > 0" class="table" [class.table-dark]="(isDarkMode$ | async)">
       <thead>
@@ -59,7 +69,63 @@
           <td>{{ graph.name }}</td>
           <td>{{ graph.createdAt | date:'short' }}</td>
           <td>
-            <button class="btn btn-sm btn-outline-primary mr-2" (click)="selectGraph(graph)">
+            <button class="btn btn-sm btn-outline-primary me-2" (click)="selectGraph(graph)">
+              Select
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="deleteGraph(graph?.id, graph?.name)">
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Embedded version with simplified layout -->
+<div *ngIf="embedded" class="graph-manager-embedded" [class.dark-mode]="(isDarkMode$ | async)">
+  <!-- Same content but with more compact layout -->
+  <!-- Simplified form -->
+  <div class="create-graph-form-embedded mb-3">
+    <h5>Create New Graph</h5>
+    <form [formGroup]="graphForm" (ngSubmit)="onSubmit()" class="d-flex gap-2 align-items-end">
+      <div class="form-group flex-grow-1 mb-0">
+        <label for="name" class="small">Graph Name</label>
+        <input type="text"
+               id="name"
+               formControlName="name"
+               class="form-control form-control-sm"
+               [class.is-invalid]="submitted && f['name'].errors"
+               [class.dark-mode]="(isDarkMode$ | async)">
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary" [disabled]="loading">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Create
+      </button>
+    </form>
+    <div *ngIf="success" class="alert alert-success alert-sm mt-2 p-2">Graph created!</div>
+    <div *ngIf="error" class="alert alert-danger alert-sm mt-2 p-2">{{ error }}</div>
+  </div>
+
+  <!-- Simplified graph list -->
+  <div class="graph-list-embedded">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Your Graphs</h5>
+      <button class="btn btn-outline-secondary btn-sm" (click)="refreshGraphs()" [disabled]="loading">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Refresh
+      </button>
+    </div>
+
+    <div *ngIf="loading" class="loading small">Loading...</div>
+    <div *ngIf="warning" class="alert alert-warning alert-sm p-2">{{ warning }}</div>
+
+    <table *ngIf="graphs.length > 0" class="table table-sm" [class.table-dark]="(isDarkMode$ | async)">
+      <tbody>
+        <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
+          <td>{{ graph.name }}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="selectGraph(graph)">
               Select
             </button>
             <button class="btn btn-sm btn-outline-danger" (click)="deleteGraph(graph?.id, graph?.name)">

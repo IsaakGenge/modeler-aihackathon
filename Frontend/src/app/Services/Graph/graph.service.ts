@@ -1,9 +1,9 @@
 // Frontend/src/app/Services/Graph/graph.service.ts
 import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, Observable, Subject, throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { tap } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
 
 // Interface for graphs received from the backend
@@ -61,26 +61,54 @@ export class GraphService {
 
   // Get all graphs from the API
   getGraphs(): Observable<Graph[]> {
-    return this.http.get<Graph[]>(this.apiUrl);
+    return this.http.get<Graph[]>(this.apiUrl).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error fetching graphs:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Get a specific graph by ID
   getGraph(id: string): Observable<Graph> {
-    return this.http.get<Graph>(`${this.apiUrl}/${id}`);
+    return this.http.get<Graph>(`${this.apiUrl}/${id}`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error(`Error fetching graph with ID ${id}:`, error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Create a new graph
   createGraph(graph: CreateGraphDto): Observable<Graph> {
+    console.log('Creating graph:', graph);
     return this.http.post<Graph>(this.apiUrl, graph).pipe(
-      tap(() => {
+      tap((newGraph) => {
+        console.log('Graph created successfully:', newGraph);
+        // Notify after successful creation
         this.graphCreatedSubject.next();
+
+        // Optionally update the current graph if it's the first one
+        if (!this.currentGraph) {
+          this.setCurrentGraph(newGraph);
+        }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error in GraphService.createGraph:', error);
+        // Rethrow the error so components can handle it
+        return throwError(() => error);
       })
     );
   }
 
   // Update an existing graph
   updateGraph(id: string, graph: Partial<Graph>): Observable<Graph> {
-    return this.http.put<Graph>(`${this.apiUrl}/${id}`, graph);
+    return this.http.put<Graph>(`${this.apiUrl}/${id}`, graph).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error(`Error updating graph with ID ${id}:`, error);
+        return throwError(() => error);
+      })
+    );
   }
 
   // Delete a graph
@@ -92,6 +120,10 @@ export class GraphService {
           this.setCurrentGraph(null);
         }
         this.graphDeletedSubject.next();
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error(`Error deleting graph with ID ${id}:`, error);
+        return throwError(() => error);
       })
     );
   }
@@ -117,6 +149,10 @@ export class GraphService {
     return this.getGraph(id).pipe(
       tap((graph) => {
         this.setCurrentGraph(graph);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error(`Error setting current graph by ID ${id}:`, error);
+        return throwError(() => error);
       })
     );
   }
@@ -153,4 +189,3 @@ export class GraphService {
     }
   }
 }
-
