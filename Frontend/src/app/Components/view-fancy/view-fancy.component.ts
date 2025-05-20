@@ -16,6 +16,8 @@ import { GraphPickerComponent } from '../graph-picker/graph-picker.component';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { NodeType } from '../../Models/node-type.model';
+import { NODE_VISUAL_SETTINGS } from '../../Models/node-visual.model';
 
 @Component({
   selector: 'app-view-fancy',
@@ -25,14 +27,14 @@ import { Subject } from 'rxjs';
     RouterModule,
     CreateNodeComponent,
     CreateEdgeComponent,
-    GraphPickerComponent,   
+    GraphPickerComponent,
     NgbNavModule
   ],
   templateUrl: './view-fancy.component.html',
   styleUrl: './view-fancy.component.css'
 })
 export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
-  private destroy$ = new Subject<void>(); 
+  private destroy$ = new Subject<void>();
   @ViewChild('cyContainer') private cyContainer!: ElementRef;
   private cy: any;
   loading: boolean = false;
@@ -217,26 +219,41 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // Define the new node color - using a nice purple instead of green
-    const nodeColor = '#8A2BE2'; // BlueViolet color
+    // Default node color for fallback
+    const defaultNodeColor = '#8A2BE2'; // BlueViolet color
 
     this.isDarkMode$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
+      const baseNodeStyles = {
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'color': '#fff',
+        'width': 60,
+        'height': 60,
+        'font-size': 12,
+        'text-outline-width': 2
+      };
+
+      // Base style for all nodes
       const styles = [
         {
           selector: 'node',
           style: {
-            'background-color': nodeColor,
-            'label': 'data(label)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'color': '#fff',
-            'width': 60,
-            'height': 60,
-            'font-size': 12,
-            'text-outline-color': nodeColor,
-            'text-outline-width': 2
+            ...baseNodeStyles,
+            'background-color': defaultNodeColor,
+            'text-outline-color': defaultNodeColor,
+            'shape': 'ellipse' // Default shape
           }
         },
+        // Add specific styles for each node type
+        ...Object.values(NodeType).map(type => ({
+          selector: `node[nodeType="${type}"]`,
+          style: {
+            'background-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || defaultNodeColor,
+            'text-outline-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || defaultNodeColor,
+            'shape': NODE_VISUAL_SETTINGS[type as NodeType]?.shape || 'ellipse'
+          }
+        })),
         {
           selector: 'edge',
           style: {
@@ -276,11 +293,12 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       nodeMap.set(node.id, node.name || 'Unnamed Node');
     });
 
-    // Convert API data to Cytoscape format with proper string IDs
+    // Convert API data to Cytoscape format with proper string IDs and nodeType
     const cytoscapeNodes = nodes.map(node => ({
       data: {
         id: String(node.id),
-        label: node.name || 'Unnamed Node'
+        label: node.name || 'Unnamed Node',
+        nodeType: node.nodeType || NodeType.Default // Make sure nodeType is included
       }
     }));
 
@@ -310,9 +328,6 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     try {
-      // Define the new node color
-      const nodeColor = '#8A2BE2'; // BlueViolet color
-
       // Create new Cytoscape instance with the data
       this.cy = cytoscape({
         container: this.cyContainer.nativeElement,
@@ -324,7 +339,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
           {
             selector: 'node',
             style: {
-              'background-color': nodeColor,
+              'background-color': defaultNodeColor,
               'label': 'data(label)',
               'text-valign': 'center',
               'text-halign': 'center',
@@ -332,10 +347,20 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
               'width': 60,
               'height': 60,
               'font-size': 12,
-              'text-outline-color': nodeColor,
-              'text-outline-width': 2
+              'text-outline-color': defaultNodeColor,
+              'text-outline-width': 2,
+              'shape': 'ellipse' // Default shape
             }
           },
+          // Add specific styles for each node type
+          ...Object.values(NodeType).map(type => ({
+            selector: `node[nodeType="${type}"]`,
+            style: {
+              'background-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || defaultNodeColor,
+              'text-outline-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || defaultNodeColor,
+              'shape': NODE_VISUAL_SETTINGS[type as NodeType]?.shape || 'ellipse'
+            }
+          })),
           {
             selector: 'edge',
             style: {
@@ -402,7 +427,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       // Add event handlers
       this.cy.on('tap', 'node', (event: any) => {
         const node = event.target;
-        console.log('Node clicked:', node.id(), node.data('label'));
+        console.log('Node clicked:', node.id(), node.data('label'), 'Type:', node.data('nodeType'));
       });
 
       // Log success or empty state
@@ -417,7 +442,6 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       this.error = 'Failed to initialize graph visualization';
     }
   }
-
 
   // Helper method to generate a label for edges that don't have one
   private generateEdgeLabel(sourceId: string, targetId: string): string {
