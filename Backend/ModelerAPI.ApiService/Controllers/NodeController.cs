@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
-using ModelerAPI.ApiService.Services;
 
 namespace ModelerAPI.ApiService.Controllers
 {

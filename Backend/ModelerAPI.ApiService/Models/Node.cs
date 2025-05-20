@@ -1,5 +1,3 @@
-using System;
-
 namespace ModelerAPI.ApiService.Models
 {
     /// <summary>
