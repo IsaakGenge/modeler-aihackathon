@@ -6,12 +6,11 @@ import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
+import { TypesService, EdgeTypeModel } from '../../Services/Types/types.service';
 import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Edge } from '../../Models/edge.model';
 import { Node } from '../../Models/node.model';
-import { EdgeType } from '../../Models/edge-type.model';
-
 
 @Component({
   selector: 'app-create-edge',
@@ -29,18 +28,20 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   nodes: Node[] = [];
   loading = false;
   isDarkMode$: Observable<boolean>;
-  edgeTypes = Object.values(EdgeType);
+  edgeTypes: EdgeTypeModel[] = [];
 
   private nodeCreatedSubscription: Subscription = new Subscription();
   private nodeDeletedSubscription: Subscription = new Subscription();
   private graphChangedSubscription: Subscription = new Subscription();
+  private typeSubscription: Subscription = new Subscription();
 
   constructor(
     private formBuilder: FormBuilder,
     private edgeService: EdgeService,
     private nodeService: NodeService,
     private graphService: GraphService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private typesService: TypesService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -49,8 +50,20 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.edgeForm = this.formBuilder.group({
       source: ['', [Validators.required]],
       target: ['', [Validators.required]],
-      edgeType: ['default', [Validators.required]]
+      edgeType: ['', [Validators.required]]
     });
+
+    // Subscribe to edge types
+    this.typeSubscription = this.typesService.edgeTypes$.subscribe(types => {
+      this.edgeTypes = types;
+      // Set default value if available and form control exists
+      if (types.length > 0 && this.edgeForm) {
+        this.edgeForm.get('edgeType')?.setValue(types[0].name);
+      }
+    });
+
+    // Load edge types if not already loaded
+    this.typesService.loadEdgeTypes();
 
     this.loadNodes();
 
@@ -75,44 +88,42 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.nodeCreatedSubscription.unsubscribe();
     this.nodeDeletedSubscription.unsubscribe();
     this.graphChangedSubscription.unsubscribe();
+    this.typeSubscription.unsubscribe();
   }
 
   loadNodes(): void {
     // Check if a graph is selected
     if (!this.graphService.currentGraphId) {
-      this.warning = 'Please select a graph to view available nodes.';
+      this.warning = 'Please select a graph before creating a connection.';
       this.nodes = [];
       return;
     }
 
     this.loading = true;
-    this.error = '';
     this.warning = '';
+    this.error = '';
 
-    this.nodeService.getNodes(this.graphService.currentGraphId).subscribe({
-      next: (data) => {
-        this.nodes = data;
-        this.loading = false;
+    this.nodeService.getNodes()
+      .subscribe({
+        next: (nodes) => {
+          this.nodes = nodes;
+          this.loading = false;
 
-        if (data.length === 0) {
-          this.warning = 'No nodes available in this graph. Please create at least two nodes to create a connection.';
-        } else if (data.length === 1) {
-          this.warning = 'Only one node available. Please create at least one more node to create a connection.';
+          if (nodes.length < 2) {
+            this.warning = 'No nodes available. Please create at least two nodes to create a connection.';
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          this.loading = false;
+
+          if (error.status === 404) {
+            this.warning = 'No nodes found. Please create at least two nodes to create a connection.';
+          } else {
+            this.error = 'Failed to load nodes';
+            console.error('Error loading nodes:', error);
+          }
         }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading = false;
-
-        if (err.status === 404) {
-          // Handle 404 as a warning not an error
-          this.warning = 'No nodes found in this graph. Please create at least two nodes to create a connection.';
-          this.nodes = [];
-        } else {
-          this.error = 'Failed to load nodes';
-          console.error('Error fetching nodes:', err);
-        }
-      }
-    });
+      });
   }
 
   get f() {
@@ -140,8 +151,10 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
       source: this.edgeForm.value.source,
       target: this.edgeForm.value.target,
       edgeType: this.edgeForm.value.edgeType,
-      graphId: this.graphService.currentGraphId as string
+      graphId: this.graphService.currentGraphId // Add this line to include the graphId
     };
+
+    this.edgeService.createEdge(newEdge)
 
     this.edgeService.createEdge(newEdge)
       .subscribe({
@@ -154,8 +167,7 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
         error: (error: HttpErrorResponse) => {
           if (error.status === 404) {
             this.warning = 'One or both of the selected nodes no longer exist. Please refresh the node list.';
-            // Auto refresh the node list
-            this.loadNodes();
+            this.loadNodes(); // Reload the node list
           } else if (error.status === 400) {
             this.error = 'Invalid connection data. Please check your inputs.';
           } else {
@@ -168,10 +180,11 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
 
   resetForm(): void {
     this.submitted = false;
+    // Reset form but set the edgeType to the first available type if any exist
     this.edgeForm.reset({
       source: '',
       target: '',
-      edgeType: 'default'
+      edgeType: this.edgeTypes.length > 0 ? this.edgeTypes[0].name : ''
     });
   }
 }

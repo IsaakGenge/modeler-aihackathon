@@ -1,14 +1,13 @@
 // Frontend/src/app/Components/create-node/create-node.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NodeService } from '../../Services/Node/node.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { GraphService } from '../../Services/Graph/graph.service';
-import { Observable } from 'rxjs';
+import { TypesService, NodeTypeModel } from '../../Services/Types/types.service';
+import { Observable, Subscription } from 'rxjs';
 import { Node } from '../../Models/node.model';
-import { NodeType } from '../../Models/node-type.model';
-
 
 @Component({
   selector: 'app-create-node',
@@ -17,20 +16,22 @@ import { NodeType } from '../../Models/node-type.model';
   templateUrl: './create-node.component.html',
   styleUrl: './create-node.component.css'
 })
-export class CreateNodeComponent implements OnInit {
+export class CreateNodeComponent implements OnInit, OnDestroy {
   nodeForm!: FormGroup;
   submitted = false;
   success = false;
   error = '';
   warning = '';
   isDarkMode$: Observable<boolean>;
-  nodeTypes = Object.values(NodeType);
+  nodeTypes: NodeTypeModel[] = [];
+  private typeSubscription: Subscription = new Subscription();
 
   constructor(
     private formBuilder: FormBuilder,
     private nodeService: NodeService,
     private graphService: GraphService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private typesService: TypesService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -38,8 +39,24 @@ export class CreateNodeComponent implements OnInit {
   ngOnInit(): void {
     this.nodeForm = this.formBuilder.group({
       name: ['', [Validators.required]],
-      nodeType: ['default', [Validators.required]]
+      nodeType: ['', [Validators.required]]
     });
+
+    // Subscribe to node types
+    this.typeSubscription = this.typesService.nodeTypes$.subscribe(types => {
+      this.nodeTypes = types;
+      // Set default value if available and form control exists
+      if (types.length > 0 && this.nodeForm) {
+        this.nodeForm.get('nodeType')?.setValue(types[0].name);
+      }
+    });
+
+    // Load node types if not already loaded
+    this.typesService.loadNodeTypes();
+  }
+
+  ngOnDestroy(): void {
+    this.typeSubscription.unsubscribe();
   }
 
   get f() {
@@ -90,9 +107,10 @@ export class CreateNodeComponent implements OnInit {
 
   resetForm(): void {
     this.submitted = false;
+    // Reset form but set the nodeType to the first available type if any exist
     this.nodeForm.reset({
       name: '',
-      nodeType: 'default'
+      nodeType: this.nodeTypes.length > 0 ? this.nodeTypes[0].name : ''
     });
   }
 }
