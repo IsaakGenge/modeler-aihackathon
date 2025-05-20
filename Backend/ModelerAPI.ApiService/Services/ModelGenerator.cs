@@ -94,13 +94,13 @@ namespace ModelerAPI.ApiService.Services
 
         private string GetRandomNodeType()
         {
-            string[] nodeTypes = { "person", "location", "organization", "event", "concept" };
+            string[] nodeTypes = {  "Person", "Place", "Thing", "concConceptept" };
             return nodeTypes[_random.Next(nodeTypes.Length)];
         }
 
         private string GetRandomEdgeType()
-        {
-            string[] edgeTypes = { "connected_to", "depends_on", "related_to", "part_of", "follows" };
+        {   
+            string[] edgeTypes = { "Related", "Belongs", "Contains", "Depends", };
             return edgeTypes[_random.Next(edgeTypes.Length)];
         }
     }

@@ -1,0 +1,14 @@
+<div class="graph-container">
+  <div class="layout-controls" *ngIf="showLayoutControls">
+    <div class="layout-buttons">
+      <button *ngFor="let layout of availableLayouts"
+              [class.active]="layoutConfig.name === layout.type"
+              (click)="changeLayoutType(layout.type)"
+              title="{{layout.label}}"
+              class="layout-button">
+        <i class="bi" [ngClass]="getLayoutIcon(layout.type)"></i>
+      </button>
+    </div>
+  </div>
+  <div #cyContainer class="cytoscape-container"></div>
+</div>

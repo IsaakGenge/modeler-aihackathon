@@ -1,7 +1,5 @@
 <!-- Frontend/src/app/Components/view-fancy/view-fancy.component.html -->
 <div class="view-fancy-container" [class.dark-mode]="(isDarkMode$ | async)">
- 
-
   <!-- Warning when no graph is selected -->
   <div *ngIf="!hasSelectedGraph" class="alert alert-warning">
     Please select or create a graph to start modeling.
@@ -38,7 +36,18 @@
         </button>
       </div>
 
-      <div #cyContainer class="cytoscape-container"></div>
+      <!-- Replace the old cytoscape container with our new component -->
+      <app-cytoscape-graph *ngIf="!loading"
+                           [nodes]="graphNodes"
+                           [edges]="graphEdges"
+                           [isDarkMode$]="isDarkMode$"
+                           [showLayoutControls]="true"
+                           (nodeClicked)="onNodeClicked($event)"
+                           (edgeClicked)="onEdgeClicked($event)"
+                           (layoutChanged)="onLayoutChanged($event)"
+                           class="cytoscape-graph-component">
+      </app-cytoscape-graph>
+
     </div>
 
     <!-- Tools Panel - Collapsible -->
