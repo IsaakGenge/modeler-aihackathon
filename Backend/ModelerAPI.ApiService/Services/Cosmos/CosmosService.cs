@@ -5,7 +5,7 @@ using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
 using System.Collections.ObjectModel;
 
-namespace ModelerAPI.ApiService.Services
+namespace ModelerAPI.ApiService.Services.Cosmos
 {
     public class CosmosService : ICosmosService
     {

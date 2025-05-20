@@ -1,6 +1,7 @@
 using Microsoft.OpenApi.Models;
 using ModelerAPI.ApiService.Configuration;
-using ModelerAPI.ApiService.Services;
+using ModelerAPI.ApiService.Services.Cosmos;
+using ModelerAPI.ApiService.Services.ModelGenerator;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);

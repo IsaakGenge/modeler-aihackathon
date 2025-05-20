@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ModelerAPI.ApiService.Models;
-using ModelerAPI.ApiService.Services;
+using ModelerAPI.ApiService.Services.ModelGenerator;
 
 namespace ModelerAPI.ApiService.Controllers
 {
