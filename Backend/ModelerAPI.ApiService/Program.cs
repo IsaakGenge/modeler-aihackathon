@@ -1,7 +1,6 @@
-using ModelerAPI.ApiService.Services;
-using ModelerAPI.ApiService.Configuration;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using ModelerAPI.ApiService.Configuration;
+using ModelerAPI.ApiService.Services;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,17 +46,29 @@ builder.Services.Configure<CosmosDbSettings>(
 builder.Services.Configure<CorsSettings>(
     builder.Configuration.GetSection(CorsSettings.SectionName));
 
+// Add CORS with a more permissive policy for development
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        var corsSettings = builder.Configuration
-            .GetSection(CorsSettings.SectionName)
-            .Get<CorsSettings>();
+        // During development, allow all origins for easier debugging
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            // In production, use the configured origins
+            var corsSettings = builder.Configuration
+                .GetSection(CorsSettings.SectionName)
+                .Get<CorsSettings>();
 
-        policy.WithOrigins(corsSettings?.AllowedOrigins ?? new[] { "http://localhost:4200" })
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+            policy.WithOrigins(corsSettings?.AllowedOrigins ?? new[] { "http://localhost:4200" })
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 
@@ -69,6 +80,9 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+// IMPORTANT: Use CORS *before* other middleware that might respond to the request
+app.UseCors();
 
 // Swagger UI middleware
 if (app.Environment.IsDevelopment())
@@ -82,7 +96,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
 app.MapControllers();
 app.MapDefaultEndpoints();
 
