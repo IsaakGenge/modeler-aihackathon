@@ -58,7 +58,7 @@
 /* Main content styling */
 .main-content {
   margin-left: 250px;
-  padding: 20px;
+  padding: 5px;
   transition: margin-left 0.3s ease;
   width: calc(100% - 250px);
 }

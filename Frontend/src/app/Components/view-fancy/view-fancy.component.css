@@ -10,8 +10,7 @@
 /* Graph picker row */
 .graph-picker-row {
   display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
+  align-items: center;  
 }
 
 app-graph-picker {
@@ -44,7 +43,7 @@ app-graph-picker {
 /* Tools panel toggle button */
 .tools-panel-toggle {
   position: absolute;
-  left: -15px;
+  left: -30px;
   top: 20px;
   width: 30px;
   height: 30px;
@@ -135,7 +134,7 @@ app-graph-picker {
 }
 
 .graph-header {
-  padding: 10px 15px;
+  padding: 5px 15px;
   border-bottom: 1px solid var(--border);
 }
 

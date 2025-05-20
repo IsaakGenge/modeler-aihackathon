@@ -217,12 +217,15 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    // Define the new node color - using a nice purple instead of green
+    const nodeColor = '#8A2BE2'; // BlueViolet color
+
     this.isDarkMode$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
       const styles = [
         {
           selector: 'node',
           style: {
-            'background-color': '#4CAF50',
+            'background-color': nodeColor,
             'label': 'data(label)',
             'text-valign': 'center',
             'text-halign': 'center',
@@ -230,7 +233,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
             'width': 60,
             'height': 60,
             'font-size': 12,
-            'text-outline-color': '#4CAF50',
+            'text-outline-color': nodeColor,
             'text-outline-width': 2
           }
         },
@@ -307,6 +310,9 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     try {
+      // Define the new node color
+      const nodeColor = '#8A2BE2'; // BlueViolet color
+
       // Create new Cytoscape instance with the data
       this.cy = cytoscape({
         container: this.cyContainer.nativeElement,
@@ -318,7 +324,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
           {
             selector: 'node',
             style: {
-              'background-color': '#4CAF50',
+              'background-color': nodeColor,
               'label': 'data(label)',
               'text-valign': 'center',
               'text-halign': 'center',
@@ -326,7 +332,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
               'width': 60,
               'height': 60,
               'font-size': 12,
-              'text-outline-color': '#4CAF50',
+              'text-outline-color': nodeColor,
               'text-outline-width': 2
             }
           },
@@ -344,7 +350,6 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
               'color': '#555',
               'text-background-color': '#fff',
               'text-background-opacity': 0.8
-              
             }
           },
           {
@@ -376,6 +381,21 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
             fit: true,
             padding: 50
           }).run();
+
+          // Apply initial zoom - the higher the number, the more zoomed in
+          if (cytoscapeNodes.length > 0) {
+            // Set initial zoom level - values > 1 are zoomed in
+            const initialZoom = 1.5;
+
+            // First fit to see all elements
+            this.cy.fit();
+
+            // Then apply the zoom centered on the graph
+            this.cy.zoom({
+              level: initialZoom,
+              position: this.cy.center()
+            });
+          }
         }
       }, 100);
 
