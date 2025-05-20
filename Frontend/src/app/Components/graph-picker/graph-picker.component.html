@@ -1,0 +1,23 @@
+<!-- Frontend/src/app/Components/graph-picker/graph-picker.component.html -->
+<div class="graph-picker" [class.dark-mode]="(isDarkMode$ | async)">
+  <div class="graph-picker-container">
+    <label for="graphSelect" class="graph-label">Active Graph:</label>
+    <select id="graphSelect"
+            class="graph-select"
+            [(ngModel)]="selectedGraphId"
+            (change)="onGraphSelect()"
+            [disabled]="loading"
+            [class.dark-mode]="(isDarkMode$ | async)">
+      <option [value]="null">-- Select a Graph --</option>
+      <option *ngFor="let graph of graphs" [value]="graph.id">
+        {{ graph.name }}
+      </option>
+    </select>
+
+    <div class="graph-picker-status">
+      <div *ngIf="loading" class="loading">Loading graphs...</div>
+      <div *ngIf="warning" class="warning">{{ warning }}</div>
+      <div *ngIf="error" class="error">{{ error }}</div>
+    </div>
+  </div>
+</div>

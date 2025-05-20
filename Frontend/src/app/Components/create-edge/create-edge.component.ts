@@ -1,9 +1,10 @@
-// Updated version of create-edge.component.ts
+// Frontend/src/app/Components/create-edge/create-edge.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
+import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -13,6 +14,7 @@ interface Edge {
   source: string;
   target: string;
   edgeType: string;
+  graphId: string;
   createdAt?: Date;
 }
 
@@ -35,11 +37,13 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
 
   private nodeCreatedSubscription: Subscription = new Subscription();
   private nodeDeletedSubscription: Subscription = new Subscription();
+  private graphChangedSubscription: Subscription = new Subscription();
 
   constructor(
     private formBuilder: FormBuilder,
     private edgeService: EdgeService,
     private nodeService: NodeService,
+    private graphService: GraphService,
     private themeService: ThemeService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
@@ -63,26 +67,41 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.nodeDeletedSubscription = this.nodeService.nodeDeleted$.subscribe(() => {
       this.loadNodes();
     });
+
+    // Subscribe to graph changes to refresh the node list
+    this.graphChangedSubscription = this.graphService.currentGraph$.subscribe(() => {
+      this.loadNodes();
+    });
   }
 
   ngOnDestroy(): void {
     // Clean up subscriptions to prevent memory leaks
     this.nodeCreatedSubscription.unsubscribe();
     this.nodeDeletedSubscription.unsubscribe();
+    this.graphChangedSubscription.unsubscribe();
   }
 
   loadNodes(): void {
+    // Check if a graph is selected
+    if (!this.graphService.currentGraphId) {
+      this.warning = 'Please select a graph to view available nodes.';
+      this.nodes = [];
+      return;
+    }
+
     this.loading = true;
     this.error = '';
     this.warning = '';
 
-    this.nodeService.getNodes().subscribe({
+    this.nodeService.getNodes(this.graphService.currentGraphId).subscribe({
       next: (data) => {
         this.nodes = data;
         this.loading = false;
 
         if (data.length === 0) {
-          this.warning = 'No nodes available. Please create at least two nodes to create a connection.';
+          this.warning = 'No nodes available in this graph. Please create at least two nodes to create a connection.';
+        } else if (data.length === 1) {
+          this.warning = 'Only one node available. Please create at least one more node to create a connection.';
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -90,7 +109,7 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
 
         if (err.status === 404) {
           // Handle 404 as a warning not an error
-          this.warning = 'No nodes found. Please create at least two nodes to create a connection.';
+          this.warning = 'No nodes found in this graph. Please create at least two nodes to create a connection.';
           this.nodes = [];
         } else {
           this.error = 'Failed to load nodes';
@@ -110,6 +129,12 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.error = '';
     this.warning = '';
 
+    // Check if a graph is selected
+    if (!this.graphService.currentGraphId) {
+      this.warning = 'Please select a graph before creating a connection.';
+      return;
+    }
+
     // stop here if form is invalid
     if (this.edgeForm.invalid) {
       return;
@@ -118,7 +143,8 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     const newEdge: Edge = {
       source: this.edgeForm.value.source,
       target: this.edgeForm.value.target,
-      edgeType: this.edgeForm.value.edgeType
+      edgeType: this.edgeForm.value.edgeType,
+      graphId: this.graphService.currentGraphId as string
     };
 
     this.edgeService.createEdge(newEdge)

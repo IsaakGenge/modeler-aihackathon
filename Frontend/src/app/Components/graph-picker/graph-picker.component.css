@@ -1,0 +1,67 @@
+/* Frontend/src/app/Components/graph-picker/graph-picker.component.css */
+.graph-picker {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+  .graph-picker.dark-mode {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #f8f9fa;
+  }
+
+.graph-picker-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.graph-label {
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+.graph-select {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  font-size: 1rem;
+  flex-grow: 1;
+  min-width: 200px;
+}
+
+  .graph-select.dark-mode {
+    background-color: #495057;
+    color: #f8f9fa;
+    border-color: #6c757d;
+  }
+
+.graph-picker-status {
+  width: 100%;
+  margin-top: 5px;
+}
+
+.loading {
+  color: #0d6efd;
+  font-style: italic;
+}
+
+.warning {
+  color: #ffc107;
+}
+
+.error {
+  color: #dc3545;
+}
+
+.dark-mode .warning {
+  color: #ffda6a;
+}
+
+.dark-mode .error {
+  color: #ea868f;
+}

@@ -15,8 +15,6 @@ namespace ModelerAPI.ApiService.Controllers
     {
         private readonly ICosmosService _cosmosService;
         private readonly ILogger<GraphController> _logger;
-        private const string DATABASE_NAME = "model";
-        private const string CONTAINER_NAME = "graph";
 
         public GraphController(ICosmosService cosmosService, ILogger<GraphController> logger)
         {
@@ -39,7 +37,7 @@ namespace ModelerAPI.ApiService.Controllers
                 _logger.LogInformation("Getting all graphs");
 
                 var query = "SELECT * FROM c WHERE c.documentType = 'Graph'";
-                var graphs = await _cosmosService.QueryItemsAsync<Graph>(DATABASE_NAME, CONTAINER_NAME, query);
+                var graphs = await _cosmosService.QueryItemsAsync<Graph>(query);
 
                 if (graphs == null || !graphs.Any())
                 {
@@ -71,7 +69,8 @@ namespace ModelerAPI.ApiService.Controllers
             {
                 _logger.LogInformation("Getting graph with ID: {Id}", id);
 
-                var graph = await _cosmosService.GetItemAsync<Graph>(DATABASE_NAME, CONTAINER_NAME, id, id);
+                // Use the ID as both the ID and partition key
+                var graph = await _cosmosService.GetItemAsync<Graph>(id, id);
 
                 if (graph == null)
                 {
@@ -114,23 +113,25 @@ namespace ModelerAPI.ApiService.Controllers
                 _logger.LogInformation("Creating new graph with name: {Name}", graph.Name);
 
                 // Ensure we have a new ID and timestamps
-                if (string.IsNullOrEmpty(graph.Id))
-                {
-                    graph.Id = Guid.NewGuid().ToString();
-                }
-
+                graph.Id = Guid.NewGuid().ToString();
                 graph.CreatedAt = DateTime.UtcNow;
                 graph.UpdatedAt = DateTime.UtcNow;
                 graph.DocumentType = "Graph";
 
-                var createdGraph = await _cosmosService.CreateItemAsync<Graph>(DATABASE_NAME, CONTAINER_NAME, graph, graph.Id);
+                // Explicitly set the partition key field
+                graph.PartitionKey = graph.Id;  // Using ID as the partition key value
+
+                // Create the item, passing both the object and the partition key value
+                var createdGraph = await _cosmosService.CreateItemAsync(graph, graph.Id);
 
                 return CreatedAtAction(nameof(GetGraphByIdAsync), new { id = createdGraph.Id }, createdGraph);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating graph with name: {Name}", graph?.Name);
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while creating the graph");
+                _logger.LogError(ex, "Error creating graph with name: {Name}. Message: {Message}",
+                    graph?.Name, ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"An error occurred while creating the graph: {ex.Message}");
             }
         }
 
@@ -162,7 +163,7 @@ namespace ModelerAPI.ApiService.Controllers
                 _logger.LogInformation("Updating graph with ID: {Id}", id);
 
                 // Check if graph exists
-                var existingGraph = await _cosmosService.GetItemAsync<Graph>(DATABASE_NAME, CONTAINER_NAME, id, id);
+                var existingGraph = await _cosmosService.GetItemAsync<Graph>(id, id);
 
                 if (existingGraph == null)
                 {
@@ -175,11 +176,7 @@ namespace ModelerAPI.ApiService.Controllers
                 existingGraph.UpdatedAt = DateTime.UtcNow;
 
                 // Save the updated graph
-                var updatedGraph = await _cosmosService.UpsertItemAsync<Graph>(
-                    DATABASE_NAME,
-                    CONTAINER_NAME,
-                    existingGraph,
-                    id);
+                var updatedGraph = await _cosmosService.UpsertItemAsync<Graph>(existingGraph, id);
 
                 return Ok(updatedGraph);
             }
@@ -206,7 +203,7 @@ namespace ModelerAPI.ApiService.Controllers
                 _logger.LogInformation("Deleting graph with ID: {Id}", id);
 
                 // Check if graph exists
-                var existingGraph = await _cosmosService.GetItemAsync<Graph>(DATABASE_NAME, CONTAINER_NAME, id, id);
+                var existingGraph = await _cosmosService.GetItemAsync<Graph>(id, id);
 
                 if (existingGraph == null)
                 {
@@ -215,7 +212,7 @@ namespace ModelerAPI.ApiService.Controllers
                 }
 
                 // Delete the graph
-                await _cosmosService.DeleteItemAsync(DATABASE_NAME, CONTAINER_NAME, id, id);
+                await _cosmosService.DeleteItemAsync(id, id);
 
                 return NoContent();
             }
@@ -227,3 +224,4 @@ namespace ModelerAPI.ApiService.Controllers
         }
     }
 }
+

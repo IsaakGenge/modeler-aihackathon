@@ -418,27 +418,25 @@ namespace ModelerAPI.ApiService.Services
         /// Retrieves an item from Cosmos DB by its ID and partition key
         /// </summary>
         /// <typeparam name="T">The type of item to retrieve</typeparam>
-        /// <param name="databaseName">The name of the database</param>
-        /// <param name="containerName">The name of the container</param>
         /// <param name="id">The unique identifier of the item</param>
         /// <param name="partitionKey">The partition key value</param>
         /// <returns>The retrieved item or null if not found</returns>
-        public async Task<T> GetItemAsync<T>(string databaseName, string containerName, string id, string partitionKey)
+        public async Task<T> GetItemAsync<T>(string id, string partitionKey)
         {
             try
             {
-                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var container = CosmosClient.GetContainer(DatabaseName, ContianerName);
                 var response = await container.ReadItemAsync<T>(id, new PartitionKey(partitionKey));
                 return response.Resource;
             }
             catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                Logger.LogWarning("Item with id {Id} not found in container {Container}", id, containerName);
+                Logger.LogWarning("Item with id {Id} not found in container {Container}", id, ContianerName);
                 return default;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error retrieving item with id {Id} from container {Container}", id, containerName);
+                Logger.LogError(ex, "Error retrieving item with id {Id} from container {Container}", id, ContianerName);
                 throw;
             }
         }
@@ -447,22 +445,30 @@ namespace ModelerAPI.ApiService.Services
         /// Creates a new item in Cosmos DB
         /// </summary>
         /// <typeparam name="T">The type of item to create</typeparam>
-        /// <param name="databaseName">The name of the database</param>
-        /// <param name="containerName">The name of the container</param>
         /// <param name="item">The item to create</param>
         /// <param name="partitionKey">The partition key value</param>
         /// <returns>The created item</returns>
-        public async Task<T> CreateItemAsync<T>(string databaseName, string containerName, T item, string partitionKey)
+        public async Task<T> CreateItemAsync<T>(T item, string partitionKey)
         {
             try
             {
-                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var container = CosmosClient.GetContainer(DatabaseName, ContianerName);
+
+                // Log the item and partition key for debugging
+                Logger.LogDebug("Creating item with partition key: {PartitionKey}", partitionKey);
+
                 var response = await container.CreateItemAsync(item, new PartitionKey(partitionKey));
                 return response.Resource;
             }
+            catch (CosmosException ex)
+            {
+                Logger.LogError(ex, "Cosmos DB error creating item. Status: {Status}, Message: {Message}",
+                    ex.StatusCode, ex.Message);
+                throw;
+            }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error creating item in container {Container}", containerName);
+                Logger.LogError(ex, "Error creating item in container {Container}", ContianerName);
                 throw;
             }
         }
@@ -471,22 +477,20 @@ namespace ModelerAPI.ApiService.Services
         /// Updates an existing item or inserts it if it doesn't exist in Cosmos DB
         /// </summary>
         /// <typeparam name="T">The type of item to upsert</typeparam>
-        /// <param name="databaseName">The name of the database</param>
-        /// <param name="containerName">The name of the container</param>
         /// <param name="item">The item to upsert</param>
         /// <param name="partitionKey">The partition key value</param>
         /// <returns>The upserted item</returns>
-        public async Task<T> UpsertItemAsync<T>(string databaseName, string containerName, T item, string partitionKey)
+        public async Task<T> UpsertItemAsync<T>(T item, string partitionKey)
         {
             try
             {
-                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var container = CosmosClient.GetContainer(DatabaseName, ContianerName);
                 var response = await container.UpsertItemAsync(item, new PartitionKey(partitionKey));
                 return response.Resource;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error upserting item in container {Container}", containerName);
+                Logger.LogError(ex, "Error upserting item in container {Container}", ContianerName);
                 throw;
             }
         }
@@ -494,27 +498,25 @@ namespace ModelerAPI.ApiService.Services
         /// <summary>
         /// Deletes an item from Cosmos DB by its ID and partition key
         /// </summary>
-        /// <param name="databaseName">The name of the database</param>
-        /// <param name="containerName">The name of the container</param>
         /// <param name="id">The unique identifier of the item</param>
         /// <param name="partitionKey">The partition key value</param>
         /// <returns>True if deletion was successful, otherwise false</returns>
-        public async Task<bool> DeleteItemAsync(string databaseName, string containerName, string id, string partitionKey)
+        public async Task<bool> DeleteItemAsync(string id, string partitionKey)
         {
             try
             {
-                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var container = CosmosClient.GetContainer(DatabaseName, ContianerName);
                 await container.DeleteItemAsync<dynamic>(id, new PartitionKey(partitionKey));
                 return true;
             }
             catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                Logger.LogWarning("Item with id {Id} not found for deletion in container {Container}", id, containerName);
+                Logger.LogWarning("Item with id {Id} not found for deletion in container {Container}", id, ContianerName);
                 return false;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error deleting item with id {Id} from container {Container}", id, containerName);
+                Logger.LogError(ex, "Error deleting item with id {Id} from container {Container}", id, ContianerName);
                 throw;
             }
         }
@@ -523,15 +525,13 @@ namespace ModelerAPI.ApiService.Services
         /// Executes a query against a Cosmos DB container
         /// </summary>
         /// <typeparam name="T">The type of items to retrieve</typeparam>
-        /// <param name="databaseName">The name of the database</param>
-        /// <param name="containerName">The name of the container</param>
         /// <param name="queryString">The SQL query string</param>
         /// <returns>An enumerable collection of items matching the query</returns>
-        public async Task<IEnumerable<T>> QueryItemsAsync<T>(string databaseName, string containerName, string queryString)
+        public async Task<IEnumerable<T>> QueryItemsAsync<T>(string queryString)
         {
             try
             {
-                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var container = CosmosClient.GetContainer(DatabaseName, ContianerName);
                 var query = container.GetItemQueryIterator<T>(new QueryDefinition(queryString));
 
                 var results = new List<T>();
@@ -545,7 +545,7 @@ namespace ModelerAPI.ApiService.Services
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error executing query in container {Container}: {Query}", containerName, queryString);
+                Logger.LogError(ex, "Error executing query in container {Container}: {Query}", ContianerName, queryString);
                 throw;
             }
         }

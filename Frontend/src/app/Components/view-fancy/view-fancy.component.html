@@ -1,47 +1,71 @@
-<div class="container-fluid">
-  <div class="row">
-    <!-- Left Panel for Node and Edge Creation -->
-    <div class="col-md-3 mb-3">
-      <div class="card" [ngClass]="(isDarkMode$ | async) ? 'bg-dark text-white' : ''">
-        <div class="card-header">
-          <h2>Graph Editor</h2>
+<!-- Frontend/src/app/Components/view-fancy/view-fancy.component.html -->
+<div class="view-fancy-container" [class.dark-mode]="(isDarkMode$ | async)">
+  <!-- Graph Picker Component at the top -->
+  <div class="graph-picker-row">
+    <app-graph-picker></app-graph-picker>
+    <button class="btn btn-outline-primary btn-sm ms-2" routerLink="/graph-manager">
+      Manage Graphs
+    </button>
+  </div>
+
+  <!-- Warning when no graph is selected -->
+  <div *ngIf="!hasSelectedGraph" class="alert alert-warning">
+    Please select or create a graph to start modeling.
+    <div class="mt-2">
+      <button class="btn btn-primary btn-sm" routerLink="/graph-manager">Go To Graph Manager</button>
+    </div>
+  </div>
+
+  <!-- Main content area -->
+  <div class="row" *ngIf="hasSelectedGraph">
+    <!-- Graph Visualization -->
+    <div class="col-md-8">
+      <div class="graph-container">
+        <div class="graph-header">
+          <h3>Graph Visualization</h3>
+          <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
+            Refresh
+          </button>
         </div>
-        <div class="card-body">
-          <!-- NgbNav for Create Node and Create Edge -->
-          <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs"
-              [ngClass]="(isDarkMode$ | async) ? 'dark-mode-tabs' : ''">
-            <li [ngbNavItem]="1">
-              <a ngbNavLink>Create Node</a>
-              <ng-template ngbNavContent>
-                <div class="tab-pane-content">
-                  <app-create-node></app-create-node>
-                </div>
-              </ng-template>
-            </li>
-            <li [ngbNavItem]="2">
-              <a ngbNavLink>Create Connection</a>
-              <ng-template ngbNavContent>
-                <div class="tab-pane-content">
-                  <app-create-edge></app-create-edge>
-                </div>
-              </ng-template>
-            </li>
-          </ul>
-          <div [ngbNavOutlet]="nav" class="mt-2"></div>
+
+        <div *ngIf="loading" class="loading-indicator">
+          Loading graph data...
         </div>
+
+        <div *ngIf="warning" class="alert alert-warning">
+          {{ warning }}
+        </div>
+
+        <div *ngIf="error" class="alert alert-danger">
+          {{ error }}
+        </div>
+
+        <div #cyContainer class="cytoscape-container"></div>
       </div>
     </div>
 
-    <!-- Right Panel for Graph Visualization -->
-    <div class="col-md-9">
-      <div class="card" [ngClass]="(isDarkMode$ | async) ? 'bg-dark text-white' : ''">
-        <div class="card-header">
-          <h2>Graph Visualization</h2>
-        </div>
-        <div class="card-body">
-          <div #cyContainer class="graph-container"></div>
-        </div>
+    <!-- Control Panel / Tools -->
+    <div class="col-md-4">
+      <div class="tools-panel">
+        <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
+          <li [ngbNavItem]="1">
+            <a ngbNavLink>Nodes</a>
+            <ng-template ngbNavContent>
+              <app-create-node></app-create-node>
+            </ng-template>
+          </li>
+          <li [ngbNavItem]="2">
+            <a ngbNavLink>Edges</a>
+            <ng-template ngbNavContent>
+              <app-create-edge></app-create-edge>
+            </ng-template>
+          </li>
+          <!-- Removed GraphManager tab -->
+        </ul>
+
+        <div [ngbNavOutlet]="nav" class="tab-content"></div>
       </div>
     </div>
   </div>
 </div>
+

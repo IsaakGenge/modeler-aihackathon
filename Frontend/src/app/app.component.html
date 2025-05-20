@@ -32,6 +32,13 @@
 
         <!-- Navigation items -->
         <ul class="nav nav-pills flex-column w-100 px-2">
+          <!-- Graphs Management link - add this new menu item -->
+          <li class="nav-item w-100 mb-2">
+            <a routerLink="/graph-manager" routerLinkActive="active" class="nav-link px-2 py-2 d-flex align-items-center">
+              <i class="bi bi-diagram-3"></i>
+              <span class="ms-2" [ngClass]="{'d-none': sidebarCollapsed}">Manage Graphs</span>
+            </a>
+          </li>
           <li class="nav-item w-100 mb-2">
             <a routerLink="/view-basic" routerLinkActive="active" class="nav-link px-2 py-2 d-flex align-items-center">
               <i class="bi bi-table"></i>

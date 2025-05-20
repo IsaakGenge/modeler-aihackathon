@@ -84,3 +84,13 @@
   .bg-dark::-webkit-scrollbar-thumb:hover {
     background: #666;
   }
+
+.graph-picker-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+app-graph-picker {
+  flex-grow: 1;
+}

@@ -1,14 +1,18 @@
+// Frontend/src/app/Components/view-fancy/view-fancy.component.ts
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import cytoscape from 'cytoscape';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
+import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { Subscription, forkJoin, of, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CreateNodeComponent } from '../create-node/create-node.component';
 import { CreateEdgeComponent } from '../create-edge/create-edge.component';
+import { GraphPickerComponent } from '../graph-picker/graph-picker.component';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
@@ -16,8 +20,10 @@ import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     CreateNodeComponent,
     CreateEdgeComponent,
+    GraphPickerComponent,   
     NgbNavModule
   ],
   templateUrl: './view-fancy.component.html',
@@ -29,22 +35,38 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   loading: boolean = false;
   error: string | null = null;
   warning: string | null = null;
-  activeTab = 1; // Default active tab (1 for node panel, 2 for edge panel)
+  activeTab = 1; // Default active tab (1 for node panel, 2 for edge panel, 3 for graph panel)
   isDarkMode$: Observable<boolean>;
+  hasSelectedGraph: boolean = false;
 
   private subscriptions: Subscription = new Subscription();
 
   constructor(
     private edgeService: EdgeService,
     private nodeService: NodeService,
+    private graphService: GraphService,
     private themeService: ThemeService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
 
   ngOnInit(): void {
-    this.loadGraphData();
     this.setupEventSubscriptions();
+
+    // Check if a graph is already selected from localStorage
+    this.subscriptions.add(
+      this.graphService.currentGraph$.subscribe(graph => {
+        this.hasSelectedGraph = !!graph;
+        if (this.hasSelectedGraph) {
+          this.loadGraphData();
+        } else {
+          // Clear the graph view if no graph is selected
+          if (this.cy) {
+            this.cy.elements().remove();
+          }
+        }
+      })
+    );
   }
 
   // Separate method to set up event subscriptions for better organization
@@ -97,18 +119,24 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadGraphData(): void {
+    // Don't load data if no graph is selected
+    if (!this.graphService.currentGraphId) {
+      this.warning = 'Please select a graph to view its data.';
+      return;
+    }
+
     this.loading = true;
     this.error = null;
     this.warning = null;
 
-    console.log('Loading graph data...');
+    console.log('Loading graph data for GraphId:', this.graphService.currentGraphId);
 
     // Use forkJoin to get both edges and nodes in parallel with error handling
     forkJoin({
-      edges: this.edgeService.getEdges().pipe(
+      edges: this.edgeService.getEdges(this.graphService.currentGraphId).pipe(
         catchError((err: HttpErrorResponse) => {
           if (err.status === 404) {
-            this.warning = 'No connections found';
+            this.warning = 'No connections found in this graph';
             return of([]);
           }
           this.error = 'Failed to load connection data';
@@ -116,10 +144,10 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
           return of([]);
         })
       ),
-      nodes: this.nodeService.getNodes().pipe(
+      nodes: this.nodeService.getNodes(this.graphService.currentGraphId).pipe(
         catchError((err: HttpErrorResponse) => {
           if (err.status === 404) {
-            this.warning = 'No nodes found';
+            this.warning = 'No nodes found in this graph';
             return of([]);
           }
           this.error = 'Failed to load node data';
@@ -230,4 +258,3 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
     return `${sourcePrefix}→${targetPrefix}`;
   }
 }
-

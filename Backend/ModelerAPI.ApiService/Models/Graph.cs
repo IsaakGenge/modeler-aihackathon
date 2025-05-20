@@ -4,7 +4,13 @@ using Newtonsoft.Json;
 namespace ModelerAPI.ApiService.Models
 {
     public class Graph
+        
     {
+        /// <summary>
+        /// The partition key for the graph, used for Cosmos DB
+        /// </summary>
+        [JsonProperty(PropertyName = "pkey")]
+        public string PartitionKey { get; set; }
         /// <summary>
         /// The unique identifier for the graph
         /// </summary>
@@ -40,6 +46,8 @@ namespace ModelerAPI.ApiService.Models
         /// </summary>
         public Graph()
         {
+            Id = Guid.NewGuid().ToString();
+            PartitionKey = Id; // Using ID as the partition key
         }
 
         /// <summary>

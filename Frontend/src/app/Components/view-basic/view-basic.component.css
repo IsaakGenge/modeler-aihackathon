@@ -1,1 +1,8 @@
-/* This file can be empty since we're using Bootstrap classes */
+.graph-picker-row {
+  display: flex;
+  align-items: center;
+}
+
+app-graph-picker {
+  flex-grow: 1;
+}/* This file can be empty since we're using Bootstrap classes */

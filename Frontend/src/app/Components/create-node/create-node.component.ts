@@ -1,14 +1,17 @@
+// Frontend/src/app/Components/create-node/create-node.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NodeService } from '../../Services/Node/node.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
+import { GraphService } from '../../Services/Graph/graph.service';
 import { Observable } from 'rxjs';
 
 interface Node {
-  id: string;
+  id?: string;
   name: string;
   nodeType: string;
+  graphId: string;
   createdAt?: Date;
 }
 
@@ -24,11 +27,13 @@ export class CreateNodeComponent implements OnInit {
   submitted = false;
   success = false;
   error = '';
+  warning = '';
   isDarkMode$: Observable<boolean>;
 
   constructor(
     private formBuilder: FormBuilder,
     private nodeService: NodeService,
+    private graphService: GraphService,
     private themeService: ThemeService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
@@ -49,6 +54,13 @@ export class CreateNodeComponent implements OnInit {
     this.submitted = true;
     this.success = false;
     this.error = '';
+    this.warning = '';
+
+    // Check if a graph is selected
+    if (!this.graphService.currentGraphId) {
+      this.warning = 'Please select a graph before creating a node.';
+      return;
+    }
 
     // stop here if form is invalid
     if (this.nodeForm.invalid) {
@@ -56,9 +68,9 @@ export class CreateNodeComponent implements OnInit {
     }
 
     const newNode: Node = {
-      id: this.nodeForm.value.id,
       name: this.nodeForm.value.name,
-      nodeType: this.nodeForm.value.nodeType
+      nodeType: this.nodeForm.value.nodeType,
+      graphId: this.graphService.currentGraphId as string
     };
 
     this.nodeService.createNode(newNode)
@@ -70,7 +82,12 @@ export class CreateNodeComponent implements OnInit {
           this.nodeService.notifyNodeCreated();
         },
         error: (error) => {
-          this.error = error.message || 'An error occurred while creating the node.';
+          if (error.status === 400) {
+            this.error = 'Invalid node data. Please check your inputs.';
+          } else {
+            this.error = error.message || 'An error occurred while creating the node.';
+          }
+          console.error('Error creating node:', error);
         }
       });
   }
@@ -78,7 +95,6 @@ export class CreateNodeComponent implements OnInit {
   resetForm(): void {
     this.submitted = false;
     this.nodeForm.reset({
-      id: '',
       name: '',
       nodeType: 'default'
     });
