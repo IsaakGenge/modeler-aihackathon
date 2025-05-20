@@ -1,11 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Mvc;
 using ModelerAPI.ApiService.Models;
-using ModelerAPI.ApiService.Services;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace ModelerAPI.ApiService.Controllers
 {
@@ -212,7 +206,7 @@ namespace ModelerAPI.ApiService.Controllers
         }
 
         /// <summary>
-        /// Deletes a graph
+        /// Deletes a graph and all its associated nodes and edges
         /// </summary>
         /// <param name="id">The unique identifier of the graph to delete</param>
         /// <returns>No content on successful deletion</returns>
@@ -235,15 +229,48 @@ namespace ModelerAPI.ApiService.Controllers
                     return NotFound($"Graph with ID: {id} not found");
                 }
 
-                // Delete the graph
+                // Step 1: Get all nodes associated with this graph
+                _logger.LogInformation("Retrieving nodes associated with graph: {Id}", id);
+                var nodes = await _cosmosService.GetNodes(id);
+                _logger.LogInformation("Found {Count} nodes to delete", nodes.Count);
+
+                // Step 2: Get all edges associated with this graph
+                _logger.LogInformation("Retrieving edges associated with graph: {Id}", id);
+                var edges = await _cosmosService.GetEdges(id);
+                _logger.LogInformation("Found {Count} edges to delete", edges.Count);
+
+                // Step 3: Delete all edges first (to maintain referential integrity)
+                _logger.LogInformation("Deleting {Count} edges", edges.Count);
+                foreach (var edge in edges)
+                {
+                    if (!string.IsNullOrEmpty(edge.Id))
+                    {
+                        await _cosmosService.DeleteEdgeAsync(edge.Id);
+                    }
+                }
+
+                // Step 4: Delete all nodes
+                _logger.LogInformation("Deleting {Count} nodes", nodes.Count);
+                foreach (var node in nodes)
+                {
+                    if (!string.IsNullOrEmpty(node.Id))
+                    {
+                        await _cosmosService.DeleteNodeAsync(node.Id);
+                    }
+                }
+
+                // Step 5: Finally, delete the graph itself
+                _logger.LogInformation("Deleting graph: {Id}", id);
                 await _cosmosService.DeleteItemAsync(id, id);
 
+                _logger.LogInformation("Successfully deleted graph {Id} and all associated nodes and edges", id);
                 return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting graph with ID: {Id}", id);
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the graph");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"An error occurred while deleting the graph: {ex.Message}");
             }
         }
     }
