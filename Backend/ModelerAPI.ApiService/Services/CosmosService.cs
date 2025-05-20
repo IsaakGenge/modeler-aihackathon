@@ -210,8 +210,8 @@ namespace ModelerAPI.ApiService.Services
                 {
                     // Use indexer syntax for dynamic objects
                     string id = item["id"].ToString();
-                    string source = item["inV"].ToString();  // Source is the inV (incoming vertex)
-                    string target = item["outV"].ToString(); // Target is the outV (outgoing vertex)
+                    string source = item["outV"].ToString();  // Source is the outV (outgoing vertex)
+                    string target = item["inV"].ToString();   // Target is the inV (incoming vertex)
                     string edgeType = item["label"].ToString(); // Get the label as edgeType
                     DateTime createdAt = DateTime.UtcNow;
                     string edgeGraphId = graphId ?? ""; // Default to empty if not provided
