@@ -41,6 +41,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   activeTab = 1; // Default active tab (1 for node panel, 2 for edge panel, 3 for graph panel)
   isDarkMode$: Observable<boolean>;
   hasSelectedGraph: boolean = false;
+  toolsPanelCollapsed: boolean = false;
 
   private subscriptions: Subscription = new Subscription();
 
@@ -54,6 +55,11 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
+    // Load saved tools panel state
+    if (typeof localStorage !== 'undefined') {
+      const savedState = localStorage.getItem('toolsPanelCollapsed');
+      this.toolsPanelCollapsed = savedState === 'true';
+    }
     this.graphService.currentGraph$
       .pipe(takeUntil(this.destroy$))
       .subscribe(graph => {
@@ -77,7 +83,25 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
 
-  
+  toggleToolsPanel(): void {
+    this.toolsPanelCollapsed = !this.toolsPanelCollapsed;
+
+    // Trigger a resize event after the panel is toggled
+    // This ensures the cytoscape graph redraws correctly
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+
+      // Fit the graph to view after resize
+      if (this.cy) {
+        this.cy.fit();
+      }
+    }, 300);
+
+    // Optionally, save the state to localStorage if you want it to persist
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('toolsPanelCollapsed', this.toolsPanelCollapsed.toString());
+    }
+  }
 
 
   // Separate method to set up event subscriptions for better organization

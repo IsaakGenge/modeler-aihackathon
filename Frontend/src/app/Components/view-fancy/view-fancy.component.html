@@ -2,7 +2,7 @@
 <div class="view-fancy-container" [class.dark-mode]="(isDarkMode$ | async)">
   <!-- Graph Picker Component at the top -->
   <div class="graph-picker-row">
-    <app-graph-picker></app-graph-picker>   
+    <app-graph-picker></app-graph-picker>
   </div>
 
   <!-- Warning when no graph is selected -->
@@ -14,38 +14,41 @@
   </div>
 
   <!-- Main content area -->
-  <div class="row" *ngIf="hasSelectedGraph">
-    <!-- Graph Visualization -->
-    <div class="col-md-8">
-      <div class="graph-container">
-        <div class="graph-header">
-          <h3>Graph Visualization</h3>          
-        </div>
-
-        <div *ngIf="loading" class="loading-indicator">
-          Loading graph data...
-        </div>
-
-        <div *ngIf="warning" class="alert alert-warning">
-          {{ warning }}
-          <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
-            Refresh
-          </button>
-        </div>
-
-        <div *ngIf="error" class="alert alert-danger">
-          {{ error }}
-          <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
-            Refresh
-          </button>
-        </div>
-
-        <div #cyContainer class="cytoscape-container"></div>
+  <div class="main-content-area" *ngIf="hasSelectedGraph">
+    <!-- Graph Visualization - Expanded when tools panel is collapsed -->
+    <div class="graph-container" [class.expanded]="toolsPanelCollapsed">
+      <div class="graph-header">
+        <h3>Graph Visualization</h3>
       </div>
+
+      <div *ngIf="loading" class="loading-indicator">
+        Loading graph data...
+      </div>
+
+      <div *ngIf="warning" class="alert alert-warning">
+        {{ warning }}
+        <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
+          Refresh
+        </button>
+      </div>
+
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+        <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
+          Refresh
+        </button>
+      </div>
+
+      <div #cyContainer class="cytoscape-container"></div>
     </div>
 
-    <!-- Control Panel / Tools -->
-    <div class="col-md-4">
+    <!-- Tools Panel - Collapsible -->
+    <div class="tools-panel-container" [class.collapsed]="toolsPanelCollapsed">
+      <!-- Tools Panel Toggle Button -->
+      <button class="tools-panel-toggle" (click)="toggleToolsPanel()">
+        <i class="bi" [ngClass]="toolsPanelCollapsed ? 'bi-chevron-left' : 'bi-chevron-right'"></i>
+      </button>
+
       <div class="tools-panel">
         <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
           <li [ngbNavItem]="1">
@@ -60,7 +63,6 @@
               <app-create-edge></app-create-edge>
             </ng-template>
           </li>
-          <!-- Removed GraphManager tab -->
         </ul>
 
         <div [ngbNavOutlet]="nav" class="tab-content"></div>
@@ -68,4 +70,3 @@
     </div>
   </div>
 </div>
-

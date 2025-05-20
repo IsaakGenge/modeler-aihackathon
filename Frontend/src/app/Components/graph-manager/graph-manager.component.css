@@ -1,27 +1,102 @@
-/* Frontend/src/app/Components/graph-manager/graph-manager.component.scss */
-/* Note: Rename from .css to .scss if needed */
+/* Frontend/src/app/Components/graph-manager/graph-manager.component.css */
 
-/* Remove most custom styles to rely on global styles in styles.scss */
-
-/* Add styles specific to this component only */
+/* Base styling for the component */
 .graph-list {
   margin-top: 1.5rem;
 }
 
-table tbody tr.active {
-  background-color: rgba(var(--primary-accent-rgb), 0.1);
-}
-
+/* Container styling */
 .component-container {
-  /* Additional specific styles for embedded version if needed */
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
   /* Embedded version specific styles */
-  .component-container.p-3 {
-    /* Specific styles for the embedded version */
-    .alert
+  .component-container.p-3 .alert {
+    font-size: 0.875rem;
+  }
 
-{
-  font-size: 0.875rem;
+/* Enhanced table styling matching view-edges component */
+.table {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border-color: var(--border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+  /* Table header styling */
+  .table thead,
+  .table th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
+
+  /* Table row styling */
+  .table > tbody > tr {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border);
+  }
+
+    /* Striped table rows */
+    .table > tbody > tr:nth-of-type(odd) {
+      background-color: var(--bg-tertiary);
+    }
+
+    /* Hover state for rows */
+    .table > tbody > tr:hover {
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+
+/* Dark theme specific overrides */
+.dark-theme .table {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+  .dark-theme .table thead,
+  .dark-theme .table th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .dark-theme .table > tbody > tr {
+    background-color: var(--bg-secondary);
+  }
+
+    .dark-theme .table > tbody > tr:nth-of-type(odd) {
+      background-color: var(--bg-tertiary);
+    }
+
+    .dark-theme .table > tbody > tr:hover {
+      background-color: rgba(52, 152, 219, 0.2);
+    }
+
+    .dark-theme .table > tbody > tr > td {
+      color: var(--text-primary);
+      border-color: var(--border);
+    }
+
+/* Table cell styling */
+.table > tbody > tr > td {
+  color: var(--text-primary);
+  border-color: var(--border);
+  background-color: inherit; /* Ensure cells inherit the row's background */
+}
+
+/* Active row styling with theme variables */
+table tbody tr.active {
+  background-color: rgba(52, 152, 219, 0.1);
+}
+
+.dark-theme table tbody tr.active {
+  background-color: rgba(52, 152, 219, 0.2);
+}
+
+/* Add transitions for smooth theme switching */
+.graph-manager, .graph-manager * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }

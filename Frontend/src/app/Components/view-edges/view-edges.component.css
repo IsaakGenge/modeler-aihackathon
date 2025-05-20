@@ -1,77 +1,109 @@
 /* Frontend/src/app/Components/view-edges/view-edges.component.css */
-.edge-container h2 {
+
+/* Base container styling using theme variables */
+.edge-container {
   color: var(--text-primary);
-  transition: color 0.3s ease;
+  background-color: var(--bg-secondary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid var(--border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* More specific selectors for dark theme styling */
-body.dark-theme .edge-container .table,
-.dark-theme .table {
-  background-color: #1e1e1e !important;
-  color: rgba(255, 255, 255, 0.87) !important;
-  border-color: #333 !important;
+  /* Basic text styling */
+  .edge-container h2 {
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+  }
+
+/* Enhanced table styling that extends the global table styles */
+.table {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border-color: var(--border);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-  /* Header styling */
-  body.dark-theme .edge-container .table thead,
-  body.dark-theme .edge-container .table th,
-  .dark-theme .table thead,
-  .dark-theme .table th {
-    background-color: #181818 !important;
-    color: rgba(255, 255, 255, 0.87) !important;
-    border-color: #333 !important;
+  /* Table header styling */
+  .table thead,
+  .table th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
   }
 
-  /* Target each row element directly */
-  body.dark-theme .edge-container .table > tbody > tr,
-  .dark-theme .table > tbody > tr {
-    background-color: #1e1e1e !important;
-    color: rgba(255, 255, 255, 0.87) !important;
-    border-color: #333 !important;
+  /* Table row styling */
+  .table > tbody > tr {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border);
   }
 
-    /* Target odd rows */
-    body.dark-theme .edge-container .table > tbody > tr:nth-of-type(odd),
-    .dark-theme .table > tbody > tr:nth-of-type(odd) {
-      background-color: #181818 !important;
+    /* Striped table rows */
+    .table > tbody > tr:nth-of-type(odd) {
+      background-color: var(--bg-tertiary);
     }
 
     /* Hover state for rows */
-    body.dark-theme .edge-container .table > tbody > tr:hover,
+    .table > tbody > tr:hover {
+      background-color: rgba(52, 152, 219, 0.1);
+    }
+
+/* Dark theme specific overrides */
+.dark-theme .table {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+  .dark-theme .table thead,
+  .dark-theme .table th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .dark-theme .table > tbody > tr {
+    background-color: var(--bg-secondary);
+  }
+
+    .dark-theme .table > tbody > tr:nth-of-type(odd) {
+      background-color: var(--bg-tertiary);
+    }
+
     .dark-theme .table > tbody > tr:hover {
-      background-color: rgba(255, 255, 255, 0.1) !important;
+      background-color: rgba(52, 152, 219, 0.2);
     }
 
-    /* Table cell styling */
-    body.dark-theme .edge-container .table > tbody > tr > td,
     .dark-theme .table > tbody > tr > td {
-      color: rgba(255, 255, 255, 0.87) !important;
-      border-color: #333 !important;
-      background-color: inherit !important; /* Ensure cells inherit the row's background */
+      color: var(--text-primary);
+      border-color: var(--border);
     }
 
-/* Bootstrap specific overrides */
-body.dark-theme .edge-container .table-hover > tbody > tr,
-.dark-theme .table-hover > tbody > tr {
-  background-color: #1e1e1e !important;
+/* Table cell styling */
+.table > tbody > tr > td {
+  color: var(--text-primary);
+  border-color: var(--border);
+  background-color: inherit; /* Ensure cells inherit the row's background */
 }
 
-body.dark-theme .edge-container .table-striped > tbody > tr,
-.dark-theme .table-striped > tbody > tr {
-  background-color: #1e1e1e !important;
+/* Improved active row highlighting for both themes */
+.table > tbody > tr.active {
+  background-color: rgba(52, 152, 219, 0.1);
 }
 
-/* Ensure text in table cells is properly colored */
-body.dark-theme .edge-container .table .card-text,
-body.dark-theme .edge-container .table .card-title,
-.dark-theme .table .card-text,
-.dark-theme .table .card-title {
-  color: rgba(255, 255, 255, 0.87) !important;
+.dark-theme .table > tbody > tr.active {
+  background-color: rgba(52, 152, 219, 0.2);
 }
 
-/* Light theme table styles are handled by Bootstrap defaults */
+/* Component-specific overrides if needed */
+.edge-container .loading,
+.edge-container .error,
+.edge-container .warning {
+  color: var(--text-primary);
+}
 
-/* Table transitions */
-.table, .table * {
+/* Add transitions for smooth theme switching */
+.edge-container, .edge-container * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }

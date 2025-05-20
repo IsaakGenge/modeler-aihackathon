@@ -3,6 +3,8 @@
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  position: relative;
 }
 
 /* Graph picker row */
@@ -16,39 +18,66 @@ app-graph-picker {
   flex-grow: 1;
 }
 
-/* Graph container styling */
-.graph-container {
-  height: 600px;
-  width: 100%;
+/* Main content area layout - using position relative to allow absolute positioning of panel */
+.main-content-area {
+  position: relative;
+  min-height: calc(100vh - 80px);
+}
+
+/* Tools panel container styling - position fixed to right edge */
+.tools-panel-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  transition: transform 0.3s ease;
+  z-index: 100;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+  .tools-panel-container.collapsed {
+    transform: translateX(315px); /* Move entire panel off-screen, except toggle button */
+    box-shadow: none; /* Remove shadow when collapsed */
+  }
+
+/* Tools panel toggle button - on the left side of the panel */
+.tools-panel-toggle {
+  position: absolute;
+  left: -15px;
+  top: 20px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: var(--primary-accent);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 101; /* Above the panel */
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+  .tools-panel-toggle:hover {
+    background-color: var(--primary-accent-darker);
+  }
+
+/* Tools panel styling */
+.tools-panel {
+  height: 100%;
   background-color: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin-bottom: 20px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.graph-header h3 {
-  color: var(--text-primary);
-  transition: color 0.3s ease;
-}
-
-.cytoscape-container {
-  width: 100%;
-  height: 500px;
   border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
-  position: relative;
-  background-color: var(--bg-secondary);
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
-/* Tools panel styling - update for tab control */
-.tools-panel {
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+.tools-panel-container.collapsed .tools-panel {
+  opacity: 0; /* Hide the panel content when collapsed */
+  visibility: hidden; /* Remove from accessibility tree when collapsed */
 }
 
 /* Nav tabs styling */
@@ -82,19 +111,55 @@ app-graph-picker {
 
 /* Tab content */
 .tab-content {
-  padding-top: 15px;
+  padding: 15px;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border);
   border-top: none;
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  overflow-y: auto;
+  max-height: calc(100vh - 160px); /* Adjust based on header height */
 }
 
-/* Override for component containers to fit in the left panel */
+/* Graph container styling - takes full width */
+.graph-container {
+  width: 100%;
+  height: calc(100vh - 80px);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* No need for expanded class since graph always takes full width */
+.graph-header {
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+  .graph-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    transition: color 0.3s ease;
+  }
+
+.cytoscape-container {
+  flex-grow: 1;
+  border: 1px solid var(--border);
+  border-radius: 0 0 4px 4px;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bg-secondary);
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+/* Override for component containers to fit in the panel */
 :host ::ng-deep .component-container {
   padding: 0;
-  background-color: var(--bg-tertiary) !important;
+  background-color: transparent !important;
 }
 
   :host ::ng-deep .component-container h2 {
@@ -107,12 +172,13 @@ app-graph-picker {
 .loading-indicator {
   color: var(--text-primary);
   font-style: italic;
-  margin: 15px 0;
+  margin: 15px;
   text-align: center;
 }
 
-/* Alert styling using theme variables */
+/* Alert styling */
 .alert {
+  margin: 15px;
   background-color: var(--alert-bg);
   border-color: var(--alert-border);
   color: var(--text-primary);
@@ -131,6 +197,7 @@ app-graph-picker {
   color: var(--alert-danger-text);
 }
 
+/* Button styling */
 .btn-secondary {
   background-color: var(--bg-elevated);
   border-color: var(--border);
@@ -150,7 +217,7 @@ app-graph-picker {
     color: #fff !important;
   }
 
-/* Ensuring buttons in dark mode also have appropriate styling */
+/* Dark mode button styling */
 .dark-mode .btn-secondary {
   background-color: var(--bg-elevated);
   border-color: var(--border);
@@ -162,22 +229,9 @@ app-graph-picker {
     color: var(--text-highlighted);
   }
 
-/* Make the left panel scrollable if content is too tall */
-.card-body {
-  max-height: 650px;
-  overflow-y: auto;
-}
-
-/* Adjust for mobile devices */
-@media (max-width: 767.98px) {
-  .graph-container {
-    height: 400px;
-  }
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -186,8 +240,48 @@ app-graph-picker {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border);
+  border-radius: 4px;
 }
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
   }
+
+/* Mobile responsive adjustments */
+@media (max-width: 991.98px) {
+  .tools-panel-container {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    max-height: 60%;
+    transform: translateY(0);
+  }
+
+    .tools-panel-container.collapsed {
+      transform: translateY(100%); /* Move entire panel off-screen on mobile */
+    }
+
+  .tools-panel-toggle {
+    left: auto;
+    right: 10px;
+    top: -15px;
+    transform: rotate(90deg);
+  }
+
+  .tools-panel {
+    height: 100%;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .graph-container {
+    height: 60vh;
+  }
+
+  /* Fixed position for toggle button in mobile collapsed state */
+  .tools-panel-container.collapsed .tools-panel-toggle {
+    top: -45px; /* Position the toggle button above the hidden panel */
+  }
+}
