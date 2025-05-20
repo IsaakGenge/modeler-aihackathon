@@ -193,6 +193,56 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    this.isDarkMode$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
+      const styles = [
+        {
+          selector: 'node',
+          style: {
+            'background-color': '#4CAF50',
+            'label': 'data(label)',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'color': '#fff',
+            'width': 60,
+            'height': 60,
+            'font-size': 12,
+            'text-outline-color': '#4CAF50',
+            'text-outline-width': 2
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 3,
+            'line-color': isDark ? '#6E6E6E' : '#9E9E9E',
+            'target-arrow-color': isDark ? '#6E6E6E' : '#9E9E9E',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'bezier',
+            'label': 'data(label)',
+            'font-size': 10,
+            'text-rotation': 'autorotate',
+            'color': isDark ? '#E0E0E0' : '#555',
+            'text-background-color': isDark ? '#424242' : '#fff',
+            'text-background-opacity': 0.9
+          }
+        },
+        {
+          selector: ':selected',
+          style: {
+            'background-color': '#2196F3',
+            'line-color': '#2196F3',
+            'target-arrow-color': '#2196F3',
+            'text-outline-color': '#2196F3',
+            'font-weight': isDark ? 'bold' : 'normal'
+          }
+        }
+      ];
+
+      if (this.cy) {
+        this.cy.style(styles);
+      }
+    });
+
     // Create a node map for lookup (this will help with edge references)
     const nodeMap = new Map();
     nodes.forEach(node => {

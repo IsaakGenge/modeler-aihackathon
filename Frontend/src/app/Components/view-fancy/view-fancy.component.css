@@ -110,3 +110,117 @@ app-graph-picker {
   background-color: #333;
 }
 
+
+.view-fancy-container {
+  background-color: #fff;
+  color: #333;
+}
+
+  .view-fancy-container.dark-mode {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+  }
+
+.graph-container {
+  height: 600px;
+  width: 100%;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.dark-mode .graph-container {
+  background-color: #2a2a2a;
+  border-color: #444;
+}
+
+/* Tool panel dark mode styles */
+.dark-mode .tools-panel {
+  background-color: #333;
+  border-color: #444;
+}
+
+.dark-mode .nav-tabs {
+  border-bottom-color: #444;
+}
+
+  .dark-mode .nav-tabs .nav-link {
+    color: #e0e0e0;
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+    .dark-mode .nav-tabs .nav-link:hover {
+      color: #fff;
+      border-color: #444;
+      background-color: #424242;
+    }
+
+    .dark-mode .nav-tabs .nav-link.active {
+      color: #fff;
+      background-color: #424242;
+      border-color: #444;
+      font-weight: bold;
+    }
+
+/* Alert modifications for dark mode */
+.dark-mode .alert {
+  background-color: #333;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+.dark-mode .alert-warning {
+  background-color: #463c17;
+  border-color: #665c37;
+  color: #ffd740;
+}
+
+.dark-mode .alert-danger {
+  background-color: #462c2c;
+  border-color: #663737;
+  color: #ff4040;
+}
+
+/* Button styles for dark mode */
+.dark-mode .btn-outline-primary {
+  color: #90caf9;
+  border-color: #90caf9;
+}
+
+  .dark-mode .btn-outline-primary:hover {
+    background-color: #90caf9;
+    color: #1e1e1e;
+  }
+
+.dark-mode .btn-outline-secondary {
+  color: #b0bec5;
+  border-color: #b0bec5;
+}
+
+  .dark-mode .btn-outline-secondary:hover {
+    background-color: #b0bec5;
+    color: #1e1e1e;
+  }
+
+/* Cytoscape container specific dark mode */
+.dark-mode .cytoscape-container {
+  border-color: #444;
+  background-color: #2a2a2a;
+}
+
+/* Loading indicator dark mode */
+.dark-mode .loading-indicator {
+  color: #e0e0e0;
+}
+
+/* Focus styles for dark mode */
+.dark-mode *:focus {
+  outline-color: #90caf9;
+}
+
+.dark-mode .focused-element {
+  font-weight: bold;
+  color: #fff;
+}
