@@ -29,6 +29,7 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Frontend", "Frontend\", "{B
 		Release.AspNetCompiler.Debug = "False"
 		VWDPort = "63250"
 		SlnRelativePath = "Frontend\"
+		Project.ExcludeFilter = "Frontend\node_modules\";
 	EndProjectSection
 EndProject
 Global

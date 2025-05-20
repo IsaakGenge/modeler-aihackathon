@@ -1,6 +1,6 @@
 // Frontend/src/app/Components/graph-picker/graph-picker.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, Output, EventEmitter } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { Observable, Subscription } from 'rxjs';
 import { ThemeService } from '../../Services/Theme/theme.service';
@@ -20,12 +20,16 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
   error = '';
   warning = '';
   isDarkMode$: Observable<boolean>;
+  isCollapsed = false; // Track collapsed state
+
+  @Output() collapsedChange = new EventEmitter<boolean>();
 
   private subscriptions: Subscription = new Subscription();
 
   constructor(
     private graphService: GraphService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -53,10 +57,32 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
         this.loadGraphs();
       })
     );
+
+    // Only try to access localStorage in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      const savedState = localStorage.getItem('graphPickerCollapsed');
+      if (savedState) {
+        this.isCollapsed = savedState === 'true';
+        // Emit initial collapsed state
+        this.collapsedChange.emit(this.isCollapsed);
+      }
+    }
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+  }
+
+  toggleCollapse(): void {
+    this.isCollapsed = !this.isCollapsed;
+
+    // Emit the new collapsed state
+    this.collapsedChange.emit(this.isCollapsed);
+
+    // Only save to localStorage in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('graphPickerCollapsed', this.isCollapsed.toString());
+    }
   }
 
   loadGraphs(): void {
@@ -91,6 +117,11 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
       this.graphService.setCurrentGraphById(this.selectedGraphId).subscribe({
         next: (graph) => {
           console.log('Graph selected:', graph.name);
+
+          // Auto-collapse when a graph is selected and not already collapsed
+          if (!this.isCollapsed) {
+            this.toggleCollapse();
+          }
         },
         error: (err) => {
           this.error = 'Failed to select graph';
@@ -100,5 +131,12 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
     } else {
       this.graphService.setCurrentGraph(null);
     }
+  }
+
+  // Get the selected graph name for display when collapsed
+  get selectedGraphName(): string {
+    if (!this.selectedGraphId) return 'No graph selected';
+    const graph = this.graphs.find(g => g.id === this.selectedGraphId);
+    return graph ? graph.name : 'Unknown graph';
   }
 }

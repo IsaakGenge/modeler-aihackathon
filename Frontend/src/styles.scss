@@ -139,3 +139,31 @@ body {
   background-color: var(--bg-secondary);
   transition: background-color 0.3s ease;
 }
+
+// Reset Button styling with proper contrast in light mode
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  border-color: var(--border);
+  color: var(--text-primary);
+
+  &:hover {
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+  }
+}
+
+// Specifically target reset buttons to ensure they're visible in light mode
+button[type="reset"],
+button[type="button"]:not(.btn-primary):not(.sidebar-toggle):not(.theme-toggle):not(.collapse-toggle) {
+  &.btn-secondary {
+    // In light mode this adds more contrast
+    background-color: var(--bg-elevated);
+    border-color: var(--border);
+    color: var(--text-primary);
+
+    &:hover {
+      background-color: var(--secondary-accent);
+      color: var(--bg-secondary);
+    }
+  }
+}

@@ -2,10 +2,7 @@
 <div class="view-fancy-container" [class.dark-mode]="(isDarkMode$ | async)">
   <!-- Graph Picker Component at the top -->
   <div class="graph-picker-row">
-    <app-graph-picker></app-graph-picker>
-    <button class="btn btn-outline-primary btn-sm ms-2" routerLink="/graph-manager">
-      Manage Graphs
-    </button>
+    <app-graph-picker></app-graph-picker>   
   </div>
 
   <!-- Warning when no graph is selected -->
@@ -22,10 +19,7 @@
     <div class="col-md-8">
       <div class="graph-container">
         <div class="graph-header">
-          <h3>Graph Visualization</h3>
-          <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
-            Refresh
-          </button>
+          <h3>Graph Visualization</h3>          
         </div>
 
         <div *ngIf="loading" class="loading-indicator">
@@ -34,10 +28,16 @@
 
         <div *ngIf="warning" class="alert alert-warning">
           {{ warning }}
+          <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
+            Refresh
+          </button>
         </div>
 
         <div *ngIf="error" class="alert alert-danger">
           {{ error }}
+          <button class="btn btn-outline-secondary btn-sm" (click)="loadGraphData()">
+            Refresh
+          </button>
         </div>
 
         <div #cyContainer class="cytoscape-container"></div>
