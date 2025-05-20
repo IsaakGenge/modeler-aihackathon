@@ -7,5 +7,5 @@ export const routes: Routes = [
   { path: 'view-basic', component: ViewBasicComponent },
   { path: 'view-fancy', component: ViewFancyComponent },
   { path: 'graph-manager', component: GraphManagerComponent },
-  { path: '', redirectTo: '/view-basic', pathMatch: 'full' } // Add default route
+  { path: '', redirectTo: '/graph-manager', pathMatch: 'full' } // Add default route
 ];

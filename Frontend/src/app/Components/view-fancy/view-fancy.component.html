@@ -1,14 +1,6 @@
 <!-- Frontend/src/app/Components/view-fancy/view-fancy.component.html -->
 <div class="view-fancy-container" [class.dark-mode]="(isDarkMode$ | async)">
-  <!-- Warning when no graph is selected -->
-  <div *ngIf="!hasSelectedGraph" class="alert alert-warning">
-    Please select or create a graph to start modeling.
-    <div class="mt-2">
-      <button class="btn btn-primary btn-sm" routerLink="/graph-manager">Go To Graph Manager</button>
-    </div>
-  </div>
-
-  <!-- Main content area -->
+    <!-- Main content area -->
   <div class="main-content-area" *ngIf="hasSelectedGraph">
     <!-- Graph Visualization - Expanded when tools panel is collapsed -->
     <div class="graph-container" [class.expanded]="toolsPanelCollapsed">

@@ -18,10 +18,12 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
     };
 
         // Different connection types between components
+        // In PlantGraphStrategy.cs
         private readonly string[] _connectionTypes = {
-        "flow_to", "connected_to", "controlled_by", "monitors", "heats", "cools",
-        "pressurizes", "filters", "supplies", "receives_from"
-    };
+    "FlowTo", "ConnectedTo", "ControlledBy", "Controls", "Monitors", "Heats", "Cools",
+    "Pressurizes", "Filters", "Supplies", "ReceivesFrom", "PumpsTo", "RegulatesFlowTo"
+};
+
 
         public PlantGraphStrategy(ICosmosService cosmosService)
         {
@@ -126,7 +128,7 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     {
                         Source = controlSystem.Id,
                         Target = sensor.Id,
-                        EdgeType = "monitors",
+                        EdgeType = "Monitors",
                         GraphId = graphId,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -142,7 +144,7 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     {
                         Source = controlSystem.Id,
                         Target = component.Id,
-                        EdgeType = "controls",
+                        EdgeType = "Controls",
                         GraphId = graphId,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -161,7 +163,7 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     {
                         Source = furnace.Id,
                         Target = boiler.Id,
-                        EdgeType = "heats",
+                        EdgeType = "Heats",
                         GraphId = graphId,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -183,7 +185,7 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     {
                         Source = boiler.Id,
                         Target = nextComponent.Id,
-                        EdgeType = "flow_to",
+                        EdgeType = "FlowTo",
                         GraphId = graphId,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -273,7 +275,7 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                 {
                     Source = currentNode.Id,
                     Target = nextNode.Id,
-                    EdgeType = "flow_to",
+                    EdgeType = "FlowTo",
                     GraphId = graphId,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -292,18 +294,18 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
         {
             // Return an appropriate connection type based on the source and target component types
             if (sourceType == "ControlSystem")
-                return "controls";
+                return "Controls";
             if (sourceType == "Sensor")
-                return "monitors";
+                return "Monitors";
             if (sourceType == "Furnace" && (targetType == "Boiler" || targetType == "HeatExchanger"))
-                return "heats";
+                return "Heats";
             if (sourceType == "Pump")
-                return "pumps_to";
+                return "PumpsTo";
             if (sourceType == "Valve")
-                return "regulates_flow_to";
+                return "RegulatesFlowTo";
 
             // Default connection type
-            return "connected_to";
+            return "ConnectedTo";
         }
 
         private string GetComponentName(string componentType, int count)

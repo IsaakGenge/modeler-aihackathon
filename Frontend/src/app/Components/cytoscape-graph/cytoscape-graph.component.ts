@@ -2,10 +2,12 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import cytoscape from 'cytoscape';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Observable, Subject, combineLatest } from 'rxjs';
+import { takeUntil, startWith } from 'rxjs/operators';
 import { NodeType } from '../../Models/node-type.model';
-import { NODE_VISUAL_SETTINGS } from '../../Models/node-visual.model';
+import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
+import { TypesService } from '../../Services/Types/types.service';
+
 
 // Define default layout options that can be used throughout the application
 export const DEFAULT_LAYOUT_OPTIONS = {
@@ -73,11 +75,65 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
   private cy: any;
   private destroy$ = new Subject<void>();
+  private nodeVisualSettings: Record<string, NodeVisualSetting> = {};
+  private edgeVisualSettings: Record<string, EdgeVisualSetting> = {}
 
+  // Default node visual setting for fallback
+  private defaultNodeVisualSetting: NodeVisualSetting = {
+    shape: 'ellipse',
+    color: '#8A2BE2' // BlueViolet color
+  };
   // Default node color for fallback
   private defaultNodeColor = '#8A2BE2'; // BlueViolet color
 
+  private defaultEdgeVisualSetting: EdgeVisualSetting = {
+    lineColor: '#757575',  // Grey
+    lineStyle: 'solid',
+    width: '1',
+    targetArrowShape: 'triangle',
+    curveStyle: 'bezier',
+    lineOpacity: '0.8'
+  };
+
+  constructor(private typesService: TypesService) {
+    // Subscribe to node visual settings
+    this.typesService.nodeVisualSettings$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(settings => {
+        this.nodeVisualSettings = settings;
+        // Update cytoscape styles if the instance exists
+        if (this.cy) {
+          this.updateCytoscapeStyles();
+        }
+      });
+
+    // Subscribe to edge visual settings
+    this.typesService.edgeVisualSettings$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(settings => {
+        this.edgeVisualSettings = settings;
+        // Update cytoscape styles if the instance exists
+        if (this.cy) {
+          this.updateCytoscapeStyles();
+        }
+      });
+  }
+
+  private updateCytoscapeStyles(): void {
+    if (!this.cy) return;
+
+    this.isDarkMode$.pipe(
+      takeUntil(this.destroy$),
+      startWith(false) // Start with light mode as default
+    ).subscribe(isDark => {
+      const styles = this.getGraphStyles(isDark);
+      this.cy.style(styles);
+    });
+  }
+
   ngOnInit(): void {
+    // Load node types to ensure we have the visual settings
+    this.typesService.loadNodeTypes();
   }
 
   ngAfterViewInit(): void {
@@ -215,6 +271,36 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       'font-weight': 'bold'
     };
 
+    // Get all node type names from the available settings
+    const nodeTypeNames = Object.keys(this.nodeVisualSettings);
+
+    // Create node type-specific styles using the visual settings from the service
+    const nodeTypeStyles = nodeTypeNames.map(typeName => ({
+      selector: `node[nodeType="${typeName}"]`,
+      style: {
+        'background-color': this.nodeVisualSettings[typeName]?.color || this.defaultNodeVisualSetting.color,
+        'text-outline-color': this.nodeVisualSettings[typeName]?.color || this.defaultNodeVisualSetting.color,
+        'shape': this.nodeVisualSettings[typeName]?.shape || this.defaultNodeVisualSetting.shape
+      }
+    }));
+
+    // Get all edge type names from the available settings
+    const edgeTypeNames = Object.keys(this.edgeVisualSettings);
+
+    // Create edge type-specific styles using the visual settings from the service
+    const edgeTypeStyles = edgeTypeNames.map(typeName => ({
+      selector: `edge[edgeType="${typeName}"]`,
+      style: {
+        'line-color': this.edgeVisualSettings[typeName]?.lineColor || this.defaultEdgeVisualSetting.lineColor,
+        'line-style': this.edgeVisualSettings[typeName]?.lineStyle || this.defaultEdgeVisualSetting.lineStyle,
+        'width': this.edgeVisualSettings[typeName]?.width || this.defaultEdgeVisualSetting.width,
+        'target-arrow-shape': this.edgeVisualSettings[typeName]?.targetArrowShape || this.defaultEdgeVisualSetting.targetArrowShape,
+        'curve-style': this.edgeVisualSettings[typeName]?.curveStyle || this.defaultEdgeVisualSetting.curveStyle,
+        'opacity': this.edgeVisualSettings[typeName]?.lineOpacity || this.defaultEdgeVisualSetting.lineOpacity,
+        'target-arrow-color': this.edgeVisualSettings[typeName]?.lineColor || this.defaultEdgeVisualSetting.lineColor
+      }
+    }));
+
     // Return the complete style array
     return [
       {
@@ -227,18 +313,30 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         }
       },
       // Add specific styles for each node type
-      ...Object.values(NodeType).map(type => ({
-        selector: `node[nodeType="${type}"]`,
-        style: {
-          'background-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
-          'text-outline-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
-          'shape': NODE_VISUAL_SETTINGS[type as NodeType]?.shape || 'ellipse'
-        }
-      })),
+      ...nodeTypeStyles,
       {
         selector: 'edge',
-        style: baseEdgeStyles
+        style: {
+          // Default edge styles
+          'line-color': isDark ? '#6E6E6E' : '#9E9E9E',
+          'target-arrow-color': isDark ? '#6E6E6E' : '#9E9E9E',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'label': 'data(label)',
+          'font-size': 12,
+          'text-rotation': 'autorotate',
+          'color': isDark ? '#FFFFFF' : '#000000',
+          'text-background-color': isDark ? '#333333' : '#F5F5F5',
+          'text-background-opacity': 1,
+          'text-background-padding': 3,
+          'text-background-shape': 'roundrectangle',
+          'text-outline-color': isDark ? '#000000' : '#FFFFFF',
+          'text-outline-width': 1,
+          'font-weight': 'bold'
+        }
       },
+      // Add specific styles for each edge type
+      ...edgeTypeStyles,
       {
         selector: ':selected',
         style: selectedStyles
@@ -284,7 +382,8 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         target: String(edge.target),
         sourceLabel: nodeMap.get(edge.source),
         targetLabel: nodeMap.get(edge.target),
-        label: edge.edgeType || `${nodeMap.get(edge.source)} → ${nodeMap.get(edge.target)}`
+        label: edge.edgeType || `${nodeMap.get(edge.source)} → ${nodeMap.get(edge.target)}`,
+        edgeType: edge.edgeType  
       }
     }));
 
