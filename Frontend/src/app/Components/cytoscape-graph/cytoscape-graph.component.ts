@@ -62,6 +62,10 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   // New input for initial zoom level
   @Input() initialZoom: number = 1.5;
 
+  // Add this with your other @Input properties
+  @Input() wheelSensitivity: number = 0.8; // Increased from 0.3 for more aggressive zooming
+
+
   @Output() nodeClicked = new EventEmitter<any>();
   @Output() edgeClicked = new EventEmitter<any>();
   @Output() layoutChanged = new EventEmitter<string>();
@@ -167,77 +171,87 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     this.layoutChanged.emit(layoutType);
   }
 
+  private getGraphStyles(isDark: boolean): any[] {
+    // Base node styles that apply to all nodes
+    const baseNodeStyles = {
+      'label': 'data(label)',
+      'text-valign': 'center',
+      'text-halign': 'center',
+      'color': '#fff',
+      'width': 60,
+      'height': 60,
+      'font-size': 14,
+      'text-outline-width': 3,
+      'font-weight': 'bold',
+      'text-wrap': 'ellipsis'
+    };
+
+    // Edge styles that apply to all edges
+    const baseEdgeStyles = {
+      'width': 3,
+      'line-color': isDark ? '#6E6E6E' : '#9E9E9E',
+      'target-arrow-color': isDark ? '#6E6E6E' : '#9E9E9E',
+      'target-arrow-shape': 'triangle',
+      'curve-style': 'bezier',
+      'label': 'data(label)',
+      'font-size': 12,
+      'text-rotation': 'autorotate',
+      'color': isDark ? '#FFFFFF' : '#000000',
+      'text-background-color': isDark ? '#333333' : '#F5F5F5',
+      'text-background-opacity': 1,
+      'text-background-padding': 3,
+      'text-background-shape': 'roundrectangle',
+      'text-outline-color': isDark ? '#000000' : '#FFFFFF',
+      'text-outline-width': 1,
+      'font-weight': 'bold'
+    };
+
+    // Selected element styles
+    const selectedStyles = {
+      'background-color': '#2196F3',
+      'line-color': '#2196F3',
+      'target-arrow-color': '#2196F3',
+      'text-outline-color': '#2196F3',
+      'font-weight': 'bold'
+    };
+
+    // Return the complete style array
+    return [
+      {
+        selector: 'node',
+        style: {
+          ...baseNodeStyles,
+          'background-color': this.defaultNodeColor,
+          'text-outline-color': this.defaultNodeColor,
+          'shape': 'ellipse'
+        }
+      },
+      // Add specific styles for each node type
+      ...Object.values(NodeType).map(type => ({
+        selector: `node[nodeType="${type}"]`,
+        style: {
+          'background-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
+          'text-outline-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
+          'shape': NODE_VISUAL_SETTINGS[type as NodeType]?.shape || 'ellipse'
+        }
+      })),
+      {
+        selector: 'edge',
+        style: baseEdgeStyles
+      },
+      {
+        selector: ':selected',
+        style: selectedStyles
+      }
+    ];
+  }
+
   private initializeCytoscape(): void {
     // Add safety check for container
     if (!this.cyContainer?.nativeElement) {
       console.warn('Cytoscape container is not available');
       return;
     }
-
-    this.isDarkMode$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
-      const baseNodeStyles = {
-        'label': 'data(label)',
-        'text-valign': 'center',
-        'text-halign': 'center',
-        'color': '#fff',
-        'width': 60,
-        'height': 60,
-        'font-size': 12,
-        'text-outline-width': 2
-      };
-
-      // Base style for all nodes
-      const styles = [
-        {
-          selector: 'node',
-          style: {
-            ...baseNodeStyles,
-            'background-color': this.defaultNodeColor,
-            'text-outline-color': this.defaultNodeColor,
-            'shape': 'ellipse' // Default shape
-          }
-        },
-        // Add specific styles for each node type
-        ...Object.values(NodeType).map(type => ({
-          selector: `node[nodeType="${type}"]`,
-          style: {
-            'background-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
-            'text-outline-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
-            'shape': NODE_VISUAL_SETTINGS[type as NodeType]?.shape || 'ellipse'
-          }
-        })),
-        {
-          selector: 'edge',
-          style: {
-            'width': 3,
-            'line-color': isDark ? '#6E6E6E' : '#9E9E9E',
-            'target-arrow-color': isDark ? '#6E6E6E' : '#9E9E9E',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'label': 'data(label)',
-            'font-size': 10,
-            'text-rotation': 'autorotate',
-            'color': isDark ? '#E0E0E0' : '#555',
-            'text-background-color': isDark ? '#424242' : '#fff',
-            'text-background-opacity': 0.9
-          }
-        },
-        {
-          selector: ':selected',
-          style: {
-            'background-color': '#2196F3',
-            'line-color': '#2196F3',
-            'target-arrow-color': '#2196F3',
-            'text-outline-color': '#2196F3',
-            'font-weight': isDark ? 'bold' : 'normal'
-          }
-        }
-      ];
-
-      if (this.cy) {
-        this.cy.style(styles);
-      }
-    });
 
     // Create a node map for lookup (this will help with edge references)
     const nodeMap = new Map();
@@ -280,6 +294,9 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     }
 
     try {
+      // Initialize with light mode styles (will be updated when isDarkMode$ emits)
+      const initialStyles = this.getGraphStyles(false);
+
       // Create new Cytoscape instance with the data
       this.cy = cytoscape({
         container: this.cyContainer.nativeElement,
@@ -287,61 +304,17 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
           nodes: cytoscapeNodes,
           edges: cytoscapeEdges
         },
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'background-color': this.defaultNodeColor,
-              'label': 'data(label)',
-              'text-valign': 'center',
-              'text-halign': 'center',
-              'color': '#fff',
-              'width': 60,
-              'height': 60,
-              'font-size': 12,
-              'text-outline-color': this.defaultNodeColor,
-              'text-outline-width': 2,
-              'shape': 'ellipse' // Default shape
-            }
-          },
-          // Add specific styles for each node type
-          ...Object.values(NodeType).map(type => ({
-            selector: `node[nodeType="${type}"]`,
-            style: {
-              'background-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
-              'text-outline-color': NODE_VISUAL_SETTINGS[type as NodeType]?.color || this.defaultNodeColor,
-              'shape': NODE_VISUAL_SETTINGS[type as NodeType]?.shape || 'ellipse'
-            }
-          })),
-          {
-            selector: 'edge',
-            style: {
-              'width': 3,
-              'line-color': '#9E9E9E',
-              'target-arrow-color': '#9E9E9E',
-              'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier',
-              'label': 'data(label)',
-              'font-size': 10,
-              'text-rotation': 'autorotate',
-              'color': '#555',
-              'text-background-color': '#fff',
-              'text-background-opacity': 0.8
-            }
-          },
-          {
-            selector: ':selected',
-            style: {
-              'background-color': '#2196F3',
-              'line-color': '#2196F3',
-              'target-arrow-color': '#2196F3',
-              'text-outline-color': '#2196F3'
-            }
-          }
-        ],
-        // Use the configurable layout
+        style: initialStyles,
         layout: this.layoutConfig,
-        wheelSensitivity: 0.3
+        wheelSensitivity: this.wheelSensitivity
+      });
+
+      // Subscribe to dark mode changes to update styles
+      this.isDarkMode$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
+        const styles = this.getGraphStyles(isDark);
+        if (this.cy) {
+          this.cy.style(styles);
+        }
       });
 
       // Run the layout to ensure everything is positioned properly
@@ -401,4 +374,5 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       console.error('Error initializing Cytoscape:', error);
     }
   }
+
 }
