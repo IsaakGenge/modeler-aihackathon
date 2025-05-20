@@ -3,7 +3,7 @@
   <div class="card mb-4">
     <div class="card-body">
       <div class="graph-picker-row">
-        <app-graph-picker></app-graph-picker>       
+        <app-graph-picker></app-graph-picker>
       </div>
 
       <!-- Warning when no graph is selected -->
@@ -17,18 +17,31 @@
   </div>
 
   <div class="row g-4 mb-4" *ngIf="hasSelectedGraph">
+    <!-- Create Node Component with collapse functionality -->
     <div class="col-md-6 d-flex">
       <div class="card w-100">
-        <div class="card-body">
-          <!-- Create Node Component -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Create New Node</h5>
+          <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleNodePanel()">
+            <i class="bi" [ngClass]="nodeCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+          </button>
+        </div>
+        <div class="card-body" [class.d-none]="nodeCollapsed">
           <app-create-node></app-create-node>
         </div>
       </div>
     </div>
+
+    <!-- Create Edge Component with collapse functionality -->
     <div class="col-md-6 d-flex">
       <div class="card w-100">
-        <div class="card-body">
-          <!-- Create Edge Component -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Create New Connection</h5>
+          <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleEdgePanel()">
+            <i class="bi" [ngClass]="edgeCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+          </button>
+        </div>
+        <div class="card-body" [class.d-none]="edgeCollapsed">
           <app-create-edge></app-create-edge>
         </div>
       </div>

@@ -6,3 +6,32 @@
 app-graph-picker {
   flex-grow: 1;
 }/* This file can be empty since we're using Bootstrap classes */
+
+/* Add smooth transition for collapsing/expanding */
+.card-body {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease;
+}
+
+  .card-body.d-none {
+    display: block !important;
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+  }
+
+.collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.card-header {
+  background-color: var(--bg-tertiary);
+  transition: background-color 0.3s ease;
+}
+

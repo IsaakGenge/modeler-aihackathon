@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CreateNodeComponent } from '../create-node/create-node.component';
@@ -26,9 +26,14 @@ import { GraphService } from '../../Services/Graph/graph.service';
 })
 export class ViewBasicComponent implements OnInit, OnDestroy {
   hasSelectedGraph: boolean = false;
+  nodeCollapsed: boolean = true; // Collapsed by default
+  edgeCollapsed: boolean = true; // Collapsed by default
   private subscription: Subscription = new Subscription();
 
-  constructor(private graphService: GraphService) { }
+  constructor(
+    private graphService: GraphService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) { }
 
   ngOnInit(): void {
     // Subscribe to the current graph to show/hide components
@@ -37,11 +42,43 @@ export class ViewBasicComponent implements OnInit, OnDestroy {
         this.hasSelectedGraph = !!graph;
       })
     );
+
+    // Load saved collapse states if in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      const savedNodeState = localStorage.getItem('nodeCollapsed');
+      const savedEdgeState = localStorage.getItem('edgeCollapsed');
+
+      // Only update if saved state exists, otherwise use the default (collapsed)
+      if (savedNodeState !== null) {
+        this.nodeCollapsed = savedNodeState === 'true';
+      }
+
+      if (savedEdgeState !== null) {
+        this.edgeCollapsed = savedEdgeState === 'true';
+      }
+    }
   }
 
   ngOnDestroy(): void {
     // Clean up subscriptions
     this.subscription.unsubscribe();
   }
-}
 
+  toggleNodePanel(): void {
+    this.nodeCollapsed = !this.nodeCollapsed;
+
+    // Save state to localStorage if in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('nodeCollapsed', this.nodeCollapsed.toString());
+    }
+  }
+
+  toggleEdgePanel(): void {
+    this.edgeCollapsed = !this.edgeCollapsed;
+
+    // Save state to localStorage if in browser environment
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('edgeCollapsed', this.edgeCollapsed.toString());
+    }
+  }
+}

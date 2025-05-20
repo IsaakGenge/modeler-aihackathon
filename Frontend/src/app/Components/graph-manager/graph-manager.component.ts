@@ -2,10 +2,11 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { GraphService, Graph, CreateGraphDto } from '../../Services/Graph/graph.service';
+import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Graph, CreateGraphDto } from '../../Models/graph.model'
 
 @Component({
   selector: 'app-graph-manager',
