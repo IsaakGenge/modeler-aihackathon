@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NodeService } from '../../Services/Node/node.service';
+import { GraphService } from '../../Services/Graph/graph.service';
 import { Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -20,20 +21,38 @@ export class ViewNodesComponent implements OnInit, AfterViewInit, OnDestroy {
   warning: string | null = null;
   private nodeCreatedSubscription: Subscription = new Subscription();
   private nodeDeletedSubscription: Subscription = new Subscription();
+  private graphChangeSubscription: Subscription = new Subscription();
+  private currentGraphId: string | null = null;
 
-  constructor(private nodeService: NodeService) { }
+  constructor(
+    private nodeService: NodeService,
+    private graphService: GraphService
+  ) { }
 
   ngOnInit(): void {
-    this.getNodes();
+    // Subscribe to graph changes
+    this.graphChangeSubscription = this.graphService.currentGraph$.subscribe(graph => {
+      this.currentGraphId = graph?.id || null;
+      if (this.currentGraphId) {
+        this.getNodes(this.currentGraphId);
+      } else {
+        // Clear nodes if no graph is selected
+        this.nodeData = [];
+      }
+    });
 
     // Subscribe to node creation events
     this.nodeCreatedSubscription = this.nodeService.nodeCreated$.subscribe(() => {
-      this.getNodes();
+      if (this.currentGraphId) {
+        this.getNodes(this.currentGraphId);
+      }
     });
 
     // Subscribe to node deletion events
     this.nodeDeletedSubscription = this.nodeService.nodeDeleted$.subscribe(() => {
-      this.getNodes();
+      if (this.currentGraphId) {
+        this.getNodes(this.currentGraphId);
+      }
     });
   }
 
@@ -42,17 +61,18 @@ export class ViewNodesComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Clean up subscription to prevent memory leaks
+    // Clean up subscriptions to prevent memory leaks
     this.nodeCreatedSubscription.unsubscribe();
     this.nodeDeletedSubscription.unsubscribe();
+    this.graphChangeSubscription.unsubscribe();
   }
 
-  getNodes(): void {
+  getNodes(graphId?: string): void {
     this.loading = true;
     this.error = null;
     this.warning = null;
 
-    this.nodeService.getNodes().subscribe({
+    this.nodeService.getNodes(graphId).subscribe({
       next: (data) => {
         this.nodeData = data;
         this.loading = false;
