@@ -18,9 +18,17 @@
         /// Type or category of the edge
         /// </summary>
         public string EdgeType { get; set; } = "default";
+
+        /// <summary>
+        /// Unique identifier for the graph
+        /// </summary>
+        public string GraphId { get; set; }
+
         /// <summary>
         /// When the edge was created
         /// </summary>
+
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

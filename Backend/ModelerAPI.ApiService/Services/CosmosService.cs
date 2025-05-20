@@ -1,38 +1,67 @@
 ﻿using Gremlin.Net.Driver;
+using Gremlin.Net.Driver.Exceptions;
 using Gremlin.Net.Structure.IO.GraphSON;
 using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
-using ModelerAPI.ApiService.Configuration;
-using Microsoft.Extensions.Options;
+using System.Collections.ObjectModel;
 
 namespace ModelerAPI.ApiService.Services
 {
     public class CosmosService : ICosmosService
     {
         private readonly CosmosClient CosmosClient;
-        private readonly Container Container;
+        private readonly ILogger<CosmosService> Logger;
+        private readonly string DatabaseName;
+        private readonly string ContianerName;
         private readonly GremlinClient GremlinClient;
-        private readonly CosmosDbSettings _settings;
 
-        public CosmosService(IOptions<CosmosDbSettings> cosmosSettings)
+        public CosmosService(IConfiguration configuration, ILogger<CosmosService> logger)
         {
-            _settings = cosmosSettings.Value;
+            // Initialize existing properties
+            Logger = logger;
+            var cosmosConnectionString = configuration["CosmosDB:ConnectionString"];
+            DatabaseName = configuration["CosmosDB:DatabaseName"];
+            ContianerName = configuration["CosmosDB:ContainerName"];
 
-            // Cosmos DB Emulator connection using configuration
-            CosmosClient = new CosmosClient(_settings.EndpointUrl, _settings.PrimaryKey);
-            Container = CosmosClient.GetContainer(_settings.DatabaseName, _settings.ContainerName);
+            // Initialize CosmosClient
+            CosmosClient = new CosmosClient(cosmosConnectionString);
 
-            // Gremlin API connection (Cosmos DB Gremlin endpoint) using configuration
-            var server = new GremlinServer(
-                hostname: _settings.GremlinHostname,
-                port: _settings.GremlinPort,
-                username: _settings.GremlinUsername,
-                password: _settings.GremlinPassword);
+
+            var gremlinHostname = configuration["CosmosDB:GremlinHostname"];
+            var gremlinPort = int.Parse(configuration["CosmosDB:GremlinPort"] ?? "443");           
+            var gremlinPassword = configuration["CosmosDB:GremlinPassword"];
+            var gremlinUsername = configuration["CosmosDB:GremlinUsername"];
+
+            var server = new GremlinServer(hostname: gremlinHostname,port: gremlinPort,username: gremlinUsername,password: gremlinPassword);
 
             var messageSerializer = new GraphSON2MessageSerializer();
             GremlinClient = new GremlinClient(server, messageSerializer);
+
+            Logger.LogInformation("GremlinClient initialized successfully.");
         }
 
+        // Helper method to execute Gremlin queries safely
+        private async Task<IReadOnlyCollection<dynamic>> ExecuteGremlinQueryAsync(string query)
+        {
+            try
+            {
+                Logger.LogDebug("Executing Gremlin query: {Query}", query);
+                var result = await GremlinClient.SubmitAsync<dynamic>(query);
+                return result;
+            }
+            catch (ResponseException ex)
+            {
+                Logger.LogError(ex, "Gremlin query execution failed: {Message}", ex.Message);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Unexpected error executing Gremlin query: {Message}", ex.Message);
+                throw;
+            }
+        }
+
+        #region Existing Node and Edge Methods
         public async Task<List<Node>> GetNodes()
         {
             // Query all nodes regardless of specific label
@@ -198,7 +227,7 @@ namespace ModelerAPI.ApiService.Services
             try
             {
                 // Delete the node using Gremlin query
-                var gremlinQuery = $"g.V('{id}').drop()";
+                string gremlinQuery = $"g.V('{id}').drop()";
                 await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
                 return true;
             }
@@ -224,7 +253,153 @@ namespace ModelerAPI.ApiService.Services
                 return false;
             }
         }
+        #endregion
 
+        #region Generic Cosmos DB Operations
 
+        /// <summary>
+        /// Retrieves an item from Cosmos DB by its ID and partition key
+        /// </summary>
+        /// <typeparam name="T">The type of item to retrieve</typeparam>
+        /// <param name="databaseName">The name of the database</param>
+        /// <param name="containerName">The name of the container</param>
+        /// <param name="id">The unique identifier of the item</param>
+        /// <param name="partitionKey">The partition key value</param>
+        /// <returns>The retrieved item or null if not found</returns>
+        public async Task<T> GetItemAsync<T>(string databaseName, string containerName, string id, string partitionKey)
+        {
+            try
+            {
+                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var response = await container.ReadItemAsync<T>(id, new PartitionKey(partitionKey));
+                return response.Resource;
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Logger.LogWarning("Item with id {Id} not found in container {Container}", id, containerName);
+                return default;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error retrieving item with id {Id} from container {Container}", id, containerName);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new item in Cosmos DB
+        /// </summary>
+        /// <typeparam name="T">The type of item to create</typeparam>
+        /// <param name="databaseName">The name of the database</param>
+        /// <param name="containerName">The name of the container</param>
+        /// <param name="item">The item to create</param>
+        /// <param name="partitionKey">The partition key value</param>
+        /// <returns>The created item</returns>
+        public async Task<T> CreateItemAsync<T>(string databaseName, string containerName, T item, string partitionKey)
+        {
+            try
+            {
+                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var response = await container.CreateItemAsync(item, new PartitionKey(partitionKey));
+                return response.Resource;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error creating item in container {Container}", containerName);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Updates an existing item or inserts it if it doesn't exist in Cosmos DB
+        /// </summary>
+        /// <typeparam name="T">The type of item to upsert</typeparam>
+        /// <param name="databaseName">The name of the database</param>
+        /// <param name="containerName">The name of the container</param>
+        /// <param name="item">The item to upsert</param>
+        /// <param name="partitionKey">The partition key value</param>
+        /// <returns>The upserted item</returns>
+        public async Task<T> UpsertItemAsync<T>(string databaseName, string containerName, T item, string partitionKey)
+        {
+            try
+            {
+                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var response = await container.UpsertItemAsync(item, new PartitionKey(partitionKey));
+                return response.Resource;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error upserting item in container {Container}", containerName);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes an item from Cosmos DB by its ID and partition key
+        /// </summary>
+        /// <param name="databaseName">The name of the database</param>
+        /// <param name="containerName">The name of the container</param>
+        /// <param name="id">The unique identifier of the item</param>
+        /// <param name="partitionKey">The partition key value</param>
+        /// <returns>True if deletion was successful, otherwise false</returns>
+        public async Task<bool> DeleteItemAsync(string databaseName, string containerName, string id, string partitionKey)
+        {
+            try
+            {
+                var container = CosmosClient.GetContainer(databaseName, containerName);
+                await container.DeleteItemAsync<dynamic>(id, new PartitionKey(partitionKey));
+                return true;
+            }
+            catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Logger.LogWarning("Item with id {Id} not found for deletion in container {Container}", id, containerName);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error deleting item with id {Id} from container {Container}", id, containerName);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Executes a query against a Cosmos DB container
+        /// </summary>
+        /// <typeparam name="T">The type of items to retrieve</typeparam>
+        /// <param name="databaseName">The name of the database</param>
+        /// <param name="containerName">The name of the container</param>
+        /// <param name="queryString">The SQL query string</param>
+        /// <returns>An enumerable collection of items matching the query</returns>
+        public async Task<IEnumerable<T>> QueryItemsAsync<T>(string databaseName, string containerName, string queryString)
+        {
+            try
+            {
+                var container = CosmosClient.GetContainer(databaseName, containerName);
+                var query = container.GetItemQueryIterator<T>(new QueryDefinition(queryString));
+
+                var results = new List<T>();
+                while (query.HasMoreResults)
+                {
+                    var response = await query.ReadNextAsync();
+                    results.AddRange(response);
+                }
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error executing query in container {Container}: {Query}", containerName, queryString);
+                throw;
+            }
+        }
+
+        #endregion
+
+        // Implement IDisposable pattern to properly dispose of the GremlinClient
+        public void Dispose()
+        {
+            GremlinClient?.Dispose();
+            CosmosClient?.Dispose();
+        }
     }
 }

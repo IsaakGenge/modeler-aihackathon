@@ -21,10 +21,16 @@ namespace ModelerAPI.ApiService.Models
         /// Type or category of the node
         /// </summary>
         public string NodeType { get; set; } = "default";
-        
+
+        /// <summary>
+        /// Unique identifier for the graph
+        /// </summary>
+        public string GraphId { get; set; } 
+
         /// <summary>
         /// When the node was created
         /// </summary>
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }
