@@ -14,6 +14,8 @@ import { CreateNodeComponent } from '../create-node/create-node.component';
 import { CreateEdgeComponent } from '../create-edge/create-edge.component';
 import { GraphPickerComponent } from '../graph-picker/graph-picker.component';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-view-fancy',
@@ -30,7 +32,8 @@ import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
   styleUrl: './view-fancy.component.css'
 })
 export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
-  @ViewChild('cyContainer', { static: true }) private cyContainer!: ElementRef;
+  private destroy$ = new Subject<void>(); 
+  @ViewChild('cyContainer') private cyContainer!: ElementRef;
   private cy: any;
   loading: boolean = false;
   error: string | null = null;
@@ -51,23 +54,31 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.setupEventSubscriptions();
-
-    // Check if a graph is already selected from localStorage
-    this.subscriptions.add(
-      this.graphService.currentGraph$.subscribe(graph => {
+    this.graphService.currentGraph$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(graph => {
         this.hasSelectedGraph = !!graph;
         if (this.hasSelectedGraph) {
-          this.loadGraphData();
+          console.log('Graph selected in fancy view:', graph);
+          // Add setTimeout to ensure DOM is updated
+          setTimeout(() => {
+            this.loadGraphData();
+          });
         } else {
-          // Clear the graph view if no graph is selected
           if (this.cy) {
             this.cy.elements().remove();
+            console.log('Graph view cleared - no graph selected');
           }
+          this.warning = 'Please select a graph to view its data.';
         }
-      })
-    );
+      });
+
+    this.setupEventSubscriptions();
   }
+
+
+  
+
 
   // Separate method to set up event subscriptions for better organization
   private setupEventSubscriptions(): void {
@@ -109,7 +120,11 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    // Clean up all subscriptions to prevent memory leaks
+    // Trigger the destroy subject
+    this.destroy$.next();
+    this.destroy$.complete();
+
+    // Clean up all subscriptions
     this.subscriptions.unsubscribe();
 
     // Clean up cytoscape instance
@@ -170,80 +185,145 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initializeCytoscape(nodes: any[], edges: any[]): void {
-    console.log('Initializing cytoscape with nodes:', nodes.length, 'edges:', edges.length);
+    console.log('Initializing cytoscape with nodes:', nodes, 'edges:', edges);
 
-    // Convert API data to Cytoscape format
+    // Add safety check for container
+    if (!this.cyContainer?.nativeElement) {
+      console.warn('Cytoscape container is not available');
+      return;
+    }
+
+    // Create a node map for lookup (this will help with edge references)
+    const nodeMap = new Map();
+    nodes.forEach(node => {
+      nodeMap.set(node.id, node.name || 'Unnamed Node');
+    });
+
+    // Convert API data to Cytoscape format with proper string IDs
     const cytoscapeNodes = nodes.map(node => ({
       data: {
-        id: node.id,
+        id: String(node.id),
         label: node.name || 'Unnamed Node'
       }
     }));
 
-    const cytoscapeEdges = edges.map(edge => ({
+    // Filter and validate edges (ensure both source and target exist)
+    const validEdges = edges.filter(edge => {
+      return nodeMap.has(edge.source) && nodeMap.has(edge.target);
+    });
+
+    if (edges.length > validEdges.length) {
+      console.warn(`Filtered out ${edges.length - validEdges.length} edges with invalid references`);
+    }
+
+    const cytoscapeEdges = validEdges.map(edge => ({
       data: {
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        label: edge.edgeType || this.generateEdgeLabel(edge.source, edge.target)
+        id: String(edge.id),
+        source: String(edge.source),
+        target: String(edge.target),
+        sourceLabel: nodeMap.get(edge.source),
+        targetLabel: nodeMap.get(edge.target),
+        label: edge.edgeType || `${nodeMap.get(edge.source)} → ${nodeMap.get(edge.target)}`
       }
     }));
 
-    // If cy already exists, destroy it first to avoid memory leaks
+    // If cy already exists, destroy it first
     if (this.cy) {
       this.cy.destroy();
     }
 
-    // Create new Cytoscape instance with the data
-    this.cy = cytoscape({
-      container: this.cyContainer.nativeElement,
-      elements: [...cytoscapeNodes, ...cytoscapeEdges],
-      style: [
-        {
-          selector: 'node',
-          style: {
-            'background-color': '#4CAF50',
-            'label': 'data(label)',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'color': 'white',
-            'width': 60,
-            'height': 60,
-            'font-size': 12
-          }
+    try {
+      // Create new Cytoscape instance with the data
+      this.cy = cytoscape({
+        container: this.cyContainer.nativeElement,
+        elements: {
+          nodes: cytoscapeNodes,
+          edges: cytoscapeEdges
         },
-        {
-          selector: 'edge',
-          style: {
-            'width': 3,
-            'line-color': '#9E9E9E',
-            'target-arrow-color': '#9E9E9E',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'label': 'data(label)',
-            'font-size': 10,
-            'color': '#555',
-            'text-background-color': '#fff',
-            'text-background-opacity': 0.8
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'background-color': '#4CAF50',
+              'label': 'data(label)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'color': '#fff',
+              'width': 60,
+              'height': 60,
+              'font-size': 12,
+              'text-outline-color': '#4CAF50',
+              'text-outline-width': 2
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 3,
+              'line-color': '#9E9E9E',
+              'target-arrow-color': '#9E9E9E',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'label': 'data(label)',
+              'font-size': 10,
+              'text-rotation': 'autorotate',
+              'color': '#555',
+              'text-background-color': '#fff',
+              'text-background-opacity': 0.8
+              
+            }
+          },
+          {
+            selector: ':selected',
+            style: {
+              'background-color': '#2196F3',
+              'line-color': '#2196F3',
+              'target-arrow-color': '#2196F3',
+              'text-outline-color': '#2196F3'
+            }
           }
+        ],
+        layout: {
+          name: 'circle',
+          fit: true,
+          padding: 30,
+          avoidOverlap: true
+        },
+        wheelSensitivity: 0.3
+      });
+
+      // Run the layout to ensure everything is positioned properly
+      setTimeout(() => {
+        if (this.cy && this.cy.elements().length > 0) {
+          this.cy.layout({
+            name: 'circle',
+            animate: true,
+            animationDuration: 500,
+            fit: true,
+            padding: 50
+          }).run();
         }
-      ],
-      layout: {
-        name: 'circle'
+      }, 100);
+
+      // Add event handlers
+      this.cy.on('tap', 'node', (event: any) => {
+        const node = event.target;
+        console.log('Node clicked:', node.id(), node.data('label'));
+      });
+
+      // Log success or empty state
+      if (this.cy.elements().length === 0) {
+        console.warn('Graph visualization is empty - no elements to display');
+        this.warning = 'No data to display. Try adding nodes and connections.';
+      } else {
+        console.log(`Graph visualization initialized with ${cytoscapeNodes.length} nodes and ${cytoscapeEdges.length} edges`);
       }
-    });
-
-    this.cy.on('tap', 'node', (event: any) => {
-      const node = event.target;
-      console.log('Node clicked:', node.id(), node.data('label'));
-      // You could highlight the node, show details in a sidebar, etc.
-    });
-
-    // If there are no elements, show an info message
-    if (cytoscapeNodes.length === 0 && cytoscapeEdges.length === 0) {
-      console.info('No nodes or edges found to display in the graph');
+    } catch (error) {
+      console.error('Error initializing Cytoscape:', error);
+      this.error = 'Failed to initialize graph visualization';
     }
   }
+
 
   // Helper method to generate a label for edges that don't have one
   private generateEdgeLabel(sourceId: string, targetId: string): string {
