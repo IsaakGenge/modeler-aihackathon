@@ -65,10 +65,13 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       const savedState = localStorage.getItem('toolsPanelCollapsed');
       this.toolsPanelCollapsed = savedState === 'true';
     }
+
     this.graphService.currentGraph$
       .pipe(takeUntil(this.destroy$))
       .subscribe(graph => {
         this.hasSelectedGraph = !!graph;
+        this.clearWarningState(); // Reset warning state when graph changes
+
         if (this.hasSelectedGraph) {
           console.log('Graph selected in fancy view:', graph);
           // Add setTimeout to ensure DOM is updated
@@ -153,6 +156,24 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subscriptions.unsubscribe();
   }
 
+  onGraphSelected(graphId: string | null): void {
+    // Clear warning state when a new graph is selected
+    this.warning = null;
+
+    if (!graphId) {
+      // Handle case when no graph is selected
+      this.warning = 'Please select a graph to view its data.';
+      this.graphNodes = [];
+      this.graphEdges = [];
+    }
+    // No need to call loadGraphData() here as it will be triggered via the subscription to currentGraph$
+  }
+
+  clearWarningState(): void {
+    this.warning = null;
+  }
+
+
   loadGraphData(): void {
     // Don't load data if no graph is selected
     if (!this.graphService.currentGraphId) {
@@ -162,7 +183,8 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.loading = true;
     this.error = null;
-    this.warning = null;
+    this.clearWarningState(); // Reset warning state before loading new data
+
 
     console.log('Loading graph data for GraphId:', this.graphService.currentGraphId);
 

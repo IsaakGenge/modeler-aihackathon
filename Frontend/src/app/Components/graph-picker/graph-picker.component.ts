@@ -23,6 +23,7 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
   isCollapsed = false; // Track collapsed state
 
   @Output() collapsedChange = new EventEmitter<boolean>();
+  @Output() graphSelected = new EventEmitter<string | null>();
 
   private subscriptions: Subscription = new Subscription();
 
@@ -118,6 +119,9 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
         next: (graph) => {
           console.log('Graph selected:', graph.name);
 
+          // Emit the graph selected event with the ID
+          this.graphSelected.emit(this.selectedGraphId);
+
           // Auto-collapse when a graph is selected and not already collapsed
           if (!this.isCollapsed) {
             this.toggleCollapse();
@@ -126,10 +130,14 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
         error: (err) => {
           this.error = 'Failed to select graph';
           console.error('Error selecting graph:', err);
+          // Emit null on error to indicate selection failed
+          this.graphSelected.emit(null);
         }
       });
     } else {
       this.graphService.setCurrentGraph(null);
+      // Explicitly emit null when no graph is selected
+      this.graphSelected.emit(null);
     }
   }
 

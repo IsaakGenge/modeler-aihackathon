@@ -14,7 +14,7 @@
     <div class="graph-container" [class.expanded]="toolsPanelCollapsed">
       <div class="graph-header">
         <div class="graph-picker-row">
-          <app-graph-picker></app-graph-picker>
+          <app-graph-picker (graphSelected)="onGraphSelected($event)"></app-graph-picker>
         </div>
       </div>
 
