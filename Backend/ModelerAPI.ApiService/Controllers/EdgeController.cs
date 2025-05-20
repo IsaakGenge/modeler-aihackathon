@@ -17,21 +17,37 @@ namespace ModelerAPI.ApiService.Controllers
 
         // GET: api/edge
         [HttpGet]
-        public async Task<IActionResult> GetEdges()
+        // GET: api/edge
+        [HttpGet]
+        public async Task<IActionResult> GetEdges([FromQuery] string graphId)
         {
             if (_cosmosService == null)
             {
                 return NotFound();
             }
 
-            var edges = await _cosmosService.GetEdges();
-            if (edges == null || !edges.Any())
+            try
             {
-                return NotFound();
-            }
+                // GraphId is optional but will be used for filtering if provided
+                var edges = await _cosmosService.GetEdges(graphId);
 
-            return Ok(edges);
+                if (edges == null || !edges.Any())
+                {
+                    if (!string.IsNullOrEmpty(graphId))
+                    {
+                        return NotFound($"No edges found for graph ID: {graphId}");
+                    }
+                    return NotFound("No edges found");
+                }
+
+                return Ok(edges);
+            }
+            catch (Exception ex)
+            {                
+                return StatusCode(500, "An error occurred while retrieving edges");
+            }
         }
+
 
         // POST: api/edge
         [HttpPost]

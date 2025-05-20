@@ -60,13 +60,49 @@ namespace ModelerAPI.ApiService.Services
                 throw;
             }
         }
+        /// <summary>
+        /// Sanitizes a string value to prevent Gremlin injection attacks by escaping single quotes
+        /// and removing potentially dangerous characters
+        /// </summary>
+        /// <param name="value">The input string to sanitize</param>
+        /// <returns>A sanitized string safe for use in Gremlin queries</returns>
+        private string SanitizeGremlinValue(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            // Escape single quotes by doubling them (this is standard SQL-like escaping)
+            string sanitized = value.Replace("'", "''");
+
+            // Remove any characters that could potentially break out of string context
+            // or otherwise manipulate the query structure
+            sanitized = sanitized
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Replace(";", "")  // Semicolons could be used to chain commands
+                .Replace("\\", ""); // Backslashes could be used for escaping
+
+            return sanitized;
+        }
+
 
         #region Existing Node and Edge Methods
-        public async Task<List<Node>> GetNodes()
+        public async Task<List<Node>> GetNodes(string graphId = null)
         {
-            // Query all nodes regardless of specific label
-            var gremlinQuery = "g.V()";
-            var result = await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
+            string gremlinQuery;
+
+            // If graphId is provided, filter by it using the pkey property
+            if (!string.IsNullOrEmpty(graphId))
+            {
+                gremlinQuery = $"g.V().has('pkey', '{SanitizeGremlinValue(graphId)}')";
+            }
+            else
+            {
+                // Otherwise, get all nodes
+                gremlinQuery = "g.V()";
+            }
+
+            var result = await ExecuteGremlinQueryAsync(gremlinQuery);
             var nodes = new List<Node>();
 
             foreach (var item in result)
@@ -78,6 +114,7 @@ namespace ModelerAPI.ApiService.Services
                     string name = "";
                     string nodeType = item["label"].ToString(); // Get the label as nodeType
                     DateTime createdAt = DateTime.UtcNow;
+                    string nodeGraphId = graphId ?? ""; // Default to empty if not provided
 
                     // Extract properties safely
                     if (item["properties"] != null)
@@ -108,6 +145,24 @@ namespace ModelerAPI.ApiService.Services
                             }
                         }
                         catch { /* Property doesn't exist */ }
+
+                        // Extract graphId if it wasn't provided as a parameter
+                        if (string.IsNullOrEmpty(graphId))
+                        {
+                            try
+                            {
+                                if (properties["graphId"] != null && properties["graphId"].Count > 0)
+                                {
+                                    nodeGraphId = properties["graphId"][0]["value"].ToString();
+                                }
+                                else if (properties["pkey"] != null && properties["pkey"].Count > 0)
+                                {
+                                    // Fall back to pkey if graphId is not explicitly stored
+                                    nodeGraphId = properties["pkey"][0]["value"].ToString();
+                                }
+                            }
+                            catch { /* Property doesn't exist */ }
+                        }
                     }
 
                     var node = new Node
@@ -115,7 +170,8 @@ namespace ModelerAPI.ApiService.Services
                         Id = id,
                         Name = name,
                         NodeType = nodeType,
-                        CreatedAt = createdAt
+                        CreatedAt = createdAt,
+                        GraphId = nodeGraphId
                     };
 
                     nodes.Add(node);
@@ -123,18 +179,29 @@ namespace ModelerAPI.ApiService.Services
                 catch (Exception ex)
                 {
                     // Log the exception and continue with the next item
-                    Console.WriteLine($"Error parsing node: {ex.Message}");
+                    Logger.LogError(ex, "Error parsing node: {Message}", ex.Message);
                 }
             }
 
             return nodes;
         }
 
-        public async Task<List<Edge>> GetEdges()
+        public async Task<List<Edge>> GetEdges(string graphId = null)
         {
-            // Query all edges regardless of specific label
-            var gremlinQuery = "g.E()";
-            var result = await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
+            string gremlinQuery;
+
+            // If graphId is provided, filter by it using the pkey property
+            if (!string.IsNullOrEmpty(graphId))
+            {
+                gremlinQuery = $"g.E().has('pkey', '{SanitizeGremlinValue(graphId)}')";
+            }
+            else
+            {
+                // Otherwise, get all edges
+                gremlinQuery = "g.E()";
+            }
+
+            var result = await ExecuteGremlinQueryAsync(gremlinQuery);
             var edges = new List<Edge>();
 
             foreach (var item in result)
@@ -147,6 +214,7 @@ namespace ModelerAPI.ApiService.Services
                     string target = item["outV"].ToString(); // Target is the outV (outgoing vertex)
                     string edgeType = item["label"].ToString(); // Get the label as edgeType
                     DateTime createdAt = DateTime.UtcNow;
+                    string edgeGraphId = graphId ?? ""; // Default to empty if not provided
 
                     // Extract additional properties from the properties collection
                     if (item["properties"] != null)
@@ -177,6 +245,46 @@ namespace ModelerAPI.ApiService.Services
                             }
                         }
                         catch { /* Property doesn't exist or has unexpected format */ }
+
+                        // Extract graphId if it wasn't provided as a parameter
+                        if (string.IsNullOrEmpty(graphId))
+                        {
+                            try
+                            {
+                                if (properties.ContainsKey("graphId"))
+                                {
+                                    var propsDict = item["properties"] as Dictionary<string, object>;
+                                    if (propsDict != null && propsDict.ContainsKey("graphId"))
+                                    {
+                                        var graphIdValue = (propsDict["graphId"] as IEnumerable<object>)
+                                            ?.Cast<Dictionary<string, object>>()
+                                            ?.FirstOrDefault()?["value"];
+
+                                        if (graphIdValue != null)
+                                        {
+                                            edgeGraphId = graphIdValue.ToString();
+                                        }
+                                    }
+                                }
+                                else if (properties.ContainsKey("pkey"))
+                                {
+                                    // Fall back to pkey if graphId is not explicitly stored
+                                    var propsDict = item["properties"] as Dictionary<string, object>;
+                                    if (propsDict != null && propsDict.ContainsKey("pkey"))
+                                    {
+                                        var pkeyValue = (propsDict["pkey"] as IEnumerable<object>)
+                                            ?.Cast<Dictionary<string, object>>()
+                                            ?.FirstOrDefault()?["value"];
+
+                                        if (pkeyValue != null)
+                                        {
+                                            edgeGraphId = pkeyValue.ToString();
+                                        }
+                                    }
+                                }
+                            }
+                            catch { /* Property doesn't exist or has unexpected format */ }
+                        }
                     }
 
                     var edge = new Edge
@@ -185,7 +293,8 @@ namespace ModelerAPI.ApiService.Services
                         Source = source,
                         Target = target,
                         EdgeType = edgeType,
-                        CreatedAt = createdAt
+                        CreatedAt = createdAt,
+                        GraphId = edgeGraphId
                     };
 
                     edges.Add(edge);
@@ -193,7 +302,7 @@ namespace ModelerAPI.ApiService.Services
                 catch (Exception ex)
                 {
                     // Log the exception and continue with the next item
-                    Console.WriteLine($"Error parsing edge: {ex.Message}");
+                    Logger.LogError(ex, "Error parsing edge: {Message}", ex.Message);
                 }
             }
 
@@ -202,23 +311,71 @@ namespace ModelerAPI.ApiService.Services
 
         public async Task<Node> CreateNodeAsync(Node node)
         {
+            // Validate GraphId is present
+            if (string.IsNullOrEmpty(node.GraphId))
+            {
+                throw new ArgumentException("GraphId is required for nodes");
+            }
+
             // Store in Cosmos DB using the NodeType as the vertex label
             node.Id = Guid.NewGuid().ToString();
 
-            // Use the NodeType property as the vertex label instead of generic 'node'
-            var gremlinQuery = $"g.addV('{node.NodeType}').property('id', '{node.Id}').property('name', '{node.Name}').property('pkey','1')";
-            await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
+            // Sanitize inputs to prevent Gremlin injection
+            var sanitizedId = SanitizeGremlinValue(node.Id);
+            var sanitizedName = SanitizeGremlinValue(node.Name);
+            var sanitizedNodeType = SanitizeGremlinValue(node.NodeType);
+            var sanitizedGraphId = SanitizeGremlinValue(node.GraphId);
+
+            // Use the NodeType property as the vertex label, and store GraphId in both graphId and pkey properties
+            var gremlinQuery = $"g.addV('{sanitizedNodeType}')" +
+                               $".property('id', '{sanitizedId}')" +
+                               $".property('name', '{sanitizedName}')" +
+                               $".property('graphId', '{sanitizedGraphId}')" +
+                               $".property('pkey', '{sanitizedGraphId}')";
+
+            if (node.CreatedAt != default)
+            {
+                var createdAtFormatted = node.CreatedAt.ToString("o");
+                gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+            }
+
+            await ExecuteGremlinQueryAsync(gremlinQuery);
             return node;
         }
 
         public async Task<Edge> CreateEdgeAsync(Edge edge)
         {
+            // Validate GraphId is present
+            if (string.IsNullOrEmpty(edge.GraphId))
+            {
+                throw new ArgumentException("GraphId is required for edges");
+            }
+
             // Store in Cosmos DB using the EdgeType as the edge label
             edge.Id = Guid.NewGuid().ToString();
 
-            // Use the EdgeType property as the edge label instead of generic 'edge'
-            var gremlinQuery = $"g.V('{edge.Target}').addE('{edge.EdgeType}').property('id', '{edge.Id}').property('pkey','1').to(g.V('{edge.Source}'))";
-            await GremlinClient.SubmitAsync<dynamic>(gremlinQuery);
+            // Sanitize inputs to prevent Gremlin injection
+            var sanitizedId = SanitizeGremlinValue(edge.Id);
+            var sanitizedSource = SanitizeGremlinValue(edge.Source);
+            var sanitizedTarget = SanitizeGremlinValue(edge.Target);
+            var sanitizedEdgeType = SanitizeGremlinValue(edge.EdgeType);
+            var sanitizedGraphId = SanitizeGremlinValue(edge.GraphId);
+
+            // Use the EdgeType property as the edge label, and store GraphId in both graphId and pkey properties
+            var gremlinQuery = $"g.V('{sanitizedSource}').addE('{sanitizedEdgeType}')" +
+                              $".property('id', '{sanitizedId}')" +
+                              $".property('graphId', '{sanitizedGraphId}')" +
+                              $".property('pkey', '{sanitizedGraphId}')";
+
+            if (edge.CreatedAt != default)
+            {
+                var createdAtFormatted = edge.CreatedAt.ToString("o");
+                gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+            }
+
+            gremlinQuery += $".to(g.V('{sanitizedTarget}'))";
+
+            await ExecuteGremlinQueryAsync(gremlinQuery);
             return edge;
         }
 

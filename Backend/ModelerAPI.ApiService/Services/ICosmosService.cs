@@ -2,15 +2,17 @@
 
 public interface ICosmosService
 {
-    // Existing methods
+    // Node operations
     Task<Node> CreateNodeAsync(Node node);
-    Task<List<Node>> GetNodes();
-    Task<Edge> CreateEdgeAsync(Edge edge);
-    Task<List<Edge>> GetEdges();
+    Task<List<Node>> GetNodes(string graphId);
     Task<bool> DeleteNodeAsync(string id);
+
+    // Edge operations
+    Task<Edge> CreateEdgeAsync(Edge edge);
+    Task<List<Edge>> GetEdges(string graphId);
     Task<bool> DeleteEdgeAsync(string id);
 
-    // New generic CRUD methods for Cosmos DB operations
+    // Generic Cosmos DB operations
     Task<T> GetItemAsync<T>(string databaseName, string containerName, string id, string partitionKey);
     Task<T> CreateItemAsync<T>(string databaseName, string containerName, T item, string partitionKey);
     Task<T> UpsertItemAsync<T>(string databaseName, string containerName, T item, string partitionKey);

@@ -16,25 +16,38 @@ namespace ModelerAPI.ApiService.Controllers
           CosmosService = cosmosService;
         }
 
+        
         // GET: api/node
         [HttpGet]
-        public async Task<IActionResult> GetNodes()
-        {          
-            if (CosmosService == null )
+        public async Task<IActionResult> GetNodes([FromQuery] string graphId)
+        {
+            if (CosmosService == null)
             {
                 return NotFound();
-            }
-            var nodes = await CosmosService.GetNodes();
-            if (nodes == null || nodes.Count() == 0)
-            {
-                return NotFound();
-            }
-            else
-            {
-                return Ok(nodes);
             }
 
+            try
+            {
+                // GraphId is optional but will be used for filtering if provided
+                var nodes = await CosmosService.GetNodes(graphId);
+
+                if (nodes == null || !nodes.Any())
+                {
+                    if (!string.IsNullOrEmpty(graphId))
+                    {
+                        return NotFound($"No nodes found for graph ID: {graphId}");
+                    }
+                    return NotFound("No nodes found");
+                }
+
+                return Ok(nodes);
+            }
+            catch (Exception ex)
+            {               
+                return StatusCode(500, "An error occurred while retrieving nodes");
+            }
         }
+
         // POST: api/node
         [HttpPost]
         public async Task<IActionResult> CreateNode([FromBody] Node node)
