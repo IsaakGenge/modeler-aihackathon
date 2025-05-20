@@ -1,0 +1,182 @@
+/* Frontend/src/app/styles/theme.scss */
+
+// Dark mode base colors
+$dark-bg-primary: #121212;
+$dark-bg-secondary: #1e1e1e;
+$dark-bg-tertiary: #2d2d2d;
+$dark-bg-elevated: #424242;
+$dark-border: #333;
+$dark-text-primary: rgba(255, 255, 255, 0.87);
+$dark-text-secondary: rgba(255, 255, 255, 0.6);
+$dark-text-highlighted: #fff;
+$dark-primary-accent: #3498db;
+$dark-primary-accent-darker: #2980b9;
+$dark-secondary-accent: #b0bec5;
+$dark-success-color: #00b894;
+$dark-warning-color: #fdcb6e;
+$dark-danger-color: #d63031;
+$dark-danger-color-darker: #b71c1c;
+
+// Light mode base colors
+$light-bg-primary: #f8f9fa;
+$light-bg-secondary: #ffffff;
+$light-bg-tertiary: #f2f2f2;
+$light-bg-elevated: #e9ecef;
+$light-border: #dee2e6;
+$light-text-primary: #212529;
+$light-text-secondary: #6c757d;
+$light-text-highlighted: #000;
+$light-primary-accent: #3498db;
+$light-primary-accent-darker: #2980b9;
+$light-secondary-accent: #6c757d;
+$light-success-color: #00b894;
+$light-warning-color: #fdcb6e;
+$light-danger-color: #d63031;
+$light-danger-color-darker: #b71c1c;
+
+// Alert/notification colors - dark mode
+$dark-alert-bg: #333;
+$dark-alert-border: #444;
+$dark-alert-warning-bg: #463c17;
+$dark-alert-warning-border: #665c37;
+$dark-alert-warning-text: #ffd740;
+$dark-alert-danger-bg: #462c2c;
+$dark-alert-danger-border: #663737;
+$dark-alert-danger-text: #ff4040;
+$dark-alert-success-bg: rgba(0, 184, 148, 0.2);
+$dark-alert-success-text: #2ecc71;
+$dark-alert-success-border: rgba(46, 204, 113, 0.3);
+$dark-alert-info-bg: rgba(52, 152, 219, 0.2);
+$dark-alert-info-text: #74b9ff;
+$dark-alert-info-border: rgba(116, 185, 255, 0.3);
+
+// Alert/notification colors - light mode
+$light-alert-bg: #f8f9fa;
+$light-alert-border: #dee2e6;
+$light-alert-warning-bg: #fff3cd;
+$light-alert-warning-border: #ffecb5;
+$light-alert-warning-text: #664d03;
+$light-alert-danger-bg: #f8d7da;
+$light-alert-danger-border: #f5c2c7;
+$light-alert-danger-text: #842029;
+$light-alert-success-bg: #d1e7dd;
+$light-alert-success-text: #0f5132;
+$light-alert-success-border: #badbcc;
+$light-alert-info-bg: #cff4fc;
+$light-alert-info-text: #055160;
+$light-alert-info-border: #b6effb;
+
+// CSS Custom Properties (Variables)
+:root {
+  // Default light theme variables
+  --bg-primary: #{$light-bg-primary};
+  --bg-secondary: #{$light-bg-secondary};
+  --bg-tertiary: #{$light-bg-tertiary};
+  --bg-elevated: #{$light-bg-elevated};
+  --border: #{$light-border};
+  --text-primary: #{$light-text-primary};
+  --text-secondary: #{$light-text-secondary};
+  --text-highlighted: #{$light-text-highlighted};
+  --primary-accent: #{$light-primary-accent};
+  --primary-accent-darker: #{$light-primary-accent-darker};
+  --secondary-accent: #{$light-secondary-accent};
+  --success-color: #{$light-success-color};
+  --warning-color: #{$light-warning-color};
+  --danger-color: #{$light-danger-color};
+  --danger-color-darker: #{$light-danger-color-darker};
+  // Alert variables
+  --alert-bg: #{$light-alert-bg};
+  --alert-border: #{$light-alert-border};
+  --alert-warning-bg: #{$light-alert-warning-bg};
+  --alert-warning-border: #{$light-alert-warning-border};
+  --alert-warning-text: #{$light-alert-warning-text};
+  --alert-danger-bg: #{$light-alert-danger-bg};
+  --alert-danger-border: #{$light-alert-danger-border};
+  --alert-danger-text: #{$light-alert-danger-text};
+  --alert-success-bg: #{$light-alert-success-bg};
+  --alert-success-text: #{$light-alert-success-text};
+  --alert-success-border: #{$light-alert-success-border};
+  --alert-info-bg: #{$light-alert-info-bg};
+  --alert-info-text: #{$light-alert-info-text};
+  --alert-info-border: #{$light-alert-info-border};
+}
+
+// Dark theme class (for body element)
+.dark-theme {
+  --bg-primary: #{$dark-bg-primary};
+  --bg-secondary: #{$dark-bg-secondary};
+  --bg-tertiary: #{$dark-bg-tertiary};
+  --bg-elevated: #{$dark-bg-elevated};
+  --border: #{$dark-border};
+  --text-primary: #{$dark-text-primary};
+  --text-secondary: #{$dark-text-secondary};
+  --text-highlighted: #{$dark-text-highlighted};
+  --primary-accent: #{$dark-primary-accent};
+  --primary-accent-darker: #{$dark-primary-accent-darker};
+  --secondary-accent: #{$dark-secondary-accent};
+  --success-color: #{$dark-success-color};
+  --warning-color: #{$dark-warning-color};
+  --danger-color: #{$dark-danger-color};
+  --danger-color-darker: #{$dark-danger-color-darker};
+  // Alert variables
+  --alert-bg: #{$dark-alert-bg};
+  --alert-border: #{$dark-alert-border};
+  --alert-warning-bg: #{$dark-alert-warning-bg};
+  --alert-warning-border: #{$dark-alert-warning-border};
+  --alert-warning-text: #{$dark-alert-warning-text};
+  --alert-danger-bg: #{$dark-alert-danger-bg};
+  --alert-danger-border: #{$dark-alert-danger-border};
+  --alert-danger-text: #{$dark-alert-danger-text};
+  --alert-success-bg: #{$dark-alert-success-bg};
+  --alert-success-text: #{$dark-alert-success-text};
+  --alert-success-border: #{$dark-alert-success-border};
+  --alert-info-bg: #{$dark-alert-info-bg};
+  --alert-info-text: #{$dark-alert-info-text};
+  --alert-info-border: #{$dark-alert-info-border};
+  // Alert classes
+  .alert {
+    background-color: var(--alert-bg);
+    border-color: var(--alert-border);
+    color: var(--text-primary);
+
+    &.alert-warning {
+      background-color: var(--alert-warning-bg);
+      border-color: var(--alert-warning-border);
+      color: var(--alert-warning-text);
+    }
+
+    &.alert-danger {
+      background-color: var(--alert-danger-bg);
+      border-color: var(--alert-danger-border);
+      color: var(--alert-danger-text);
+    }
+
+    &.alert-success {
+      background-color: var(--alert-success-bg);
+      border-color: var(--alert-success-border);
+      color: var(--alert-success-text);
+    }
+
+    &.alert-info {
+      background-color: var(--alert-info-bg);
+      border-color: var(--alert-info-border);
+      color: var(--alert-info-text);
+    }
+  }
+  // Scrollbar styling
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #555;
+
+    &:hover {
+      background: #666;
+    }
+  }
+}

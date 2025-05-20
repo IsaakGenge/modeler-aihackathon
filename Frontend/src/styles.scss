@@ -1,0 +1,141 @@
+// Import the theme from the correct path
+@use 'app/styles/theme';
+
+// Base styles using theme variables
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Bootstrap Component Overrides
+.card {
+  background-color: var(--bg-secondary);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid var(--border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.card-header {
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.form-control, .form-select {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+
+  &:focus {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+  }
+
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+}
+
+.form-select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+// Table styles
+.table {
+  color: var(--text-primary);
+
+  &-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  &-hover > tbody > tr:hover > * {
+    background-color: rgba(52, 152, 219, 0.1);
+  }
+
+  th {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+}
+
+// Navigation Sidebar
+.container-fluid .col-auto.px-0 {
+  width: 280px !important;
+  background-color: var(--bg-tertiary) !important;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+}
+
+// Navigation links
+.nav-link {
+  color: var(--text-primary) !important;
+
+  &:hover {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-highlighted) !important;
+  }
+}
+
+// Button styling
+.btn-primary {
+  background-color: var(--primary-accent);
+  border-color: var(--primary-accent);
+
+  &:hover {
+    background-color: var(--primary-accent-darker);
+    border-color: var(--primary-accent-darker);
+  }
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  border-color: var(--border);
+
+  &:hover {
+    background-color: var(--bg-elevated);
+  }
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+
+  &:hover {
+    background-color: var(--danger-color-darker);
+  }
+}
+
+// Theme Toggle Button
+.theme-toggle {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 0.5rem;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Text colors that respect theme
+.theme-secondary-text {
+  color: var(--text-secondary);
+}
+
+// Component container for consistent styling
+.component-container {
+  padding: 1.5rem;
+  border-radius: 0.375rem;
+  background-color: var(--bg-secondary);
+  transition: background-color 0.3s ease;
+}
