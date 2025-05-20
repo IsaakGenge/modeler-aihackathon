@@ -1,29 +1,72 @@
-/* Base container styling */
+/***************************************
+ * MAIN CONTAINER STYLES
+ ***************************************/
 .view-fancy-container {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
   min-height: 100vh;
   position: relative;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
-/* Graph picker row */
+.main-content-area {
+  position: relative;
+  min-height: calc(100vh - 80px);
+}
+
+/***************************************
+ * GRAPH PICKER STYLES
+ ***************************************/
 .graph-picker-row {
   display: flex;
-  align-items: center;  
+  align-items: center;
 }
 
 app-graph-picker {
   flex-grow: 1;
 }
 
-/* Main content area layout - using position relative for panel positioning */
-.main-content-area {
-  position: relative;
-  min-height: calc(100vh - 80px);
+/***************************************
+ * GRAPH CONTAINER STYLES
+ ***************************************/
+.graph-container {
+  width: 100%;
+  height: calc(100vh - 80px);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  margin-right: 0; /* Ensure no margin causing overflow */
 }
 
-/* Tools panel container styling - positioned at the right edge */
+.graph-header {
+  padding: 5px 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+  .graph-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+    transition: color 0.3s ease;
+  }
+
+.cytoscape-container {
+  flex-grow: 1;
+  border: 1px solid var(--border);
+  border-radius: 0 0 4px 4px;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--bg-secondary);
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+/***************************************
+ * TOOLS PANEL STYLES
+ ***************************************/
+/* Tools panel container */
 .tools-panel-container {
   position: absolute;
   top: 0;
@@ -33,18 +76,19 @@ app-graph-picker {
   transition: transform 0.3s ease;
   z-index: 100;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  overflow: visible; /* Allow the toggle button to be visible */
 }
 
-.tools-panel-container.collapsed {
-  transform: translateX(315px); /* Move panel off-screen */
-  box-shadow: none;
-}
+  .tools-panel-container.collapsed {
+    transform: translateX(100%);
+    box-shadow: none;
+  }
 
 /* Tools panel toggle button */
 .tools-panel-toggle {
   position: absolute;
-  left: -30px;
-  top: 20px;
+  left: -22px;
+  top: 120px;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -58,13 +102,15 @@ app-graph-picker {
   z-index: 101;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s ease;
+  pointer-events: auto;
+  visibility: visible;
 }
 
-.tools-panel-toggle:hover {
-  background-color: var(--primary-accent-darker);
-}
+  .tools-panel-toggle:hover {
+    background-color: var(--primary-accent-darker);
+  }
 
-/* Tools panel styling */
+/* Tools panel content */
 .tools-panel {
   height: 100%;
   background-color: var(--bg-tertiary);
@@ -77,38 +123,40 @@ app-graph-picker {
 .tools-panel-container.collapsed .tools-panel {
   opacity: 0;
   visibility: hidden;
+  pointer-events: none; /* Disable interactions when hidden */
 }
 
-/* Nav tabs styling */
+/***************************************
+ * NAVIGATION TABS STYLES
+ ***************************************/
 .nav-tabs {
   border-bottom: 1px solid var(--border);
   background-color: var(--bg-tertiary);
   transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 
-.nav-tabs .nav-link {
-  color: var(--text-primary);
-  background-color: transparent;
-  border: 1px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-}
+  .nav-tabs .nav-link {
+    color: var(--text-primary);
+    background-color: transparent;
+    border: 1px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  }
 
-.nav-tabs .nav-link:hover {
-  border-color: var(--border) var(--border) transparent;
-  background-color: var(--bg-elevated);
-  color: var(--text-highlighted);
-}
+    .nav-tabs .nav-link:hover {
+      border-color: var(--border) var(--border) transparent;
+      background-color: var(--bg-elevated);
+      color: var(--text-highlighted);
+    }
 
-.nav-tabs .nav-link.active {
-  color: var(--text-highlighted);
-  font-weight: bold;
-  background-color: var(--bg-secondary);
-  border-color: var(--border) var(--border) var(--bg-secondary);
-  border-bottom-color: transparent;
-}
+    .nav-tabs .nav-link.active {
+      color: var(--text-highlighted);
+      font-weight: bold;
+      background-color: var(--bg-secondary);
+      border-color: var(--border) var(--border) var(--bg-secondary);
+      border-bottom-color: transparent;
+    }
 
-/* Tab content */
 .tab-content {
   padding: 15px;
   background-color: var(--bg-secondary);
@@ -121,51 +169,23 @@ app-graph-picker {
   max-height: calc(100vh - 160px);
 }
 
-/* Graph container styling */
-.graph-container {
-  width: 100%;
-  height: calc(100vh - 80px);
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.graph-header {
-  padding: 5px 15px;
-  border-bottom: 1px solid var(--border);
-}
-
-.graph-header h3 {
-  color: var(--text-primary);
-  margin: 0;
-  transition: color 0.3s ease;
-}
-
-.cytoscape-container {
-  flex-grow: 1;
-  border: 1px solid var(--border);
-  border-radius: 0 0 4px 4px;
-  overflow: hidden;
-  position: relative;
-  background-color: var(--bg-secondary);
-  transition: border-color 0.3s ease, background-color 0.3s ease;
-}
-
-/* Override for component containers in the tools panel */
+/***************************************
+ * COMPONENT OVERRIDES
+ ***************************************/
 :host ::ng-deep .component-container {
   padding: 0;
   background-color: transparent !important;
 }
 
-:host ::ng-deep .component-container h2 {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-  color: var(--text-primary);
-}
+  :host ::ng-deep .component-container h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+  }
 
+/***************************************
+ * UTILITY STYLES
+ ***************************************/
 /* Loading indicator */
 .loading-indicator {
   color: var(--text-primary);
@@ -174,7 +194,7 @@ app-graph-picker {
   text-align: center;
 }
 
-/* Alert styling - leverages global variables */
+/* Alert styling */
 .alert {
   margin: 15px;
 }
@@ -193,12 +213,15 @@ app-graph-picker {
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+  }
 
-/* Mobile responsive adjustments */
+/***************************************
+ * RESPONSIVE STYLES
+ ***************************************/
 @media (max-width: 991.98px) {
+  /* Mobile tools panel */
   .tools-panel-container {
     position: fixed;
     top: auto;
@@ -210,9 +233,14 @@ app-graph-picker {
     transform: translateY(0);
   }
 
-  .tools-panel-container.collapsed {
-    transform: translateY(100%);
-  }
+    .tools-panel-container.collapsed {
+      transform: translateY(100%);
+    }
+
+      .tools-panel-container.collapsed .tools-panel-toggle {
+        left: -30px;
+        transform: rotate(180deg);
+      }
 
   .tools-panel-toggle {
     left: auto;
@@ -226,11 +254,8 @@ app-graph-picker {
     border-radius: 4px 4px 0 0;
   }
 
+  /* Mobile graph container */
   .graph-container {
     height: 60vh;
-  }
-
-  .tools-panel-container.collapsed .tools-panel-toggle {
-    top: -45px;
   }
 }
