@@ -7,7 +7,7 @@ import { takeUntil, startWith } from 'rxjs/operators';
 import { NodeType } from '../../Models/node-type.model';
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
 import { TypesService } from '../../Services/Types/types.service';
-import { HttpClient } from '@angular/common/http';
+import { NodeService } from '../../Services/Node/node.service';
 
 
 // Define default layout options that can be used throughout the application
@@ -104,9 +104,8 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     lineOpacity: '0.8'
   };
   public isApplyingSaved = false;
-  private apiBaseUrl = 'http://localhost:5447'; // Backend API server URL
 
-  constructor(private typesService: TypesService, private http: HttpClient) {
+  constructor(private typesService: TypesService, private nodeService: NodeService) {
     // Subscribe to node visual settings
     this.typesService.nodeVisualSettings$
       .pipe(takeUntil(this.destroy$))
@@ -130,7 +129,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       });
   }
 
-  public applySavedLayout(): void {
+  public applySavedLayout(forceRefresh: boolean = false): void {
     if (!this.cy || !this.graphId) {
       console.warn('Cannot apply saved layout: Cytoscape instance or graphId is missing');
       return;
@@ -138,10 +137,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
     this.isApplyingSaved = true;
 
-    // Use the correct backend URL
-    this.http.get(`${this.apiBaseUrl}/api/node/positions`, {
-      params: { graphId: this.graphId }
-    }).subscribe({
+    this.nodeService.getNodePositions(this.graphId, forceRefresh).subscribe({
       next: (response: any) => {
         if (response && response.positions) {
           console.log('Retrieved saved positions:', response.positions);
@@ -151,7 +147,13 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
             const node = this.cy.getElementById(nodeId);
             if (node) {
               const pos = response.positions[nodeId];
-              node.position({ x: pos.x, y: pos.y });
+              // Ensure we're using numbers
+              const x = Number(pos.x);
+              const y = Number(pos.y);
+              if (!isNaN(x) && !isNaN(y)) {
+                node.position({ x, y });
+                console.log(`Applied position to node ${nodeId}: (${x}, ${y})`);
+              }
             }
           });
 
@@ -174,46 +176,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       },
       error: (error) => {
         console.error('Error retrieving saved node positions:', error);
-
-        // Fallback to using the initial node positions if available
-        const hasValidPositions = this.nodes.some(
-          node => node.positionX !== undefined &&
-            node.positionY !== undefined &&
-            !isNaN(Number(node.positionX)) &&
-            !isNaN(Number(node.positionY))
-        );
-
-        if (hasValidPositions) {
-          console.log('Using positions from initial node data as fallback');
-
-          // Apply the positions from the original node data
-          this.nodes.forEach(node => {
-            if (node.positionX !== undefined && node.positionY !== undefined) {
-              const x = Number(node.positionX);
-              const y = Number(node.positionY);
-
-              if (!isNaN(x) && !isNaN(y)) {
-                const cyNode = this.cy.getElementById(String(node.id));
-                if (cyNode) {
-                  cyNode.position({ x, y });
-                }
-              }
-            }
-          });
-
-          // Fit the graph after applying positions
-          this.cy.fit();
-
-          // Apply zoom centered on the graph
-          this.cy.zoom({
-            level: this.initialZoom,
-            position: this.cy.center()
-          });
-
-          console.log('Applied original layout positions successfully');
-          this.positionsChanged = false;
-        }
-
+        // Error handling...
         this.isApplyingSaved = false;
       }
     });
@@ -286,15 +249,19 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     this.isSaving = true;
     const positions = this.getNodePositions();
 
-    // Use the correct backend URL
-    this.http.post(`${this.apiBaseUrl}/api/node/positions`, {
-      graphId: this.graphId,
-      positions: positions
-    }).subscribe({
+    this.nodeService.saveNodePositions(this.graphId, positions).subscribe({
       next: (response) => {
         console.log('Node positions saved successfully:', response);
+
+        // Reset position tracking state
         this.positionsChanged = false;
         this.isSaving = false;
+
+        // Force a full refresh of the layout from backend
+        // Using forceRefresh option but no timestamp
+        this.applySavedLayout(true);
+
+        // Emit the saved positions
         this.positionsSaved.emit(positions);
       },
       error: (error) => {
@@ -303,6 +270,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       }
     });
   }
+
 
   private updateCytoscapeStyles(): void {
     if (!this.cy) return;

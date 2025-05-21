@@ -5,6 +5,7 @@ import { Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { GraphService } from '../Graph/graph.service';
 import { Node } from '../../Models/node.model';
+import { map } from 'rxjs/operators'
 
 @Injectable({
   providedIn: 'root'
@@ -54,4 +55,52 @@ export class NodeService {
   notifyNodeDeleted(): void {
     this.nodeDeletedSubject.next();
   }
+
+  // Get node positions for a graph
+  // Updated getNodePositions method to use the existing GetNodes endpoint
+  getNodePositions(graphId: string, forceRefresh: boolean = false): Observable<any> {
+    if (!graphId) {
+      console.error('Graph ID is required to get node positions');
+      return new Observable(observer => observer.error('Graph ID is required'));
+    }
+
+    const httpOptions = {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    };
+
+    // Use the existing getNodes method that retrieves all node data including positions
+    return this.getNodes(graphId).pipe(
+      map(nodes => {
+        // Transform the node array into the positions format expected by the component
+        const positions: { [key: string]: { x: number, y: number } } = {};
+
+        nodes.forEach(node => {
+          if (node.id && node.positionX !== undefined && node.positionY !== undefined) {
+            positions[node.id] = {
+              x: Number(node.positionX),
+              y: Number(node.positionY)
+            };
+          }
+        });
+
+        return { positions };
+      })
+    );
+  }
+
+
+
+
+  // Save node positions
+  saveNodePositions(graphId: string, positions: { [key: string]: { x: number, y: number } }): Observable<any> {
+    return this.http.post(`${environment.apiBaseUrl}/node/positions`, {
+      graphId,
+      positions
+    });
+  }
+
 }
