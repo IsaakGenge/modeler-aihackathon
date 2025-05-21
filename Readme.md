@@ -23,8 +23,8 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
 - [Development](#development)
 
 ## Demo 
-A working demo of the front can be found at [here](https://white-tree-05d734f0f.6.azurestaticapps.net). 
-A working demo of the backend swagger page can be found [here](https://modelerapiapiservice20250521101918-cjggfabua3f8cxap.eastus-01.azurewebsites.net/index.html).]
+-- **[Frontend](https://white-tree-05d734f0f.6.azurestaticapps.net). 
+-- **[Swagger](https://modelerapiapiservice20250521101918-cjggfabua3f8cxap.eastus-01.azurewebsites.net/index.html).]
 
 ## Features
 
