@@ -2,11 +2,11 @@ name: Build and Deploy Backend
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master ]
     paths:
       - 'Backend/**'
   pull_request:
-    branches: [ main, master ]
+    branches: [ master ]
     paths:
       - 'Backend/**'
   workflow_dispatch: # Allows manual triggering
