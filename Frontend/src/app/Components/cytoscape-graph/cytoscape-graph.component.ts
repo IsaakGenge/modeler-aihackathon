@@ -103,6 +103,8 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     curveStyle: 'bezier',
     lineOpacity: '0.8'
   };
+  public isApplyingSaved = false;
+  private apiBaseUrl = 'http://localhost:5447'; // Backend API server URL
 
   constructor(private typesService: TypesService, private http: HttpClient) {
     // Subscribe to node visual settings
@@ -127,6 +129,96 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         }
       });
   }
+
+  public applySavedLayout(): void {
+    if (!this.cy || !this.graphId) {
+      console.warn('Cannot apply saved layout: Cytoscape instance or graphId is missing');
+      return;
+    }
+
+    this.isApplyingSaved = true;
+
+    // Use the correct backend URL
+    this.http.get(`${this.apiBaseUrl}/api/node/positions`, {
+      params: { graphId: this.graphId }
+    }).subscribe({
+      next: (response: any) => {
+        if (response && response.positions) {
+          console.log('Retrieved saved positions:', response.positions);
+
+          // Apply the positions to each node
+          Object.keys(response.positions).forEach(nodeId => {
+            const node = this.cy.getElementById(nodeId);
+            if (node) {
+              const pos = response.positions[nodeId];
+              node.position({ x: pos.x, y: pos.y });
+            }
+          });
+
+          // Fit the graph after applying positions
+          this.cy.fit();
+
+          // Apply zoom centered on the graph
+          this.cy.zoom({
+            level: this.initialZoom,
+            position: this.cy.center()
+          });
+
+          console.log('Applied saved layout positions successfully');
+          this.positionsChanged = false;
+        } else {
+          console.warn('No saved positions found for this graph');
+        }
+
+        this.isApplyingSaved = false;
+      },
+      error: (error) => {
+        console.error('Error retrieving saved node positions:', error);
+
+        // Fallback to using the initial node positions if available
+        const hasValidPositions = this.nodes.some(
+          node => node.positionX !== undefined &&
+            node.positionY !== undefined &&
+            !isNaN(Number(node.positionX)) &&
+            !isNaN(Number(node.positionY))
+        );
+
+        if (hasValidPositions) {
+          console.log('Using positions from initial node data as fallback');
+
+          // Apply the positions from the original node data
+          this.nodes.forEach(node => {
+            if (node.positionX !== undefined && node.positionY !== undefined) {
+              const x = Number(node.positionX);
+              const y = Number(node.positionY);
+
+              if (!isNaN(x) && !isNaN(y)) {
+                const cyNode = this.cy.getElementById(String(node.id));
+                if (cyNode) {
+                  cyNode.position({ x, y });
+                }
+              }
+            }
+          });
+
+          // Fit the graph after applying positions
+          this.cy.fit();
+
+          // Apply zoom centered on the graph
+          this.cy.zoom({
+            level: this.initialZoom,
+            position: this.cy.center()
+          });
+
+          console.log('Applied original layout positions successfully');
+          this.positionsChanged = false;
+        }
+
+        this.isApplyingSaved = false;
+      }
+    });
+  }
+
 
   private debugPositionData(): void {
     console.log("=== POSITION DEBUGGING ===");
@@ -194,8 +286,8 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     this.isSaving = true;
     const positions = this.getNodePositions();
 
-    // Fix the URL to match the controller route (node is singular, not plural)
-    this.http.post('/api/node/positions', {
+    // Use the correct backend URL
+    this.http.post(`${this.apiBaseUrl}/api/node/positions`, {
       graphId: this.graphId,
       positions: positions
     }).subscribe({

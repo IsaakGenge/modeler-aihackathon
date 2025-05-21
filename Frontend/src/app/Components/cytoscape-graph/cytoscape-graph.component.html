@@ -17,6 +17,14 @@
               [disabled]="isSaving || !positionsChanged">
         <i class="bi" [ngClass]="isSaving ? 'bi-hourglass-split' : 'bi-save'"></i>
       </button>
+
+      <!-- Add Apply Saved Layout button -->
+      <button (click)="applySavedLayout()"
+              title="Apply Saved Layout"
+              class="layout-button"
+              [disabled]="isApplyingSaved || !graphId">
+        <i class="bi" [ngClass]="isApplyingSaved ? 'bi-hourglass-split' : 'bi-arrow-counterclockwise'"></i>
+      </button>
     </div>
   </div>
   <div #cyContainer class="cytoscape-container"></div>
