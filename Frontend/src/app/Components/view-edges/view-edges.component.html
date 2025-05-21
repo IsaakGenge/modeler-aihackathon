@@ -36,7 +36,7 @@
           <td>{{ edge.createdAt | date }}</td>
           <td>
             <button class="btn btn-danger btn-sm"
-                    (click)="deleteEdge(edge.id)"
+                    (click)="initiateDeleteEdge(edge.id)"
                     data-bs-toggle="tooltip"
                     data-bs-placement="top"
                     [title]="'ID: ' + edge.id">
@@ -53,3 +53,14 @@
     No connections available. Create a connection to get started.
   </div>
 </div>
+
+<!-- Add the confirmation modal component -->
+<app-confirmation-modal [show]="showDeleteModal"
+                        [title]="'Confirm Connection Deletion'"
+                        [message]="'Are you sure you want to delete this connection?'"
+                        [confirmButtonText]="'Delete'"
+                        [isLoading]="deleteInProgress"
+                        [error]="deleteError"
+                        (confirm)="confirmDelete()"
+                        (cancel)="cancelDelete()">
+</app-confirmation-modal>

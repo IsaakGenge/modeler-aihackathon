@@ -1,0 +1,30 @@
+<!-- Frontend/src/app/Components/shared/confirmation-modal/confirmation-modal.component.html -->
+<div *ngIf="show">
+  <div class="modal-backdrop" (click)="onCancel()"></div>
+  <div class="custom-modal delete-confirmation">
+    <div class="modal-header">
+      <h5>{{ title }}</h5>
+      <button type="button" class="close-modal-btn" (click)="onCancel()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="warning-icon">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+      </div>
+      <p>{{ message }}</p>
+      <p class="deletion-note" *ngIf="warningText">{{ warningText }}</p>
+
+      <div *ngIf="error" class="error-message">
+        {{ error }}
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="isLoading">{{ cancelButtonText }}</button>
+      <button type="button" class="btn btn-danger" (click)="onConfirm()" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        {{ confirmButtonText }}
+      </button>
+    </div>
+  </div>
+</div>

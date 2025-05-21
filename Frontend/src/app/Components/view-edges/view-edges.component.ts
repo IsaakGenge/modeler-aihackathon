@@ -8,11 +8,12 @@ import { GraphService } from '../../Services/Graph/graph.service';
 import { Subscription, forkJoin, of, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-view-edges',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ConfirmationModalComponent],
   templateUrl: './view-edges.component.html',
   styleUrl: './view-edges.component.css'
 })
@@ -23,6 +24,12 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   error: string | null = null;
   warning: string | null = null;
   isDarkMode$: Observable<boolean>;
+
+  // Modal properties
+  showDeleteModal: boolean = false;
+  deleteInProgress: boolean = false;
+  deleteError: string | null = null;
+  edgeToDelete: string | null = null;
 
   private edgeCreatedSubscription: Subscription = new Subscription();
   private edgeDeletedSubscription: Subscription = new Subscription();
@@ -38,7 +45,6 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
 
-  // Rest of the component code remains the same
   ngOnInit(): void {
     // Get edges and nodes on component initialization
     this.loadData();
@@ -147,28 +153,51 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     return id.substring(0, 8) + '...';
   }
 
-  deleteEdge(id: string): void {
-    if (confirm('Are you sure you want to delete this connection?')) {
-      this.loading = true;
-      this.error = null;
-      this.warning = null;
+  // Show delete confirmation modal
+  initiateDeleteEdge(id: string): void {
+    this.edgeToDelete = id;
+    this.showDeleteModal = true;
+    this.deleteError = null;
+  }
 
-      this.edgeService.deleteEdge(id).subscribe({
-        next: () => {
-          this.edgeService.notifyEdgeDeleted();
-          this.loading = false;
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loading = false;
+  // Handle confirmed deletion
+  confirmDelete(): void {
+    if (!this.edgeToDelete) return;
 
-          if (err.status === 404) {
-            this.warning = 'Connection not found or already deleted';
-          } else {
-            this.error = 'Failed to delete connection';
-            console.error('Error deleting edge:', err);
-          }
+    this.deleteInProgress = true;
+    this.deleteError = null;
+
+    this.edgeService.deleteEdge(this.edgeToDelete).subscribe({
+      next: () => {
+        this.edgeService.notifyEdgeDeleted();
+        this.resetDeleteState();
+        this.loading = false;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.deleteInProgress = false;
+        this.loading = false;
+
+        if (err.status === 404) {
+          this.warning = 'Connection not found or already deleted';
+          this.resetDeleteState();
+        } else {
+          this.deleteError = 'Failed to delete connection';
+          console.error('Error deleting edge:', err);
         }
-      });
-    }
+      }
+    });
+  }
+
+  // Handle cancel deletion
+  cancelDelete(): void {
+    this.resetDeleteState();
+  }
+
+  // Reset delete modal state
+  private resetDeleteState(): void {
+    this.showDeleteModal = false;
+    this.deleteInProgress = false;
+    this.deleteError = null;
+    this.edgeToDelete = null;
   }
 }

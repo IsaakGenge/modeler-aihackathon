@@ -68,3 +68,14 @@
     </div>
   </div>
 </div>
+
+<!-- Add the confirmation modal component -->
+<app-confirmation-modal [show]="showDeleteModal"
+                        [title]="'Confirm Deletion'"
+                        [message]="'Are you sure you want to delete this ' + (selectedElement?.type === 'node' ? 'node' : 'connection') + '?'"
+                        [confirmButtonText]="'Delete'"
+                        [isLoading]="deleteInProgress"
+                        [error]="deleteError"
+                        (confirm)="handleConfirmDelete()"
+                        (cancel)="handleCancelDelete()">
+</app-confirmation-modal>

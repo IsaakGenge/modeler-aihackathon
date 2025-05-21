@@ -5,11 +5,12 @@ import { Observable } from 'rxjs';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 
 @Component({
   selector: 'app-details-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ConfirmationModalComponent],
   templateUrl: './details-panel.component.html',
   styleUrls: ['./details-panel.component.css']
 })
@@ -21,6 +22,11 @@ export class DetailsPanelComponent implements OnChanges {
 
   public isLoadingDetails: boolean = false;
   public fullElementData: any = null;
+
+  // Modal properties
+  showDeleteModal: boolean = false;
+  deleteInProgress: boolean = false;
+  deleteError: string | null = null;
 
   constructor(
     private nodeService: NodeService,
@@ -75,7 +81,14 @@ export class DetailsPanelComponent implements OnChanges {
       });
   }
 
+  // Opens the delete confirmation modal
   public deleteElement(): void {
+    this.showDeleteModal = true;
+    this.deleteError = null;
+  }
+
+  // Handles the confirmation of deletion
+  public handleConfirmDelete(): void {
     if (!this.selectedElement) return;
 
     const elementType = this.selectedElement.type;
@@ -86,39 +99,48 @@ export class DetailsPanelComponent implements OnChanges {
       return;
     }
 
-    const confirmMessage = `Are you sure you want to delete this ${elementType === 'node' ? 'node' : 'connection'}?`;
+    this.deleteInProgress = true;
+    this.deleteError = null;
 
-    if (confirm(confirmMessage)) {
-      this.isLoadingDetails = true;
-
-      if (elementType === 'node') {
-        this.nodeService.deleteNode(elementId).subscribe({
-          next: () => {
-            this.nodeService.notifyNodeDeleted();
-            this.closeDetailsPanel();
-            this.isLoadingDetails = false;
-          },
-          error: (error: HttpErrorResponse) => {
-            console.error(`Error deleting node: ${error.message}`);
-            this.isLoadingDetails = false;
-            // You might want to show an error message here
-          }
-        });
-      } else if (elementType === 'edge') {
-        this.edgeService.deleteEdge(elementId).subscribe({
-          next: () => {
-            this.edgeService.notifyEdgeDeleted();
-            this.closeDetailsPanel();
-            this.isLoadingDetails = false;
-          },
-          error: (error: HttpErrorResponse) => {
-            console.error(`Error deleting edge: ${error.message}`);
-            this.isLoadingDetails = false;
-            // You might want to show an error message here
-          }
-        });
-      }
+    if (elementType === 'node') {
+      this.nodeService.deleteNode(elementId).subscribe({
+        next: () => {
+          this.nodeService.notifyNodeDeleted();
+          this.closeDetailsPanel();
+          this.resetDeleteState();
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(`Error deleting node: ${error.message}`);
+          this.deleteInProgress = false;
+          this.deleteError = 'Failed to delete node. Please try again.';
+        }
+      });
+    } else if (elementType === 'edge') {
+      this.edgeService.deleteEdge(elementId).subscribe({
+        next: () => {
+          this.edgeService.notifyEdgeDeleted();
+          this.closeDetailsPanel();
+          this.resetDeleteState();
+        },
+        error: (error: HttpErrorResponse) => {
+          console.error(`Error deleting edge: ${error.message}`);
+          this.deleteInProgress = false;
+          this.deleteError = 'Failed to delete connection. Please try again.';
+        }
+      });
     }
+  }
+
+  // Handles the cancellation of deletion
+  public handleCancelDelete(): void {
+    this.resetDeleteState();
+  }
+
+  // Resets the delete modal state
+  private resetDeleteState(): void {
+    this.showDeleteModal = false;
+    this.deleteInProgress = false;
+    this.deleteError = null;
   }
 
   private fetchElementDetails(): void {
