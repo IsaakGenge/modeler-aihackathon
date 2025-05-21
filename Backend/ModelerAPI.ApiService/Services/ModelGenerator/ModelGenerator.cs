@@ -29,7 +29,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                 { "star", new StarGraphStrategy(_cosmosService) },
                 { "chain", new ChainGraphStrategy(_cosmosService) },
                 { "complete", new CompleteGraphStrategy(_cosmosService) },
-                { "plant", new PlantGraphStrategy(_cosmosService) }
+                { "plant", new PlantGraphStrategy(_cosmosService) },
+                { "tree", new TreeGraphStrategy(_cosmosService) }
             };
         }
 
