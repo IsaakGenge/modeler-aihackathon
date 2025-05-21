@@ -62,23 +62,91 @@ export class DetailsPanelComponent implements OnChanges {
       'sourceLabel', 'targetLabel', 'graphId', 'positionX', 'positionY'
     ];
 
+    // Get properties from custom properties object if it exists
+    if (this.fullElementData.properties && typeof this.fullElementData.properties === 'object') {
+      return Object.entries(this.fullElementData.properties)
+        .filter(([key, value]) => value !== null && value !== undefined)
+        .map(([key, value]) => {
+          return {
+            key,
+            value: this.formatPropertyValue(key, value)
+          };
+        });
+    }
+
+    // Fallback to showing all non-excluded properties from the main object
     return Object.entries(this.fullElementData)
-      .filter(([key]) => !excludedProps.includes(key) && this.fullElementData[key] !== null)
+      .filter(([key]) => !excludedProps.includes(key) &&
+        this.fullElementData[key] !== null &&
+        this.fullElementData[key] !== undefined &&
+        key !== 'properties') // Skip the properties object itself
       .map(([key, value]) => {
-        let displayValue = value;
-
-        // Format date strings
-        if (typeof value === 'string' &&
-          (key.includes('date') || key.includes('Date') || key.includes('At'))) {
-          try {
-            displayValue = new Date(value).toLocaleString();
-          } catch (e) {
-            // Not a valid date, use original value
-          }
-        }
-
-        return { key, value: displayValue };
+        return {
+          key,
+          value: this.formatPropertyValue(key, value)
+        };
       });
+  }
+
+  // Helper method to check if a value is a JSON string
+  public isJsonString(value: any): boolean {
+    if (typeof value !== 'string') return false;
+
+    // Check if it starts and ends with curly braces or square brackets
+    if (
+      (value.startsWith('{') && value.endsWith('}')) ||
+      (value.startsWith('[') && value.endsWith(']'))
+    ) {
+      try {
+        JSON.parse(value);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  // Helper method to format property values based on their type
+  private formatPropertyValue(key: string, value: any): any {
+    // Format date strings
+    if (typeof value === 'string' &&
+      (key.toLowerCase().includes('date') ||
+        key.toLowerCase().includes('time') ||
+        key.toLowerCase().includes('at'))) {
+      try {
+        return new Date(value).toLocaleString();
+      } catch (e) {
+        // Not a valid date, use original value
+      }
+    }
+
+    // Format boolean values
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+
+    // Format objects and arrays
+    if (typeof value === 'object' && value !== null) {
+      try {
+        return JSON.stringify(value, null, 2);
+      } catch (e) {
+        return '[Complex Object]';
+      }
+    }
+
+    // Handle numbers
+    if (typeof value === 'number') {
+      // Check if it's a decimal number that needs formatting
+      if (value % 1 !== 0) {
+        return value.toFixed(2);
+      }
+      return value;
+    }
+
+    // Return as is for other types
+    return value;
   }
 
   // Opens the delete confirmation modal
@@ -164,6 +232,7 @@ export class DetailsPanelComponent implements OnChanges {
 
         if (node) {
           this.fullElementData = node;
+          console.log('Node details loaded:', this.fullElementData);
         } else {
           console.warn(`Node with ID ${nodeId} not found in the data`);
         }
@@ -186,6 +255,7 @@ export class DetailsPanelComponent implements OnChanges {
 
         if (edge) {
           this.fullElementData = edge;
+          console.log('Edge details loaded:', this.fullElementData);
         } else {
           console.warn(`Edge with ID ${edgeId} not found in the data`);
         }

@@ -119,11 +119,11 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             {
                 // Use indexer syntax for dynamic objects
                 string id = item["id"].ToString();
-                string source = item["outV"].ToString();  // Source is the outV (outgoing vertex)
-                string target = item["inV"].ToString();   // Target is the inV (incoming vertex)
-                string edgeType = item["label"].ToString(); // Get the label as edgeType
+                string source = item["outV"].ToString();
+                string target = item["inV"].ToString();
+                string edgeType = item["label"].ToString();
                 DateTime createdAt = DateTime.UtcNow;
-                string edgeGraphId = graphId ?? ""; // Default to empty if not provided
+                string edgeGraphId = graphId ?? "";
                 Dictionary<string, object> customProperties = new Dictionary<string, object>();
 
                 // Extract additional properties from the properties collection
@@ -142,28 +142,76 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
                     // Extract custom properties (all properties that aren't standard ones)
                     var propsDict = properties as Dictionary<string, object>;
+
+                    // Log the properties dictionary to help with debugging
+                    Logger.LogDebug("Edge {Id} properties: {Properties}", id,
+                        System.Text.Json.JsonSerializer.Serialize(propsDict));
+
                     if (propsDict != null)
                     {
                         foreach (var prop in propsDict)
                         {
                             // Skip standard properties we've already extracted
-                            if (prop.Key == "createdAt" || prop.Key == "graphId" || prop.Key == "pkey")
+                            if (prop.Key == "createdAt" || prop.Key == "graphId" || prop.Key == "pkey" || prop.Key == "id")
                             {
                                 continue;
                             }
 
-                            // Extract the property value
-                            var values = prop.Value as IEnumerable<object>;
-                            if (values != null)
+                            try
                             {
-                                var valueObj = values.Cast<Dictionary<string, object>>().FirstOrDefault();
-                                if (valueObj != null && valueObj.ContainsKey("value"))
+                                // Try different approaches to extract the property value
+                                if (prop.Value is string simpleString)
                                 {
-                                    customProperties[prop.Key] = valueObj["value"];
+                                    // Direct string property
+                                    customProperties[prop.Key] = simpleString;
+                                    Logger.LogDebug("Extracted simple string property {PropKey}={PropValue} for edge {Id}",
+                                        prop.Key, simpleString, id);
                                 }
+                                else if (prop.Value is IEnumerable<object> values)
+                                {
+                                    // Array of values - typical Gremlin format
+                                    var valueObj = values.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                    if (valueObj != null && valueObj.ContainsKey("value"))
+                                    {
+                                        customProperties[prop.Key] = valueObj["value"];
+                                        Logger.LogDebug("Extracted property {PropKey}={PropValue} for edge {Id}",
+                                            prop.Key, valueObj["value"], id);
+                                    }
+                                }
+                                else if (prop.Value is Dictionary<string, object> directDict)
+                                {
+                                    // Direct dictionary property
+                                    if (directDict.ContainsKey("value"))
+                                    {
+                                        customProperties[prop.Key] = directDict["value"];
+                                        Logger.LogDebug("Extracted dictionary property {PropKey}={PropValue} for edge {Id}",
+                                            prop.Key, directDict["value"], id);
+                                    }
+                                    else
+                                    {
+                                        // Use the whole dictionary as the value
+                                        customProperties[prop.Key] = directDict;
+                                        Logger.LogDebug("Extracted full dictionary for property {PropKey} for edge {Id}",
+                                            prop.Key, id);
+                                    }
+                                }
+                                else
+                                {
+                                    // For other types, try to use the raw value
+                                    customProperties[prop.Key] = prop.Value;
+                                    Logger.LogDebug("Extracted raw property {PropKey} for edge {Id} of type {Type}",
+                                        prop.Key, id, prop.Value?.GetType().Name ?? "null");
+                                }
+                            }
+                            catch (Exception propEx)
+                            {
+                                Logger.LogWarning(propEx, "Error extracting property {PropKey} for edge {Id}", prop.Key, id);
                             }
                         }
                     }
+
+                    // Log the final custom properties to verify extraction
+                    Logger.LogDebug("Edge {Id} final custom properties count: {Count}", id, customProperties.Count);
                 }
 
                 return new Edge

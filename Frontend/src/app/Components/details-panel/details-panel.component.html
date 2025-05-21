@@ -37,8 +37,14 @@
         <!-- Additional node properties will be displayed here dynamically -->
         <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
           <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
-          <div class="detail-value">{{ prop.value }}</div>
+          <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
+            <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
+              <pre>{{ prop.value }}</pre>
+            </ng-container>
+            <ng-template #simpleValue>{{ prop.value }}</ng-template>
+          </div>
         </div>
+
       </div>
 
       <div *ngIf="selectedElement?.type === 'edge'">
@@ -62,7 +68,12 @@
         <!-- Additional edge properties will be displayed here dynamically -->
         <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
           <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
-          <div class="detail-value">{{ prop.value }}</div>
+          <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
+            <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
+              <pre>{{ prop.value }}</pre>
+            </ng-container>
+            <ng-template #simpleValue>{{ prop.value }}</ng-template>
+          </div>
         </div>
       </div>
     </div>

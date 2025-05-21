@@ -93,3 +93,15 @@
     font-size: 0.9rem;
   }
 
+.json-value pre {
+  margin: 0;
+  padding: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 200px;
+  font-size: 12px;
+  font-family: monospace;
+  border: 1px solid var(--border);
+}
+
