@@ -3,12 +3,9 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, Input, Output, EventEmitter, PLATFORM_ID, Inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import cytoscape from 'cytoscape';
-
-
 import type { NodeSingular } from 'cytoscape';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { takeUntil, startWith } from 'rxjs/operators';
-import { NodeType } from '../../Models/node-type.model';
+import { takeUntil, startWith } from 'rxjs/operators'; 
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
 import { TypesService } from '../../Services/Types/types.service';
 import { NodeService } from '../../Services/Node/node.service';
@@ -613,7 +610,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         data: {
           id: String(node.id),
           label: node.name || 'Unnamed Node',
-          nodeType: node.nodeType || NodeType.Default,
+          nodeType: node.nodeType || 'Default',
           parent: node.parent ? String(node.parent) : undefined, // Add parent reference
         }
       };
