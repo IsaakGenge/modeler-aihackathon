@@ -7,4 +7,5 @@ export interface Node {
   createdAt?: Date;
   positionX?: number;
   positionY?: number;
+  properties?: { [key: string]: any };
 }

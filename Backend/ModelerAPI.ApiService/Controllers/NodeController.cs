@@ -57,10 +57,33 @@ namespace ModelerAPI.ApiService.Controllers
         }
         // PUT: api/node/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateNode(int id, [FromBody] object node)
+        public async Task<IActionResult> UpdateNode(string id, [FromBody] Node node)
         {
-            // Logic to update a node
-            return NoContent();
+            try
+            {
+                if (id != node.Id)
+                {
+                    return BadRequest("ID in URL does not match ID in the request body");
+                }
+
+                if (string.IsNullOrEmpty(node.Id))
+                {
+                    return BadRequest("Node ID is required");
+                }
+
+                // Update the node using the CosmosService
+                var updatedNode = await CosmosService.UpdateNodeAsync(node);
+
+                return Ok(updatedNode);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while updating the node: {ex.Message}");
+            }
         }
         // DELETE: api/node/{id}
         [HttpDelete("{id}")]

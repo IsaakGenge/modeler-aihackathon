@@ -4,9 +4,29 @@
   <div class="details-header">
     <h4>{{ selectedElement?.type === 'node' ? 'Node Details' : 'Edge Details' }}</h4>
     <div class="details-actions">
-      <button class="delete-button btn btn-danger btn-sm" (click)="deleteElement()">
+      <!-- Edit button - show when not in edit mode -->
+      <button *ngIf="!isEditMode" class="edit-button btn btn-primary btn-sm" (click)="toggleEditMode()">
+        <i class="bi bi-pencil"></i> Edit
+      </button>
+
+      <!-- Delete button - show when not in edit mode -->
+      <button *ngIf="!isEditMode" class="delete-button btn btn-danger btn-sm" (click)="deleteElement()">
         <i class="bi bi-trash"></i> Delete
       </button>
+
+      <!-- Save button - show when in edit mode -->
+      <button *ngIf="isEditMode" class="save-button btn btn-success btn-sm"
+              (click)="saveChanges()" [disabled]="isUpdating">
+        <i class="bi bi-check"></i> {{ isUpdating ? 'Saving...' : 'Save' }}
+      </button>
+
+      <!-- Cancel button - show when in edit mode -->
+      <button *ngIf="isEditMode" class="cancel-button btn btn-secondary btn-sm"
+              (click)="cancelEdit()" [disabled]="isUpdating">
+        <i class="bi bi-x"></i> Cancel
+      </button>
+
+      <!-- Close button - always show -->
       <button class="close-button" (click)="closeDetailsPanel()">
         <i class="bi bi-x"></i>
       </button>
@@ -19,60 +39,151 @@
       </div>
     </div>
 
+    <!-- Update error message -->
+    <div *ngIf="updateError" class="alert alert-danger mt-2 mb-2">
+      {{ updateError }}
+    </div>
+
     <div *ngIf="!isLoadingDetails">
-      <div *ngIf="selectedElement?.type === 'node'">
-        <div class="detail-item">
-          <div class="detail-label">ID:</div>
-          <div class="detail-value">{{ selectedElement?.data?.id }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Name:</div>
-          <div class="detail-value">{{ selectedElement?.data?.label }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Type:</div>
-          <div class="detail-value">{{ selectedElement?.data?.nodeType }}</div>
+      <!-- VIEW MODE: Normal display of details -->
+      <div *ngIf="!isEditMode">
+        <div *ngIf="selectedElement?.type === 'node'">
+          <div class="detail-item">
+            <div class="detail-label">ID:</div>
+            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Name:</div>
+            <div class="detail-value">{{ selectedElement?.data?.label }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Type:</div>
+            <div class="detail-value">{{ selectedElement?.data?.nodeType }}</div>
+          </div>
+
+          <!-- Additional node properties will be displayed here dynamically -->
+          <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
+            <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
+            <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
+              <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
+                <pre>{{ prop.value }}</pre>
+              </ng-container>
+              <ng-template #simpleValue>{{ prop.value }}</ng-template>
+            </div>
+          </div>
+
         </div>
 
-        <!-- Additional node properties will be displayed here dynamically -->
-        <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
-          <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
-          <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
-            <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
-              <pre>{{ prop.value }}</pre>
-            </ng-container>
-            <ng-template #simpleValue>{{ prop.value }}</ng-template>
+        <div *ngIf="selectedElement?.type === 'edge'">
+          <div class="detail-item">
+            <div class="detail-label">ID:</div>
+            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Type:</div>
+            <div class="detail-value">{{ selectedElement?.data?.edgeType || 'Default' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Source:</div>
+            <div class="detail-value">{{ selectedElement?.data?.sourceLabel || selectedElement?.data?.source }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Target:</div>
+            <div class="detail-value">{{ selectedElement?.data?.targetLabel || selectedElement?.data?.target }}</div>
+          </div>
+
+          <!-- Additional edge properties will be displayed here dynamically -->
+          <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
+            <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
+            <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
+              <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
+                <pre>{{ prop.value }}</pre>
+              </ng-container>
+              <ng-template #simpleValue>{{ prop.value }}</ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT MODE: Editable fields for properties -->
+      <div *ngIf="isEditMode" class="edit-mode">
+        <!-- Display fixed properties (ID, Type, etc.) -->
+        <div *ngIf="selectedElement?.type === 'node'" class="fixed-properties">
+          <div class="detail-item">
+            <div class="detail-label">ID:</div>
+            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Name:</div>
+            <div class="detail-value">{{ selectedElement?.data?.label }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Type:</div>
+            <div class="detail-value">{{ selectedElement?.data?.nodeType }}</div>
           </div>
         </div>
 
-      </div>
+        <div *ngIf="selectedElement?.type === 'edge'" class="fixed-properties">
+          <div class="detail-item">
+            <div class="detail-label">ID:</div>
+            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Type:</div>
+            <div class="detail-value">{{ selectedElement?.data?.edgeType || 'Default' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Source:</div>
+            <div class="detail-value">{{ selectedElement?.data?.sourceLabel || selectedElement?.data?.source }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Target:</div>
+            <div class="detail-value">{{ selectedElement?.data?.targetLabel || selectedElement?.data?.target }}</div>
+          </div>
+        </div>
 
-      <div *ngIf="selectedElement?.type === 'edge'">
-        <div class="detail-item">
-          <div class="detail-label">ID:</div>
-          <div class="detail-value">{{ selectedElement?.data?.id }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Type:</div>
-          <div class="detail-value">{{ selectedElement?.data?.edgeType || 'Default' }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Source:</div>
-          <div class="detail-value">{{ selectedElement?.data?.sourceLabel || selectedElement?.data?.source }}</div>
-        </div>
-        <div class="detail-item">
-          <div class="detail-label">Target:</div>
-          <div class="detail-value">{{ selectedElement?.data?.targetLabel || selectedElement?.data?.target }}</div>
+        <div class="properties-divider">
+          <h5 class="mt-3 mb-2">Custom Properties</h5>
+          <button type="button" class="btn btn-sm btn-outline-primary"
+                  (click)="addNewPropertyField()" *ngIf="!isAddingProperty">
+            <i class="bi bi-plus"></i> Add Property
+          </button>
         </div>
 
-        <!-- Additional edge properties will be displayed here dynamically -->
-        <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
-          <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
-          <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
-            <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
-              <pre>{{ prop.value }}</pre>
-            </ng-container>
-            <ng-template #simpleValue>{{ prop.value }}</ng-template>
+        <!-- Editable properties -->
+        <div *ngFor="let prop of editableProperties; let i = index" class="editable-property mb-2">
+          <div class="row">
+            <div class="col">
+              <input type="text" class="form-control" [(ngModel)]="prop.key" placeholder="Property name">
+            </div>
+            <div class="col">
+              <input type="text" class="form-control" [(ngModel)]="prop.value" placeholder="Value">
+            </div>
+            <div class="col-auto">
+              <button type="button" class="btn btn-outline-danger" (click)="removeProperty(i)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add new property form -->
+        <div *ngIf="isAddingProperty" class="add-property-form mb-3">
+          <div class="row">
+            <div class="col">
+              <input type="text" class="form-control" [(ngModel)]="newProperty.key" placeholder="Property name">
+            </div>
+            <div class="col">
+              <input type="text" class="form-control" [(ngModel)]="newProperty.value" placeholder="Value">
+            </div>
+            <div class="col-auto">
+              <button type="button" class="btn btn-outline-success" (click)="confirmAddProperty()">
+                <i class="bi bi-check"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" (click)="cancelAddProperty()">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>

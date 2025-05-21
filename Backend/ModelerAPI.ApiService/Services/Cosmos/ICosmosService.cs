@@ -6,11 +6,16 @@ public interface ICosmosService
     Task<Node> CreateNodeAsync(Node node);
     Task<List<Node>> GetNodes(string graphId = null);
     Task<bool> DeleteNodeAsync(string id);
+    Task<Node> UpdateNodeAsync(Node node);
 
     // Edge operations
     Task<Edge> CreateEdgeAsync(Edge edge);
     Task<List<Edge>> GetEdges(string graphId = null);
     Task<bool> DeleteEdgeAsync(string id);
+    Task<Edge> UpdateEdgeAsync(Edge edge);
+
+
+
 
     // Generic Cosmos DB operations
     Task<T> GetItemAsync<T>(string id, string partitionKey);

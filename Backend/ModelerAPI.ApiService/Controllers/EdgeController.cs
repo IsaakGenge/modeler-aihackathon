@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ModelerAPI.ApiService.Models;
-using ModelerAPI.ApiService.Services;
+using ModelerAPI.ApiService.Services.Cosmos; // Fixed namespace
 
 namespace ModelerAPI.ApiService.Controllers
 {
@@ -15,8 +15,6 @@ namespace ModelerAPI.ApiService.Controllers
             _cosmosService = cosmosService;
         }
 
-        // GET: api/edge
-        [HttpGet]
         // GET: api/edge
         [HttpGet]
         public async Task<IActionResult> GetEdges([FromQuery] string graphId)
@@ -43,11 +41,10 @@ namespace ModelerAPI.ApiService.Controllers
                 return Ok(edges);
             }
             catch (Exception ex)
-            {                
+            {
                 return StatusCode(500, "An error occurred while retrieving edges");
             }
         }
-
 
         // POST: api/edge
         [HttpPost]
@@ -65,10 +62,33 @@ namespace ModelerAPI.ApiService.Controllers
 
         // PUT: api/edge/{id}
         [HttpPut("{id}")]
-        public IActionResult UpdateEdge(string id, [FromBody] Edge edge)
+        public async Task<IActionResult> UpdateEdge(string id, [FromBody] Edge edge)
         {
-            // Logic to update an edge - to be implemented
-            return NoContent();
+            try
+            {
+                if (id != edge.Id)
+                {
+                    return BadRequest("ID in URL does not match ID in the request body");
+                }
+
+                if (string.IsNullOrEmpty(edge.Id))
+                {
+                    return BadRequest("Edge ID is required");
+                }
+
+                // Update the edge using the CosmosService
+                var updatedEdge = await _cosmosService.UpdateEdgeAsync(edge);
+
+                return Ok(updatedEdge);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while updating the edge: {ex.Message}");
+            }
         }
 
         // DELETE: api/edge/{id}

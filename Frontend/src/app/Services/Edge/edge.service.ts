@@ -41,7 +41,13 @@ export class EdgeService {
         }
 
         return this.http.post<Edge>(this.apiUrl, edge);
+  }
+  updateEdge(edge: Edge): Observable<Edge> {
+    if (!edge.id) {
+      throw new Error('Edge ID is required for update');
     }
+    return this.http.put<Edge>(`${this.apiUrl}/${edge.id}`, edge);
+  }
 
     deleteEdge(id: string): Observable<any> {
         return this.http.delete<any>(`${this.apiUrl}/${id}`);

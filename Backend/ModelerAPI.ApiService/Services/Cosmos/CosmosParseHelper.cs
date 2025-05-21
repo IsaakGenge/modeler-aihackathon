@@ -363,6 +363,322 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             return graphId;
         }
 
+        /// <summary>
+        /// Extracts custom properties from a valueMap response from Gremlin
+        /// </summary>
+        /// <param name="valueMap">The dynamic valueMap object from Gremlin response</param>
+        /// <returns>Dictionary of custom properties</returns>
+        /// <summary>
+        /// Extracts custom properties from a valueMap response from Gremlin
+        /// </summary>
+        /// <param name="valueMap">The dynamic valueMap object from Gremlin response</param>
+        /// <returns>Dictionary of custom properties</returns>
+        public Dictionary<string, object> ExtractCustomProperties(dynamic valueMap)
+        {
+            var customProperties = new Dictionary<string, object>();
+
+            try
+            {
+                // Log the valueMap type for debugging
+                string valueMapType = valueMap?.GetType()?.FullName ?? "null";
+                Logger.LogDebug("ExtractCustomProperties received valueMap of type: {Type}", valueMapType);
+
+                // Handle the case when valueMap is a dictionary
+                var valueMapDict = valueMap as Dictionary<string, object>;
+                if (valueMapDict != null)
+                {
+                    foreach (var prop in valueMapDict)
+                    {
+                        // Skip system properties
+                        if (IsSystemProperty(prop.Key))
+                        {
+                            continue;
+                        }
+
+                        object finalValue = null;
+
+                        // Extract the property value
+                        if (prop.Value is IEnumerable<object> values)
+                        {
+                            // This is the typical Gremlin response format for property values
+                            try
+                            {
+                                // Check if the first item is a dictionary with 'value' key
+                                var firstItem = values.FirstOrDefault();
+
+                                if (firstItem is Dictionary<string, object> valueDict && valueDict.ContainsKey("value"))
+                                {
+                                    // Get the raw value
+                                    var rawValue = valueDict["value"];
+
+                                    // Convert to appropriate type
+                                    finalValue = ConvertToAppropriateType(rawValue, prop.Key);
+
+                                    Logger.LogDebug("Extracted custom property {PropKey}={PropValue} (Type: {ValueType})",
+                                        prop.Key, finalValue, finalValue?.GetType().Name ?? "null");
+                                }
+                                else
+                                {
+                                    // If the values collection contains simple values (not dictionaries)
+                                    // Just use the first value directly
+                                    if (firstItem != null)
+                                    {
+                                        finalValue = ConvertToAppropriateType(firstItem, prop.Key);
+
+                                        Logger.LogDebug("Extracted direct value from collection for {PropKey}={PropValue} (Type: {ValueType})",
+                                            prop.Key, finalValue, finalValue?.GetType().Name ?? "null");
+                                    }
+                                }
+                            }
+                            catch (InvalidCastException ex)
+                            {
+                                // Log the error but continue processing
+                                Logger.LogWarning(ex, "Failed to cast collection item for property {PropKey}, trying alternative extraction", prop.Key);
+
+                                // Fallback to treating the values collection as a single value
+                                finalValue = ConvertToAppropriateType(prop.Value, prop.Key);
+                            }
+                        }
+                        else if (prop.Value is string simpleString)
+                        {
+                            // Direct string property - try to convert to appropriate type
+                            finalValue = ConvertToAppropriateType(simpleString, prop.Key);
+
+                            Logger.LogDebug("Extracted simple string property {PropKey}={PropValue} (Type: {ValueType})",
+                                prop.Key, finalValue, finalValue?.GetType().Name ?? "null");
+                        }
+                        else if (prop.Value is Dictionary<string, object> directDict && directDict.ContainsKey("value"))
+                        {
+                            // Dictionary with 'value' property
+                            var rawValue = directDict["value"];
+                            finalValue = ConvertToAppropriateType(rawValue, prop.Key);
+
+                            Logger.LogDebug("Extracted dictionary property {PropKey}={PropValue} (Type: {ValueType})",
+                                prop.Key, finalValue, finalValue?.GetType().Name ?? "null");
+                        }
+                        else if (prop.Value != null)
+                        {
+                            // For other types, try to use the raw value
+                            finalValue = ConvertToAppropriateType(prop.Value, prop.Key);
+
+                            Logger.LogDebug("Extracted raw property {PropKey}={PropValue} (Type: {ValueType})",
+                                prop.Key, finalValue, finalValue?.GetType().Name ?? "null");
+                        }
+
+                        if (finalValue != null)
+                        {
+                            customProperties[prop.Key] = finalValue;
+                        }
+                    }
+                }
+                else if (valueMap != null)
+                {
+                    // If valueMap is not a dictionary, try to handle it as a dynamic object
+                    try
+                    {
+                        // This handles the case where valueMap is a dynamic object with properties
+                        foreach (var prop in valueMap)
+                        {
+                            string key = prop.Key?.ToString();
+                            if (string.IsNullOrEmpty(key) || IsSystemProperty(key))
+                                continue;
+
+                            object value = prop.Value;
+                            var finalValue = ConvertToAppropriateType(value, key);
+                            if (finalValue != null)
+                            {
+                                customProperties[key] = finalValue;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Could not extract properties from non-dictionary valueMap");
+                    }
+                }
+
+                // Log the final custom properties count
+                Logger.LogDebug("Extracted {Count} custom properties", customProperties.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error extracting custom properties");
+            }
+
+            return customProperties;
+        }
+
+
+        /// <summary>
+        /// Converts a value to its appropriate type based on content
+        /// </summary>
+        private object ConvertToAppropriateType(object value, string propertyName)
+        {
+            if (value == null)
+                return null;
+
+            // Log the actual type of the value for debugging
+            Logger.LogDebug("Converting property {Property} with value type {Type}: {Value}",
+                propertyName, value.GetType().Name, value);
+
+            // Handle numeric types directly
+            if (value is int or long or short or byte or sbyte or uint or ulong or ushort or float or double or decimal)
+            {
+                Logger.LogDebug("Numeric value detected - keeping as {Type}: {Value}", value.GetType().Name, value);
+                return value;
+            }
+
+            // Handle boolean types directly
+            if (value is bool boolValue)
+            {
+                Logger.LogDebug("Boolean value detected: {Value}", boolValue);
+                return boolValue;
+            }
+
+            // Handle DateTime types directly
+            if (value is DateTime dateTimeValue)
+            {
+                Logger.LogDebug("DateTime value detected: {Value}", dateTimeValue);
+                return dateTimeValue;
+            }
+
+            // Handle string values - try to convert to the most appropriate type
+            if (value is string stringValue)
+            {
+                // Empty string stays as empty string
+                if (string.IsNullOrEmpty(stringValue))
+                    return stringValue;
+
+                // Try boolean
+                if (stringValue.Equals("true", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to boolean: true", stringValue);
+                    return true;
+                }
+                if (stringValue.Equals("false", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to boolean: false", stringValue);
+                    return false;
+                }
+                if (stringValue.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to boolean: true", stringValue);
+                    return true;
+                }
+                if (stringValue.Equals("no", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to boolean: false", stringValue);
+                    return false;
+                }
+
+                // Try integer (only if it looks like a pure number)
+                if (int.TryParse(stringValue, out int intValue) &&
+                    !stringValue.Contains(".") && !stringValue.Contains(","))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to integer: {ConvertedValue}",
+                        stringValue, intValue);
+                    return intValue;
+                }
+
+                // Try double (for decimal numbers)
+                // Replace comma with period for culture-invariant parsing
+                string invariantString = stringValue.Replace(',', '.');
+                if (double.TryParse(invariantString,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out double doubleValue))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to double: {ConvertedValue}",
+                        stringValue, doubleValue);
+                    return doubleValue;
+                }
+
+                // Try DateTime (especially for properties that might contain dates)
+                if ((propertyName.Contains("date", StringComparison.OrdinalIgnoreCase) ||
+                     propertyName.Contains("time", StringComparison.OrdinalIgnoreCase) ||
+                     propertyName.EndsWith("At", StringComparison.OrdinalIgnoreCase)) &&
+                    DateTime.TryParse(stringValue, out DateTime dateValue))
+                {
+                    Logger.LogDebug("String value '{Value}' converted to DateTime: {ConvertedValue}",
+                        stringValue, dateValue);
+                    return dateValue;
+                }
+
+                // Try to parse JSON objects or arrays
+                if ((stringValue.StartsWith("{") && stringValue.EndsWith("}")) ||
+                    (stringValue.StartsWith("[") && stringValue.EndsWith("]")))
+                {
+                    try
+                    {
+                        var jsonResult = System.Text.Json.JsonSerializer.Deserialize<object>(stringValue);
+                        Logger.LogDebug("String value successfully parsed as JSON");
+                        return jsonResult;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogDebug("Failed to parse string as JSON: {Error}", ex.Message);
+                        // If JSON parsing fails, keep as string
+                    }
+                }
+
+                Logger.LogDebug("Keeping value as string: {Value}", stringValue);
+                // Fallback to string
+                return stringValue;
+            }
+
+            // For JsonElement, handle appropriately
+            if (value is System.Text.Json.JsonElement jsonElement)
+            {
+                switch (jsonElement.ValueKind)
+                {
+                    case System.Text.Json.JsonValueKind.Number:
+                        if (jsonElement.TryGetInt32(out int intVal))
+                        {
+                            Logger.LogDebug("JsonElement converted to int: {Value}", intVal);
+                            return intVal;
+                        }
+
+                        if (jsonElement.TryGetDouble(out double doubleVal))
+                        {
+                            Logger.LogDebug("JsonElement converted to double: {Value}", doubleVal);
+                            return doubleVal;
+                        }
+                        break;
+
+                    case System.Text.Json.JsonValueKind.True:
+                        return true;
+
+                    case System.Text.Json.JsonValueKind.False:
+                        return false;
+
+                    case System.Text.Json.JsonValueKind.String:
+                        // Try to convert string to appropriate type
+                        return ConvertToAppropriateType(jsonElement.GetString(), propertyName);
+                }
+            }
+
+            // Return the value as is for other types
+            Logger.LogDebug("Using value as is, type: {Type}", value.GetType().Name);
+            return value;
+        }
+
+        /// <summary>
+        /// Determines if a property is a system property that should not be included in custom properties
+        /// </summary>
+        /// <param name="propertyName">Name of the property to check</param>
+        /// <returns>True if it's a system property, false otherwise</returns>
+        private bool IsSystemProperty(string propertyName)
+        {
+            // Define system properties that are not considered custom properties
+            string[] systemProperties = new[]
+            {
+        "id", "name", "nodeType", "edgeType", "graphId", "pkey",
+        "positionX", "positionY", "createdAt", "source", "target"
+    };
+
+            return systemProperties.Contains(propertyName, StringComparer.OrdinalIgnoreCase);
+        }
+
         #endregion
     }
 }

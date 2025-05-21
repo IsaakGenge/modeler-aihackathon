@@ -105,3 +105,65 @@
   border: 1px solid var(--border);
 }
 
+/* Add to Frontend/src/app/Components/details-panel/details-panel.component.css */
+
+/* Edit mode styles */
+.edit-button, .save-button, .cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+}
+
+  .edit-button .bi, .save-button .bi, .cancel-button .bi {
+    font-size: 0.9rem;
+  }
+
+.editable-property {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  margin-bottom: 10px;
+}
+
+.properties-divider {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0 10px 0;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}
+
+  .properties-divider h5 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+.add-property-form {
+  background-color: var(--bg-tertiary);
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+}
+
+.fixed-properties {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Make buttons in edit mode appear side by side */
+.col-auto {
+  display: flex;
+  gap: 5px;
+}
+
+/* Alert style for error messages */
+.alert {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+

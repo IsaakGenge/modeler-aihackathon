@@ -102,6 +102,10 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             if (value == null)
                 return "null";
 
+            // Log the type for debugging
+            Logger.LogDebug("Serializing property value of type: {Type} with value: {Value}",
+                value.GetType().Name, value);
+
             switch (value)
             {
                 case string s:
@@ -109,10 +113,11 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 case DateTime dt:
                     return $"'{dt:o}'";
                 case bool b:
-                    return b ? "true" : "false";
+                    return b ? "true" : "false"; // Boolean values without quotes
                 case int or long or short or byte or sbyte or uint or ulong or ushort:
                 case float or double or decimal:
-                    return value.ToString();
+                    // Numeric values without quotes
+                    return value.ToString().Replace(",", "."); // Ensure decimal point is a period
                 case DateTimeOffset dto:
                     return $"'{dto:o}'";
                 case DateOnly dateOnly:
@@ -120,7 +125,32 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 case TimeOnly timeOnly:
                     return $"'{timeOnly:HH:mm:ss.fffffff}'";
                 default:
-                    // For complex objects, serialize to JSON and escape any single quotes
+                    if (value is System.Text.Json.JsonElement jsonElement)
+                    {
+                        // Handle JsonElement type which might come from System.Text.Json
+                        switch (jsonElement.ValueKind)
+                        {
+                            case System.Text.Json.JsonValueKind.String:
+                                return $"'{SanitizeGremlinValue(jsonElement.GetString() ?? "")}'";
+                            case System.Text.Json.JsonValueKind.Number:
+                                return jsonElement.ToString(); // No quotes for numbers
+                            case System.Text.Json.JsonValueKind.True:
+                                return "true";
+                            case System.Text.Json.JsonValueKind.False:
+                                return "false";
+                            case System.Text.Json.JsonValueKind.Null:
+                                return "null";
+                            case System.Text.Json.JsonValueKind.Object:
+                            case System.Text.Json.JsonValueKind.Array:
+                                // For objects and arrays, we need to serialize to JSON
+                                var jsonVal = jsonElement.ToString();
+                                return $"'{SanitizeGremlinValue(jsonVal)}'";
+                            default:
+                                return $"'{SanitizeGremlinValue(jsonElement.ToString())}'";
+                        }
+                    }
+
+                    // For other complex objects, serialize to JSON
                     var jsonOptions = new System.Text.Json.JsonSerializerOptions
                     {
                         WriteIndented = false,
@@ -342,6 +372,211 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 return false;
             }
         }
+
+        public async Task<Node> UpdateNodeAsync(Node node)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(node.Id))
+                {
+                    throw new ArgumentException("Node ID is required for update");
+                }
+
+                if (string.IsNullOrEmpty(node.GraphId))
+                {
+                    throw new ArgumentException("GraphId is required for nodes");
+                }
+
+                // Sanitize inputs to prevent Gremlin injection
+                var sanitizedId = SanitizeGremlinValue(node.Id);
+                var sanitizedName = SanitizeGremlinValue(node.Name);
+                var sanitizedGraphId = SanitizeGremlinValue(node.GraphId);
+
+                // First, update basic properties
+                var gremlinQuery = $"g.V('{sanitizedId}')" +
+                                  $".property('name', '{sanitizedName}')" +
+                                  $".property('graphId', '{sanitizedGraphId}')";
+
+                if (node.PositionX.HasValue && node.PositionY.HasValue)
+                {
+                    gremlinQuery += $".property('positionX', {node.PositionX})" +
+                                  $".property('positionY', {node.PositionY})";
+                }
+
+                await ExecuteGremlinQueryAsync(gremlinQuery);
+
+                // Get current node properties
+                var currentNodeQuery = $"g.V('{sanitizedId}').valueMap()";
+                var currentNodeResult = await ExecuteGremlinQueryAsync(currentNodeQuery);
+
+                // Parse the current node properties
+                var currentProperties = new Dictionary<string, object>();
+                if (currentNodeResult.Count > 0)
+                {
+                    var valueMap = currentNodeResult.First();
+                    var parsedProperties = ParseHelper.ExtractCustomProperties(valueMap);
+                    foreach (var prop in parsedProperties)
+                    {
+                        currentProperties[prop.Key] = prop.Value;
+                    }
+                }
+
+                // Get updated properties (or empty dictionary if null)
+                var updatedProperties = node.Properties ?? new Dictionary<string, object>();
+
+                // IMPORTANT: FIRST REMOVE ALL EXISTING CUSTOM PROPERTIES
+                // This ensures a clean slate before adding the updated properties
+                foreach (var currentProp in currentProperties.Keys.ToList()) // Use ToList() to avoid collection modified exception
+                {
+                    // Skip system properties
+                    if (new[] { "id", "name", "nodeType", "graphId", "pkey", "positionX", "positionY", "createdAt" }
+                        .Contains(currentProp, StringComparer.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Remove ALL custom properties
+                    var removePropertyQuery = $"g.V('{sanitizedId}').properties('{SanitizeGremlinValue(currentProp)}').drop()";
+                    await ExecuteGremlinQueryAsync(removePropertyQuery);
+                }
+
+                // Now add only the properties that should exist
+                if (updatedProperties.Count > 0)
+                {
+                    foreach (var prop in updatedProperties)
+                    {
+                        // Skip null properties
+                        if (prop.Value == null)
+                            continue;
+
+                        var sanitizedKey = SanitizeGremlinValue(prop.Key);
+                        string propertyValue = SerializePropertyValue(prop.Value);
+
+                        var updatePropertyQuery = $"g.V('{sanitizedId}').property('{sanitizedKey}', {propertyValue})";
+                        await ExecuteGremlinQueryAsync(updatePropertyQuery);
+                    }
+                }
+
+                // Return the updated node with all its properties
+                var updatedNodeQuery = $"g.V('{sanitizedId}')";
+                var updatedNodeResult = await ExecuteGremlinQueryAsync(updatedNodeQuery);
+
+                // Final verification
+                if (updatedNodeResult.Count > 0)
+                {
+                    var updatedNode = ParseHelper.ParseNodeFromVertex(updatedNodeResult.First(), node.GraphId);
+                    return updatedNode;
+                }
+
+                return node; // Fallback to returning the input node if we can't get the updated one
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating node: {Message}", ex.Message);
+                throw;
+            }
+        }
+
+        public async Task<Edge> UpdateEdgeAsync(Edge edge)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(edge.Id))
+                {
+                    throw new ArgumentException("Edge ID is required for update");
+                }
+
+                if (string.IsNullOrEmpty(edge.GraphId))
+                {
+                    throw new ArgumentException("GraphId is required for edges");
+                }
+
+                // Sanitize inputs to prevent Gremlin injection
+                var sanitizedId = SanitizeGremlinValue(edge.Id);
+                var sanitizedGraphId = SanitizeGremlinValue(edge.GraphId);
+
+                // Update basic properties
+                var gremlinQuery = $"g.E('{sanitizedId}')" +
+                                  $".property('graphId', '{sanitizedGraphId}')"; // Don't update pkey
+
+                await ExecuteGremlinQueryAsync(gremlinQuery);
+
+                // Get current edge properties
+                var currentEdgeQuery = $"g.E('{sanitizedId}').valueMap()";
+                var currentEdgeResult = await ExecuteGremlinQueryAsync(currentEdgeQuery);
+
+                // Parse the current edge properties
+                var currentProperties = new Dictionary<string, object>();
+                if (currentEdgeResult.Count > 0)
+                {
+                    var valueMap = currentEdgeResult.First();
+                    var parsedProperties = ParseHelper.ExtractCustomProperties(valueMap);
+                    foreach (var prop in parsedProperties)
+                    {
+                        currentProperties[prop.Key] = prop.Value;
+                    }
+                }
+
+                // Get updated properties (or empty dictionary if null)
+                var updatedProperties = edge.Properties ?? new Dictionary<string, object>();
+
+                // IMPORTANT: FIRST REMOVE ALL EXISTING CUSTOM PROPERTIES
+                // This ensures a clean slate before adding the updated properties
+                foreach (var currentProp in currentProperties.Keys.ToList()) // Use ToList() to avoid collection modified exception
+                {
+                    // Skip system properties
+                    if (new[] { "id", "edgeType", "graphId", "pkey", "createdAt" }
+                        .Contains(currentProp, StringComparer.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Remove ALL custom properties
+                    var removePropertyQuery = $"g.E('{sanitizedId}').properties('{SanitizeGremlinValue(currentProp)}').drop()";
+                    await ExecuteGremlinQueryAsync(removePropertyQuery);
+                }
+
+                // Now add only the properties that should exist
+                if (updatedProperties.Count > 0)
+                {
+                    foreach (var prop in updatedProperties)
+                    {
+                        // Skip null properties
+                        if (prop.Value == null)
+                            continue;
+
+                        var sanitizedKey = SanitizeGremlinValue(prop.Key);
+                        string propertyValue = SerializePropertyValue(prop.Value);
+
+                        var updatePropertyQuery = $"g.E('{sanitizedId}').property('{sanitizedKey}', {propertyValue})";
+                        await ExecuteGremlinQueryAsync(updatePropertyQuery);
+                    }
+                }
+
+                // Return the updated edge with all its properties
+                var updatedEdgeQuery = $"g.E('{sanitizedId}')";
+                var updatedEdgeResult = await ExecuteGremlinQueryAsync(updatedEdgeQuery);
+
+                // Final verification
+                if (updatedEdgeResult.Count > 0)
+                {
+                    var updatedEdge = ParseHelper.ParseEdgeFromEdge(updatedEdgeResult.First(), edge.GraphId);
+                    return updatedEdge;
+                }
+
+                return edge; // Fallback to returning the input edge if we can't get the updated one
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating edge: {Message}", ex.Message);
+                throw;
+            }
+        }
+
+
+
+
+
 
         public async Task<bool> UpdateNodePositionsAsync(string nodeId, double x, double y)
         {

@@ -48,6 +48,13 @@ export class NodeService {
     this.nodeCreatedSubject.next();
   }
 
+  updateNode(node: Node): Observable<Node> {
+    if (!node.id) {
+      throw new Error('Node ID is required for update');
+    }
+    return this.http.put<Node>(`${this.apiUrl}/${node.id}`, node);
+  }
+
   deleteNode(id: string): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/${id}`);
   }
