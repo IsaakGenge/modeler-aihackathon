@@ -74,3 +74,22 @@
   justify-content: center;
   padding: 20px 0;
 }
+
+.details-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.delete-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+}
+
+  .delete-button .bi {
+    font-size: 0.9rem;
+  }
+

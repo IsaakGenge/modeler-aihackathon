@@ -7,85 +7,131 @@ import { NodeService } from '../../Services/Node/node.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
-    selector: 'app-details-panel',
-    standalone: true,
-    imports: [CommonModule],
-    templateUrl: './details-panel.component.html',
-    styleUrls: ['./details-panel.component.css']
+  selector: 'app-details-panel',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './details-panel.component.html',
+  styleUrls: ['./details-panel.component.css']
 })
 export class DetailsPanelComponent implements OnChanges {
-    @Input() selectedElement: any = null;
-    @Input() graphId: string = '';
-    @Input() isDarkMode$!: Observable<boolean>;
-    @Output() closePanel = new EventEmitter<void>();
+  @Input() selectedElement: any = null;
+  @Input() graphId: string = '';
+  @Input() isDarkMode$!: Observable<boolean>;
+  @Output() closePanel = new EventEmitter<void>();
 
-    public isLoadingDetails: boolean = false;
-    public fullElementData: any = null;
+  public isLoadingDetails: boolean = false;
+  public fullElementData: any = null;
 
-    constructor(
-        private nodeService: NodeService,
-        private edgeService: EdgeService
-    ) { }
+  constructor(
+    private nodeService: NodeService,
+    private edgeService: EdgeService
+  ) { }
 
-    ngOnChanges(changes: SimpleChanges): void {
-        // When selectedElement changes, fetch the details
-        if (changes['selectedElement'] && this.selectedElement) {
-            this.fetchElementDetails();
+  ngOnChanges(changes: SimpleChanges): void {
+    // When selectedElement changes, fetch the details
+    if (changes['selectedElement'] && this.selectedElement) {
+      this.fetchElementDetails();
+    }
+  }
+
+  public closeDetailsPanel(): void {
+    this.selectedElement = null;
+    this.fullElementData = null;
+    this.closePanel.emit();
+  }
+
+  public formatPropertyName(propName: string): string {
+    // Convert camelCase to Title Case with spaces
+    return propName
+      .replace(/([A-Z])/g, ' $1') // Insert a space before all uppercase letters
+      .replace(/^./, (str) => str.toUpperCase()); // Capitalize the first letter
+  }
+
+  public getAdditionalProperties(): { key: string, value: any }[] {
+    if (!this.fullElementData) return [];
+
+    // Properties we don't want to show (already displayed or internal)
+    const excludedProps = [
+      'id', 'name', 'label', 'nodeType', 'edgeType', 'source', 'target',
+      'sourceLabel', 'targetLabel', 'graphId', 'positionX', 'positionY'
+    ];
+
+    return Object.entries(this.fullElementData)
+      .filter(([key]) => !excludedProps.includes(key) && this.fullElementData[key] !== null)
+      .map(([key, value]) => {
+        let displayValue = value;
+
+        // Format date strings
+        if (typeof value === 'string' &&
+          (key.includes('date') || key.includes('Date') || key.includes('At'))) {
+          try {
+            displayValue = new Date(value).toLocaleString();
+          } catch (e) {
+            // Not a valid date, use original value
+          }
         }
+
+        return { key, value: displayValue };
+      });
+  }
+
+  public deleteElement(): void {
+    if (!this.selectedElement) return;
+
+    const elementType = this.selectedElement.type;
+    const elementId = this.selectedElement.data.id;
+
+    if (!elementId) {
+      console.error('Cannot delete element: ID is missing');
+      return;
     }
 
-    public closeDetailsPanel(): void {
-        this.selectedElement = null;
-        this.fullElementData = null;
-        this.closePanel.emit();
+    const confirmMessage = `Are you sure you want to delete this ${elementType === 'node' ? 'node' : 'connection'}?`;
+
+    if (confirm(confirmMessage)) {
+      this.isLoadingDetails = true;
+
+      if (elementType === 'node') {
+        this.nodeService.deleteNode(elementId).subscribe({
+          next: () => {
+            this.nodeService.notifyNodeDeleted();
+            this.closeDetailsPanel();
+            this.isLoadingDetails = false;
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error(`Error deleting node: ${error.message}`);
+            this.isLoadingDetails = false;
+            // You might want to show an error message here
+          }
+        });
+      } else if (elementType === 'edge') {
+        this.edgeService.deleteEdge(elementId).subscribe({
+          next: () => {
+            this.edgeService.notifyEdgeDeleted();
+            this.closeDetailsPanel();
+            this.isLoadingDetails = false;
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error(`Error deleting edge: ${error.message}`);
+            this.isLoadingDetails = false;
+            // You might want to show an error message here
+          }
+        });
+      }
     }
+  }
 
-    public formatPropertyName(propName: string): string {
-        // Convert camelCase to Title Case with spaces
-        return propName
-            .replace(/([A-Z])/g, ' $1') // Insert a space before all uppercase letters
-            .replace(/^./, (str) => str.toUpperCase()); // Capitalize the first letter
+  private fetchElementDetails(): void {
+    if (!this.selectedElement) return;
+
+    this.isLoadingDetails = true;
+
+    if (this.selectedElement.type === 'node') {
+      this.fetchNodeDetails(this.selectedElement.data.id);
+    } else if (this.selectedElement.type === 'edge') {
+      this.fetchEdgeDetails(this.selectedElement.data.id);
     }
-
-    public getAdditionalProperties(): { key: string, value: any }[] {
-        if (!this.fullElementData) return [];
-
-        // Properties we don't want to show (already displayed or internal)
-        const excludedProps = [
-            'id', 'name', 'label', 'nodeType', 'edgeType', 'source', 'target',
-            'sourceLabel', 'targetLabel', 'graphId', 'positionX', 'positionY'
-        ];
-
-        return Object.entries(this.fullElementData)
-            .filter(([key]) => !excludedProps.includes(key) && this.fullElementData[key] !== null)
-            .map(([key, value]) => {
-                let displayValue = value;
-
-                // Format date strings
-                if (typeof value === 'string' &&
-                    (key.includes('date') || key.includes('Date') || key.includes('At'))) {
-                    try {
-                        displayValue = new Date(value).toLocaleString();
-                    } catch (e) {
-                        // Not a valid date, use original value
-                    }
-                }
-
-                return { key, value: displayValue };
-            });
-    }
-
-    private fetchElementDetails(): void {
-        if (!this.selectedElement) return;
-
-        this.isLoadingDetails = true;
-
-        if (this.selectedElement.type === 'node') {
-            this.fetchNodeDetails(this.selectedElement.data.id);
-        } else if (this.selectedElement.type === 'edge') {
-            this.fetchEdgeDetails(this.selectedElement.data.id);
-        }
-    }
+  }
 
   // Method to fetch complete node data
   private fetchNodeDetails(nodeId: string): void {
@@ -130,5 +176,4 @@ export class DetailsPanelComponent implements OnChanges {
       }
     });
   }
-
 }

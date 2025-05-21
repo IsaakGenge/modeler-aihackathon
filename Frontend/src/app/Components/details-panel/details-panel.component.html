@@ -3,9 +3,14 @@
      [class.active]="selectedElement">
   <div class="details-header">
     <h4>{{ selectedElement?.type === 'node' ? 'Node Details' : 'Edge Details' }}</h4>
-    <button class="close-button" (click)="closeDetailsPanel()">
-      <i class="bi bi-x"></i>
-    </button>
+    <div class="details-actions">
+      <button class="delete-button btn btn-danger btn-sm" (click)="deleteElement()">
+        <i class="bi bi-trash"></i> Delete
+      </button>
+      <button class="close-button" (click)="closeDetailsPanel()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
   </div>
   <div class="details-content">
     <div *ngIf="isLoadingDetails" class="loading-spinner">
