@@ -3,9 +3,6 @@ using Gremlin.Net.Driver.Exceptions;
 using Gremlin.Net.Structure.IO.GraphSON;
 using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
-using Newtonsoft.Json;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 
 namespace ModelerAPI.ApiService.Services.Cosmos
 {
@@ -16,6 +13,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
         private readonly string DatabaseName;
         private readonly string ContianerName;
         private readonly GremlinClient GremlinClient;
+        private readonly CosmosParseHelper ParseHelper;
 
         public CosmosService(IConfiguration configuration, ILogger<CosmosService> logger)
         {
@@ -28,7 +26,6 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             // Initialize CosmosClient
             CosmosClient = new CosmosClient(cosmosConnectionString);
 
-
             var gremlinHostname = configuration["CosmosDB:GremlinHostname"];
             var gremlinPort = int.Parse(configuration["CosmosDB:GremlinPort"] ?? "443");
             var gremlinPassword = configuration["CosmosDB:GremlinPassword"];
@@ -36,10 +33,13 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
             var server = new GremlinServer(hostname: gremlinHostname, port: gremlinPort, username: gremlinUsername, password: gremlinPassword);
 
-            var messageSerializer = new GraphSON2MessageSerializer(new CustomGraphSON2Reader());          
+            var messageSerializer = new GraphSON2MessageSerializer(new CustomGraphSON2Reader());
 
             // Create the Gremlin client with settings
-            GremlinClient = new GremlinClient(server, messageSerializer);          
+            GremlinClient = new GremlinClient(server, messageSerializer);
+
+            // Initialize the parse helper
+            ParseHelper = new CosmosParseHelper(logger);
 
             Logger.LogInformation("GremlinClient initialized successfully.");
         }
@@ -64,6 +64,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 throw;
             }
         }
+
         /// <summary>
         /// Sanitizes a string value to prevent Gremlin injection attacks by escaping single quotes
         /// and removing potentially dangerous characters
@@ -89,7 +90,6 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             return sanitized;
         }
 
-
         #region Existing Node and Edge Methods
         public async Task<List<Node>> GetNodes(string graphId = null)
         {
@@ -111,175 +111,10 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
             foreach (var item in result)
             {
-                try
+                var node = ParseHelper.ParseNodeFromVertex(item, graphId);
+                if (node != null)
                 {
-                    // Use indexer syntax for dynamic objects
-                    string id = item["id"].ToString();
-                    string name = "";
-                    string nodeType = item["label"].ToString(); // Get the label as nodeType
-                    DateTime createdAt = DateTime.UtcNow;
-                    string nodeGraphId = graphId ?? ""; // Default to empty if not provided
-                    double? positionX = null;
-                    double? positionY = null;
-
-                    // Extract properties safely
-                    if (item["properties"] != null)
-                    {
-                        dynamic properties = item["properties"];
-
-
-                        // Extract name - check if property exists using a more direct approach
-                        try
-                        {
-                            if (properties.ContainsKey("name"))
-                            {
-                                var propsDict = item["properties"] as Dictionary<string, object>;
-                                if (propsDict != null && propsDict.ContainsKey("name"))
-                                {
-                                    var nameValues = propsDict["name"] as IEnumerable<object>;
-                                    if (nameValues != null)
-                                    {
-                                        var nameObj = nameValues.Cast<Dictionary<string, object>>().FirstOrDefault();
-                                        if (nameObj != null && nameObj.ContainsKey("value"))
-                                        {
-                                            name = nameObj["value"]?.ToString() ?? "";
-                                            Logger.LogDebug("Extracted node name: {Name} for node: {Id}", name, id);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, "Error extracting node name for node {Id}", id);
-                        }
-
-                        // Extract createdAt
-                        try
-                        {
-                            if (properties.ContainsKey("createdAt"))
-                            {
-                                var propsDict = item["properties"] as Dictionary<string, object>;
-                                if (propsDict != null && propsDict.ContainsKey("createdAt"))
-                                {
-                                    var createdAtValues = propsDict["createdAt"] as IEnumerable<object>;
-                                    if (createdAtValues != null)
-                                    {
-                                        var createdAtObj = createdAtValues.Cast<Dictionary<string, object>>().FirstOrDefault();
-                                        if (createdAtObj != null && createdAtObj.ContainsKey("value"))
-                                        {
-                                            string dateString = createdAtObj["value"]?.ToString() ?? "";
-                                            if (DateTime.TryParse(dateString, out var parsedDate))
-                                            {
-                                                createdAt = parsedDate;
-                                                Logger.LogDebug("Extracted createdAt: {CreatedAt} for node: {Id}", createdAt, id);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, "Error extracting createdAt for node {Id}", id);
-                        }
-
-                        // Extract positionX
-                        try
-                        {
-                            if (properties.ContainsKey("positionX"))
-                            {
-                                var propsDict = item["properties"] as Dictionary<string, object>;
-                                if (propsDict != null && propsDict.ContainsKey("positionX"))
-                                {
-                                    var posXValues = propsDict["positionX"] as IEnumerable<object>;
-                                    if (posXValues != null)
-                                    {
-                                        var posXObj = posXValues.Cast<Dictionary<string, object>>().FirstOrDefault();
-                                        if (posXObj != null && posXObj.ContainsKey("value"))
-                                        {
-                                            string valueString = posXObj["value"]?.ToString() ?? "";
-                                            if (Double.TryParse(valueString, out var parseX))
-                                            {
-                                                positionX = parseX;
-                                                Logger.LogDebug("Extracted positionX: {PosX} for node: {Id}", positionX, id);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, "Error extracting positionX for node {Id}", id);
-                        }
-
-                        // Extract positionY
-                        try
-                        {
-                            if (properties.ContainsKey("positionY"))
-                            {
-                                var propsDict = item["properties"] as Dictionary<string, object>;
-                                if (propsDict != null && propsDict.ContainsKey("positionY"))
-                                {
-                                    var posYValues = propsDict["positionY"] as IEnumerable<object>;
-                                    if (posYValues != null)
-                                    {
-                                        var posYObj = posYValues.Cast<Dictionary<string, object>>().FirstOrDefault();
-                                        if (posYObj != null && posYObj.ContainsKey("value"))
-                                        {
-                                            string valueString = posYObj["value"]?.ToString() ?? "";
-                                            if (Double.TryParse(valueString, out var parseY))
-                                            {
-                                                positionY = parseY;
-                                                Logger.LogDebug("Extracted positionY: {PosY} for node: {Id}", positionY, id);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogError(ex, "Error extracting positionY for node {Id}", id);
-                        }
-
-                        // Extract graphId if it wasn't provided as a parameter
-                        if (string.IsNullOrEmpty(graphId))
-                        {
-                            try
-                            {
-                                if (properties["graphId"] != null && properties["graphId"].Count > 0)
-                                {
-                                    nodeGraphId = properties["graphId"][0]["value"].ToString();
-                                }
-                                else if (properties["pkey"] != null && properties["pkey"].Count > 0)
-                                {
-                                    // Fall back to pkey if graphId is not explicitly stored
-                                    nodeGraphId = properties["pkey"][0]["value"].ToString();
-                                }
-                            }
-                            catch { /* Property doesn't exist */ }
-                        }
-                    }
-
-                    var node = new Node
-                    {
-                        Id = id,
-                        Name = name,
-                        NodeType = nodeType,
-                        CreatedAt = createdAt,
-                        GraphId = nodeGraphId,
-                        PositionX = positionX,
-                        PositionY = positionY
-                    };
-
                     nodes.Add(node);
-                }
-                catch (Exception ex)
-                {
-                    // Log the exception and continue with the next item
-                    Logger.LogError(ex, "Error parsing node: {Message}", ex.Message);
                 }
             }
 
@@ -306,103 +141,10 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
             foreach (var item in result)
             {
-                try
+                var edge = ParseHelper.ParseEdgeFromEdge(item, graphId);
+                if (edge != null)
                 {
-                    // Use indexer syntax for dynamic objects
-                    string id = item["id"].ToString();
-                    string source = item["outV"].ToString();  // Source is the outV (outgoing vertex)
-                    string target = item["inV"].ToString();   // Target is the inV (incoming vertex)
-                    string edgeType = item["label"].ToString(); // Get the label as edgeType
-                    DateTime createdAt = DateTime.UtcNow;
-                    string edgeGraphId = graphId ?? ""; // Default to empty if not provided
-
-                    // Extract additional properties from the properties collection
-                    if (item["properties"] != null)
-                    {
-                        dynamic properties = item["properties"];
-
-                        // Extract createdAt
-                        try
-                        {
-                            if (properties.ContainsKey("createdAt"))
-                            {
-                                var propsDict = item["properties"] as Dictionary<string, object>;
-                                if (propsDict != null && propsDict.ContainsKey("createdAt"))
-                                {
-                                    var createdAtValue = (propsDict["createdAt"] as IEnumerable<object>)
-                                        ?.Cast<Dictionary<string, object>>()
-                                        ?.FirstOrDefault()?["value"];
-
-                                    if (createdAtValue != null)
-                                    {
-                                        string dateString = createdAtValue.ToString();
-                                        if (DateTime.TryParse(dateString, out var parsedDate))
-                                        {
-                                            createdAt = parsedDate;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        catch { /* Property doesn't exist or has unexpected format */ }
-
-                        // Extract graphId if it wasn't provided as a parameter
-                        if (string.IsNullOrEmpty(graphId))
-                        {
-                            try
-                            {
-                                if (properties.ContainsKey("graphId"))
-                                {
-                                    var propsDict = item["properties"] as Dictionary<string, object>;
-                                    if (propsDict != null && propsDict.ContainsKey("graphId"))
-                                    {
-                                        var graphIdValue = (propsDict["graphId"] as IEnumerable<object>)
-                                            ?.Cast<Dictionary<string, object>>()
-                                            ?.FirstOrDefault()?["value"];
-
-                                        if (graphIdValue != null)
-                                        {
-                                            edgeGraphId = graphIdValue.ToString();
-                                        }
-                                    }
-                                }
-                                else if (properties.ContainsKey("pkey"))
-                                {
-                                    // Fall back to pkey if graphId is not explicitly stored
-                                    var propsDict = item["properties"] as Dictionary<string, object>;
-                                    if (propsDict != null && propsDict.ContainsKey("pkey"))
-                                    {
-                                        var pkeyValue = (propsDict["pkey"] as IEnumerable<object>)
-                                            ?.Cast<Dictionary<string, object>>()
-                                            ?.FirstOrDefault()?["value"];
-
-                                        if (pkeyValue != null)
-                                        {
-                                            edgeGraphId = pkeyValue.ToString();
-                                        }
-                                    }
-                                }
-                            }
-                            catch { /* Property doesn't exist or has unexpected format */ }
-                        }
-                    }
-
-                    var edge = new Edge
-                    {
-                        Id = id,
-                        Source = source,
-                        Target = target,
-                        EdgeType = edgeType,
-                        CreatedAt = createdAt,
-                        GraphId = edgeGraphId
-                    };
-
                     edges.Add(edge);
-                }
-                catch (Exception ex)
-                {
-                    // Log the exception and continue with the next item
-                    Logger.LogError(ex, "Error parsing edge: {Message}", ex.Message);
                 }
             }
 
@@ -525,6 +267,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 return false;
             }
         }
+
         public async Task<bool> UpdateNodePositionsAsync(string nodeId, double x, double y)
         {
             try
@@ -583,13 +326,9 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 return false;
             }
         }
-
-
-
         #endregion
 
         #region Generic Cosmos DB Operations
-
         /// <summary>
         /// Retrieves an item from Cosmos DB by its ID and partition key
         /// </summary>
@@ -725,7 +464,6 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 throw;
             }
         }
-
         #endregion
 
         // Implement IDisposable pattern to properly dispose of the GremlinClient
