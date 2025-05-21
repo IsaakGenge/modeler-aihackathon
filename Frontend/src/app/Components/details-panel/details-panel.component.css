@@ -1,0 +1,89 @@
+/* Frontend/src/app/Components/details-panel/details-panel.component.css */
+.details-panel {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 300px;
+  background-color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+  transform: translateX(350px);
+  transition: transform 0.3s ease-in-out;
+  z-index: 100;
+}
+
+  .details-panel.active {
+    transform: translateX(0);
+  }
+
+  .details-panel.dark-theme {
+    background-color: #333;
+    color: #fff;
+    border-color: #555;
+  }
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.dark-theme .details-header {
+  background-color: #444;
+  border-color: #555;
+}
+
+.details-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.dark-theme .close-button {
+  color: #fff;
+}
+
+.details-content {
+  padding: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.detail-label {
+  font-weight: 600;
+  width: 40%;
+  color: #666;
+}
+
+.dark-theme .detail-label {
+  color: #ccc;
+}
+
+.detail-value {
+  width: 60%;
+  word-break: break-word;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}

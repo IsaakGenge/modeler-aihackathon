@@ -28,4 +28,11 @@
     </div>
   </div>
   <div #cyContainer class="cytoscape-container"></div>
+
+  <!-- Details panel component -->
+  <app-details-panel [selectedElement]="selectedElement"
+                     [graphId]="graphId"
+                     [isDarkMode$]="isDarkMode$"
+                     (closePanel)="closeDetailsPanel()">
+  </app-details-panel>
 </div>

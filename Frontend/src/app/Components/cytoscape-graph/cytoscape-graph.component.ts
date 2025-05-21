@@ -8,6 +8,8 @@ import { NodeType } from '../../Models/node-type.model';
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
 import { TypesService } from '../../Services/Types/types.service';
 import { NodeService } from '../../Services/Node/node.service';
+import { EdgeService } from '../../Services/Edge/edge.service';
+import { DetailsPanelComponent } from '../details-panel/details-panel.component';
 
 
 // Define default layout options that can be used throughout the application
@@ -45,7 +47,7 @@ export const LAYOUT_TYPES = {
 @Component({
   selector: 'app-cytoscape-graph',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DetailsPanelComponent],
   templateUrl: './cytoscape-graph.component.html',
   styleUrl: './cytoscape-graph.component.css'
 })
@@ -104,8 +106,9 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     lineOpacity: '0.8'
   };
   public isApplyingSaved = false;
+  public selectedElement: any = null;
 
-  constructor(private typesService: TypesService, private nodeService: NodeService) {
+  constructor(private typesService: TypesService, private nodeService: NodeService, private edgeService: EdgeService) {
     // Subscribe to node visual settings
     this.typesService.nodeVisualSettings$
       .pipe(takeUntil(this.destroy$))
@@ -180,6 +183,26 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         this.isApplyingSaved = false;
       }
     });
+  }
+
+  public closeDetailsPanel(): void {
+    this.selectedElement = null;
+    // Also unselect in cytoscape
+    if (this.cy) {
+      this.cy.$(':selected').unselect();
+    }
+  }
+
+  // Add handling for when the background is clicked to clear selection
+  private handleBackgroundClick(): void {
+    if (this.cy) {
+      this.cy.on('tap', (event: any) => {
+        // Check if we clicked on the background (not a node or edge)
+        if (event.target === this.cy) {
+          this.closeDetailsPanel();
+        }
+      });
+    }
   }
 
 
@@ -304,8 +327,12 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   // Public method to reinitialize or update the graph
+  // Add this to the updateGraph method to clear selection when the graph is updated
   public updateGraph(nodes: any[], edges: any[]): void {
     console.log("Updating graph with new data:", { nodes, edges });
+
+    // Clear any selected element when the graph is updated
+    this.closeDetailsPanel();
 
     // Make a deep copy to ensure we don't lose data
     this.nodes = nodes.map(node => ({ ...node }));
@@ -313,6 +340,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
     this.initializeCytoscape();
   }
+
 
   // Method to fit the graph to the view area
   public fitGraph(): void {
@@ -731,6 +759,18 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       this.cy.on('tap', 'node', (event: any) => {
         const node = event.target;
         console.log('Node clicked:', node.id(), node.data('label'), 'Type:', node.data('nodeType'));
+
+        // Set the selected element (this will be passed to the details panel)
+        this.selectedElement = {
+          type: 'node',
+          data: {
+            id: node.id(),
+            label: node.data('label'),
+            nodeType: node.data('nodeType')
+          }
+        };
+
+        // Emit the node click event for parent components
         this.nodeClicked.emit({
           id: node.id(),
           label: node.data('label'),
@@ -741,6 +781,22 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       this.cy.on('tap', 'edge', (event: any) => {
         const edge = event.target;
         console.log('Edge clicked:', edge.id(), edge.data('label'));
+
+        // Set the selected element (this will be passed to the details panel)
+        this.selectedElement = {
+          type: 'edge',
+          data: {
+            id: edge.id(),
+            label: edge.data('label'),
+            source: edge.data('source'),
+            target: edge.data('target'),
+            sourceLabel: edge.data('sourceLabel'),
+            targetLabel: edge.data('targetLabel'),
+            edgeType: edge.data('edgeType')
+          }
+        };
+
+        // Emit the edge click event for parent components
         this.edgeClicked.emit({
           id: edge.id(),
           label: edge.data('label'),
@@ -748,6 +804,9 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
           target: edge.data('target')
         });
       });
+
+      // Set up background click handling
+      this.handleBackgroundClick();
 
       // Add position change tracking
       this.cy.on('position', 'node', () => {

@@ -1,0 +1,66 @@
+<!-- Frontend/src/app/Components/details-panel/details-panel.component.html -->
+<div class="details-panel" *ngIf="selectedElement"
+     [class.active]="selectedElement"
+     [ngClass]="(isDarkMode$ | async) ? 'dark-theme' : ''">
+  <div class="details-header">
+    <h4>{{ selectedElement?.type === 'node' ? 'Node Details' : 'Edge Details' }}</h4>
+    <button class="close-button" (click)="closeDetailsPanel()">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+  <div class="details-content">
+    <div *ngIf="isLoadingDetails" class="loading-spinner">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoadingDetails">
+      <div *ngIf="selectedElement?.type === 'node'">
+        <div class="detail-item">
+          <div class="detail-label">ID:</div>
+          <div class="detail-value">{{ selectedElement?.data?.id }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Name:</div>
+          <div class="detail-value">{{ selectedElement?.data?.label }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Type:</div>
+          <div class="detail-value">{{ selectedElement?.data?.nodeType }}</div>
+        </div>
+
+        <!-- Additional node properties will be displayed here dynamically -->
+        <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
+          <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
+          <div class="detail-value">{{ prop.value }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="selectedElement?.type === 'edge'">
+        <div class="detail-item">
+          <div class="detail-label">ID:</div>
+          <div class="detail-value">{{ selectedElement?.data?.id }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Type:</div>
+          <div class="detail-value">{{ selectedElement?.data?.edgeType || 'Default' }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Source:</div>
+          <div class="detail-value">{{ selectedElement?.data?.sourceLabel || selectedElement?.data?.source }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Target:</div>
+          <div class="detail-value">{{ selectedElement?.data?.targetLabel || selectedElement?.data?.target }}</div>
+        </div>
+
+        <!-- Additional edge properties will be displayed here dynamically -->
+        <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
+          <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
+          <div class="detail-value">{{ prop.value }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
