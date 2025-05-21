@@ -20,4 +20,6 @@ public interface ICosmosService
     Task<IEnumerable<T>> QueryItemsAsync<T>(string queryString);
     Task<bool> UpdateNodePositionsAsync(string nodeId, double x, double y);
     Task<bool> BatchUpdateNodePositionsAsync(Dictionary<string, (double x, double y)> nodePositions);
+    Task<bool> UpdateNodePropertiesAsync(string nodeId, Dictionary<string, object> properties);
+    Task<bool> UpdateEdgePropertiesAsync(string edgeId, Dictionary<string, object> properties);
 }

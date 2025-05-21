@@ -39,7 +39,14 @@ namespace ModelerAPI.ApiService.Models
         /// Y position of the node in the graph visualization
         /// </summary>
         public double? PositionY { get; set; }
+
+        /// <summary>
+        /// Custom properties for the node that can be stored as key-value pairs
+        /// All values should be JSON parsable
+        /// </summary>
+        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
     }
+
     public class NodePositionsDto
     {
         public string GraphId { get; set; }

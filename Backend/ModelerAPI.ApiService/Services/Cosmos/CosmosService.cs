@@ -89,6 +89,44 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
             return sanitized;
         }
+        /// <summary>
+        /// Serializes a property value for use in Gremlin queries based on its type
+        /// </summary>
+        /// <param name="value">The value to serialize</param>
+        /// <returns>A string representation of the value suitable for Gremlin queries</returns>
+        private string SerializePropertyValue(object value)
+        {
+            if (value == null)
+                return "null";
+
+            switch (value)
+            {
+                case string s:
+                    return $"'{SanitizeGremlinValue(s)}'";
+                case DateTime dt:
+                    return $"'{dt:o}'";
+                case bool b:
+                    return b ? "true" : "false";
+                case int or long or short or byte or sbyte or uint or ulong or ushort:
+                case float or double or decimal:
+                    return value.ToString();
+                case DateTimeOffset dto:
+                    return $"'{dto:o}'";
+                case DateOnly dateOnly:
+                    return $"'{dateOnly:yyyy-MM-dd}'";
+                case TimeOnly timeOnly:
+                    return $"'{timeOnly:HH:mm:ss.fffffff}'";
+                default:
+                    // For complex objects, serialize to JSON and escape any single quotes
+                    var jsonOptions = new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = false,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                    };
+                    var json = System.Text.Json.JsonSerializer.Serialize(value, jsonOptions);
+                    return $"'{SanitizeGremlinValue(json)}'";
+            }
+        }
 
         #region Existing Node and Edge Methods
         public async Task<List<Node>> GetNodes(string graphId = null)
@@ -184,7 +222,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             if (node.PositionX.HasValue && node.PositionY.HasValue)
             {
                 gremlinQuery += $".property('positionX', {node.PositionX})" +
-                               $".property('positionY', {node.PositionY})";
+                              $".property('positionY', {node.PositionY})";
             }
             else
             {
@@ -193,7 +231,24 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 var x = random.Next(-100, 100);
                 var y = random.Next(-100, 100);
                 gremlinQuery += $".property('positionX', {x})" +
-                               $".property('positionY', {y})";
+                              $".property('positionY', {y})";
+            }
+
+            // Add custom properties
+            if (node.Properties != null)
+            {
+                foreach (var prop in node.Properties)
+                {
+                    // Skip null properties
+                    if (prop.Value == null)
+                        continue;
+
+                    var sanitizedKey = SanitizeGremlinValue(prop.Key);
+
+                    // Serialize the property value based on its type
+                    string propertyValue = SerializePropertyValue(prop.Value);
+                    gremlinQuery += $".property('{sanitizedKey}', {propertyValue})";
+                }
             }
 
             await ExecuteGremlinQueryAsync(gremlinQuery);
@@ -228,6 +283,23 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             {
                 var createdAtFormatted = edge.CreatedAt.ToString("o");
                 gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+            }
+
+            // Add custom properties
+            if (edge.Properties != null)
+            {
+                foreach (var prop in edge.Properties)
+                {
+                    // Skip null properties
+                    if (prop.Value == null)
+                        continue;
+
+                    var sanitizedKey = SanitizeGremlinValue(prop.Key);
+
+                    // Serialize the property value based on its type
+                    string propertyValue = SerializePropertyValue(prop.Value);
+                    gremlinQuery += $".property('{sanitizedKey}', {propertyValue})";
+                }
             }
 
             gremlinQuery += $".to(g.V('{sanitizedTarget}'))";
@@ -323,6 +395,59 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error batch updating node positions: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateNodePropertiesAsync(string nodeId, Dictionary<string, object> properties)
+        {
+            try
+            {
+                // Sanitize the input
+                var sanitizedId = SanitizeGremlinValue(nodeId);
+
+                // Execute each property update as a separate query for best compatibility
+                foreach (var property in properties)
+                {
+                    var sanitizedKey = SanitizeGremlinValue(property.Key);
+                    var propertyValue = SerializePropertyValue(property.Value);
+
+                    var gremlinQuery = $"g.V('{sanitizedId}').property('{sanitizedKey}', {propertyValue})";
+                    await ExecuteGremlinQueryAsync(gremlinQuery);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating node properties: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        // Add a method to update edge properties
+        public async Task<bool> UpdateEdgePropertiesAsync(string edgeId, Dictionary<string, object> properties)
+        {
+            try
+            {
+                // Sanitize the input
+                var sanitizedId = SanitizeGremlinValue(edgeId);
+
+                // Execute each property update as a separate query for best compatibility
+                foreach (var property in properties)
+                {
+                    var sanitizedKey = SanitizeGremlinValue(property.Key);
+                    var propertyValue = SerializePropertyValue(property.Value);
+
+                    var gremlinQuery = $"g.E('{sanitizedId}').property('{sanitizedKey}', {propertyValue})";
+                    await ExecuteGremlinQueryAsync(gremlinQuery);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating edge properties: {Message}", ex.Message);
                 return false;
             }
         }

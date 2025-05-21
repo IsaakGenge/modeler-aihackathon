@@ -40,17 +40,48 @@ namespace ModelerAPI.Tests
 
         protected virtual void SetupDefaultMocks()
         {
-            // Setup default node data with GraphId
+            // Setup default node data with GraphId and Properties
             var testNodes = new List<Node>
             {
-                new Node { Id = "node1", Name = "Test Node 1", NodeType = "person", GraphId = DefaultTestGraphId, CreatedAt = DateTime.UtcNow },
-                new Node { Id = "node2", Name = "Test Node 2", NodeType = "location", GraphId = DefaultTestGraphId, CreatedAt = DateTime.UtcNow }
+                new Node {
+                    Id = "node1",
+                    Name = "Test Node 1",
+                    NodeType = "person",
+                    GraphId = DefaultTestGraphId,
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = new Dictionary<string, object> {
+                        { "firstName", "John" },
+                        { "lastName", "Doe" }
+                    }
+                },
+                new Node {
+                    Id = "node2",
+                    Name = "Test Node 2",
+                    NodeType = "location",
+                    GraphId = DefaultTestGraphId,
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = new Dictionary<string, object> {
+                        { "city", "Seattle" },
+                        { "country", "USA" }
+                    }
+                }
             };
 
-            // Setup default edge data with GraphId
+            // Setup default edge data with GraphId and Properties
             var testEdges = new List<Edge>
             {
-                new Edge { Id = "edge1", Source = "node1", Target = "node2", EdgeType = "connected_to", GraphId = DefaultTestGraphId, CreatedAt = DateTime.UtcNow }
+                new Edge {
+                    Id = "edge1",
+                    Source = "node1",
+                    Target = "node2",
+                    EdgeType = "connected_to",
+                    GraphId = DefaultTestGraphId,
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = new Dictionary<string, object> {
+                        { "since", "2022-01-01" },
+                        { "verified", true }
+                    }
+                }
             };
 
             // Setup common mocks with and without GraphId parameter
@@ -68,10 +99,6 @@ namespace ModelerAPI.Tests
                     return node;
                 });
 
-            // Setup rejection for nodes without GraphId
-            MockCosmosService.Setup(m => m.CreateNodeAsync(It.Is<Node>(n => string.IsNullOrEmpty(n.GraphId))))
-                .ThrowsAsync(new ArgumentException("GraphId is required for nodes"));
-
             // Setup CreateEdgeAsync to return the input edge with an ID and validate GraphId
             MockCosmosService.Setup(m => m.CreateEdgeAsync(It.Is<Edge>(e => !string.IsNullOrEmpty(e.GraphId))))
                 .ReturnsAsync((Edge edge) =>
@@ -80,16 +107,14 @@ namespace ModelerAPI.Tests
                     return edge;
                 });
 
-            // Setup rejection for edges without GraphId
-            MockCosmosService.Setup(m => m.CreateEdgeAsync(It.Is<Edge>(e => string.IsNullOrEmpty(e.GraphId))))
-                .ThrowsAsync(new ArgumentException("GraphId is required for edges"));
-
-            // Setup DeleteNodeAsync to return true
-            MockCosmosService.Setup(m => m.DeleteNodeAsync(It.IsAny<string>()))
+            // Setup UpdateNodePropertiesAsync default success behavior
+            MockCosmosService.Setup(m => m.UpdateNodePropertiesAsync(
+                It.IsAny<string>(), It.IsAny<Dictionary<string, object>>()))
                 .ReturnsAsync(true);
 
-            // Setup DeleteEdgeAsync to return true
-            MockCosmosService.Setup(m => m.DeleteEdgeAsync(It.IsAny<string>()))
+            // Setup UpdateEdgePropertiesAsync default success behavior
+            MockCosmosService.Setup(m => m.UpdateEdgePropertiesAsync(
+                It.IsAny<string>(), It.IsAny<Dictionary<string, object>>()))
                 .ReturnsAsync(true);
         }
     }

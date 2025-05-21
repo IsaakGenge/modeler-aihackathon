@@ -36,6 +36,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 string nodeGraphId = graphId ?? ""; // Default to empty if not provided
                 double? positionX = null;
                 double? positionY = null;
+                Dictionary<string, object> customProperties = new Dictionary<string, object>();
 
                 // Extract properties safely
                 if (item["properties"] != null)
@@ -44,10 +45,10 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
                     // Extract name
                     name = ExtractStringProperty(properties, "name", id);
-                    
+
                     // Extract createdAt
                     createdAt = ExtractDateTimeProperty(properties, "createdAt", id) ?? DateTime.UtcNow;
-                    
+
                     // Extract positions
                     positionX = ExtractDoubleProperty(properties, "positionX", id);
                     positionY = ExtractDoubleProperty(properties, "positionY", id);
@@ -56,6 +57,33 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                     if (string.IsNullOrEmpty(graphId))
                     {
                         nodeGraphId = ExtractGraphId(properties, id);
+                    }
+
+                    // Extract custom properties (all properties that aren't standard ones)
+                    var propsDict = properties as Dictionary<string, object>;
+                    if (propsDict != null)
+                    {
+                        foreach (var prop in propsDict)
+                        {
+                            // Skip standard properties we've already extracted
+                            if (prop.Key == "name" || prop.Key == "createdAt" ||
+                                prop.Key == "positionX" || prop.Key == "positionY" ||
+                                prop.Key == "graphId" || prop.Key == "pkey")
+                            {
+                                continue;
+                            }
+
+                            // Extract the property value
+                            var values = prop.Value as IEnumerable<object>;
+                            if (values != null)
+                            {
+                                var valueObj = values.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                if (valueObj != null && valueObj.ContainsKey("value"))
+                                {
+                                    customProperties[prop.Key] = valueObj["value"];
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -67,7 +95,8 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                     CreatedAt = createdAt,
                     GraphId = nodeGraphId,
                     PositionX = positionX,
-                    PositionY = positionY
+                    PositionY = positionY,
+                    Properties = customProperties
                 };
             }
             catch (Exception ex)
@@ -95,6 +124,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 string edgeType = item["label"].ToString(); // Get the label as edgeType
                 DateTime createdAt = DateTime.UtcNow;
                 string edgeGraphId = graphId ?? ""; // Default to empty if not provided
+                Dictionary<string, object> customProperties = new Dictionary<string, object>();
 
                 // Extract additional properties from the properties collection
                 if (item["properties"] != null)
@@ -109,6 +139,31 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                     {
                         edgeGraphId = ExtractGraphId(properties, id);
                     }
+
+                    // Extract custom properties (all properties that aren't standard ones)
+                    var propsDict = properties as Dictionary<string, object>;
+                    if (propsDict != null)
+                    {
+                        foreach (var prop in propsDict)
+                        {
+                            // Skip standard properties we've already extracted
+                            if (prop.Key == "createdAt" || prop.Key == "graphId" || prop.Key == "pkey")
+                            {
+                                continue;
+                            }
+
+                            // Extract the property value
+                            var values = prop.Value as IEnumerable<object>;
+                            if (values != null)
+                            {
+                                var valueObj = values.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                if (valueObj != null && valueObj.ContainsKey("value"))
+                                {
+                                    customProperties[prop.Key] = valueObj["value"];
+                                }
+                            }
+                        }
+                    }
                 }
 
                 return new Edge
@@ -118,7 +173,8 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                     Target = target,
                     EdgeType = edgeType,
                     CreatedAt = createdAt,
-                    GraphId = edgeGraphId
+                    GraphId = edgeGraphId,
+                    Properties = customProperties
                 };
             }
             catch (Exception ex)

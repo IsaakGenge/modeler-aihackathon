@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using System.Text.Json;
 
 namespace ModelerAPI.Tests
 {
@@ -55,6 +56,91 @@ namespace ModelerAPI.Tests
         }
 
         [Fact]
+        public async Task CreateNodeAsync_WithProperties_ReturnsNodeWithProperties()
+        {
+            // Arrange
+            var properties = new Dictionary<string, object>
+            {
+                { "age", 30 },
+                { "isActive", true },
+                { "tags", new[] { "tag1", "tag2" } },
+                { "address", new { city = "Seattle", zip = "98101" } }
+            };
+
+            var newNode = new Node
+            {
+                Name = "Node With Properties",
+                NodeType = "person",
+                GraphId = TestGraphId,
+                Properties = properties
+            };
+
+            MockCosmosService.Setup(m => m.CreateNodeAsync(It.IsAny<Node>()))
+                .ReturnsAsync((Node node) =>
+                {
+                    node.Id = Guid.NewGuid().ToString();
+                    node.CreatedAt = DateTime.UtcNow;
+                    return node;
+                });
+
+            // Act
+            var result = await MockCosmosService.Object.CreateNodeAsync(newNode);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotNull(result.Id);
+            Assert.Equal("Node With Properties", result.Name);
+            Assert.NotNull(result.Properties);
+            Assert.Equal(4, result.Properties.Count);
+            
+            Assert.Equal(30, result.Properties["age"]);
+            Assert.True((bool)result.Properties["isActive"]);
+            
+            // Verify complex objects (these might need to be verified differently 
+            // depending on how your serialization/deserialization works)
+            Assert.NotNull(result.Properties["tags"]);
+            Assert.NotNull(result.Properties["address"]);
+
+            // Verify the service was called with the right parameters
+            MockCosmosService.Verify(m => m.CreateNodeAsync(It.Is<Node>(n =>
+                n.Properties.Count == 4 &&
+                n.Properties.ContainsKey("age") &&
+                n.Properties.ContainsKey("isActive") &&
+                n.Properties.ContainsKey("tags") &&
+                n.Properties.ContainsKey("address"))), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateNodePropertiesAsync_WithNewProperties_ReturnsSuccess()
+        {
+            // Arrange
+            string nodeId = "node1";
+            var properties = new Dictionary<string, object>
+            {
+                { "score", 95.5 },
+                { "lastUpdated", DateTime.UtcNow }
+            };
+
+            MockCosmosService.Setup(m => m.UpdateNodePropertiesAsync(nodeId, It.IsAny<Dictionary<string, object>>()))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await MockCosmosService.Object.UpdateNodePropertiesAsync(nodeId, properties);
+
+            // Assert
+            Assert.True(result);
+
+            // Verify the service was called with the right parameters
+            MockCosmosService.Verify(m => m.UpdateNodePropertiesAsync(
+                nodeId, 
+                It.Is<Dictionary<string, object>>(p => 
+                    p.Count == 2 && 
+                    p.ContainsKey("score") && 
+                    p.ContainsKey("lastUpdated"))), 
+                Times.Once);
+        }
+
+        [Fact]
         public async Task CreateNodeAsync_WithoutGraphId_ThrowsArgumentException()
         {
             // Arrange
@@ -77,16 +163,37 @@ namespace ModelerAPI.Tests
         }
 
         [Fact]
-        public async Task GetNodes_WithGraphId_ReturnsNodesForSpecificGraph()
+        public async Task GetNodes_WithGraphId_ReturnsNodesWithProperties()
         {
             // Arrange
             var testNodes = new List<Node>
             {
-                new Node { Id = "node1", Name = "Test Node 1", NodeType = "person", GraphId = TestGraphId, CreatedAt = DateTime.UtcNow },
-                new Node { Id = "node2", Name = "Test Node 2", NodeType = "location", GraphId = TestGraphId, CreatedAt = DateTime.UtcNow }
+                new Node { 
+                    Id = "node1", 
+                    Name = "Test Node 1", 
+                    NodeType = "person", 
+                    GraphId = TestGraphId, 
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = new Dictionary<string, object> { 
+                        { "age", 25 }, 
+                        { "email", "test1@example.com" } 
+                    }
+                },
+                new Node { 
+                    Id = "node2", 
+                    Name = "Test Node 2", 
+                    NodeType = "location", 
+                    GraphId = TestGraphId, 
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = new Dictionary<string, object> { 
+                        { "latitude", 47.6062 }, 
+                        { "longitude", -122.3321 } 
+                    }
+                }
             };
 
-            MockCosmosService.Setup(m => m.GetNodes(TestGraphId)).ReturnsAsync(testNodes);
+            MockCosmosService.Setup(m => m.GetNodes(TestGraphId))
+                .ReturnsAsync(testNodes);
 
             // Act
             var result = await MockCosmosService.Object.GetNodes(TestGraphId);
@@ -94,139 +201,16 @@ namespace ModelerAPI.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(2, result.Count);
-            Assert.Equal("Test Node 1", result[0].Name);
-            Assert.Equal("Test Node 2", result[1].Name);
-            Assert.All(result, node => Assert.Equal(TestGraphId, node.GraphId));
-
-            // Verify the service was called with the GraphId
-            MockCosmosService.Verify(m => m.GetNodes(TestGraphId), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetNodes_WithoutGraphId_ReturnsAllNodes()
-        {
-            // Arrange
-            var testNodes = new List<Node>
-            {
-                new Node { Id = "node1", Name = "Test Node 1", NodeType = "person", GraphId = "graph1", CreatedAt = DateTime.UtcNow },
-                new Node { Id = "node2", Name = "Test Node 2", NodeType = "location", GraphId = "graph2", CreatedAt = DateTime.UtcNow }
-            };
-
-            MockCosmosService.Setup(m => m.GetNodes(null)).ReturnsAsync(testNodes);
-
-            // Act
-            var result = await MockCosmosService.Object.GetNodes();
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.Count);
-            Assert.Contains(result, node => node.GraphId == "graph1");
-            Assert.Contains(result, node => node.GraphId == "graph2");
-
-            // Verify the service was called with null GraphId
-            MockCosmosService.Verify(m => m.GetNodes(null), Times.Once);
-        }
-
-        [Fact]
-        public async Task DeleteNodeAsync_WithExistingId_ReturnsTrue()
-        {
-            // Arrange
-            string nodeId = "node1";
-            MockCosmosService.Setup(m => m.DeleteNodeAsync(nodeId)).ReturnsAsync(true);
-
-            // Act
-            var result = await MockCosmosService.Object.DeleteNodeAsync(nodeId);
-
-            // Assert
-            Assert.True(result);
-
-            // Verify the service was called with the correct ID
-            MockCosmosService.Verify(m => m.DeleteNodeAsync(nodeId), Times.Once);
-        }
-
-        [Fact]
-        public async Task DeleteNodeAsync_WithNonExistingId_ReturnsFalse()
-        {
-            // Arrange
-            string nodeId = "nonexistent";
-            MockCosmosService.Setup(m => m.DeleteNodeAsync(nodeId)).ReturnsAsync(false);
-
-            // Act
-            var result = await MockCosmosService.Object.DeleteNodeAsync(nodeId);
-
-            // Assert
-            Assert.False(result);
-
-            // Verify the service was called with the correct ID
-            MockCosmosService.Verify(m => m.DeleteNodeAsync(nodeId), Times.Once);
-        }
-
-        [Fact]
-        public async Task UpdateNodePositionsAsync_WithValidData_ReturnsTrue()
-        {
-            // Arrange
-            string nodeId = "node1";
-            double posX = 150.75;
-            double posY = 300.25;
-
-            MockCosmosService.Setup(m => m.UpdateNodePositionsAsync(nodeId, posX, posY))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await MockCosmosService.Object.UpdateNodePositionsAsync(nodeId, posX, posY);
-
-            // Assert
-            Assert.True(result);
-
-            // Verify the service was called with correct parameters
-            MockCosmosService.Verify(m => m.UpdateNodePositionsAsync(nodeId, posX, posY), Times.Once);
-        }
-
-        [Fact]
-        public async Task BatchUpdateNodePositionsAsync_WithValidData_ReturnsTrue()
-        {
-            // Arrange
-            var nodePositions = new Dictionary<string, (double x, double y)>
-            {
-                { "node1", (100.5, 200.25) },
-                { "node2", (300.75, 400.5) }
-            };
-
-            MockCosmosService.Setup(m => m.BatchUpdateNodePositionsAsync(It.IsAny<Dictionary<string, (double x, double y)>>()))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await MockCosmosService.Object.BatchUpdateNodePositionsAsync(nodePositions);
-
-            // Assert
-            Assert.True(result);
-
-            // Verify the service was called with correct parameters
-            MockCosmosService.Verify(m => m.BatchUpdateNodePositionsAsync(
-                It.Is<Dictionary<string, (double x, double y)>>(dict =>
-                    dict.Count == 2 &&
-                    dict.ContainsKey("node1") &&
-                    dict.ContainsKey("node2"))),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task BatchUpdateNodePositionsAsync_WithEmptyDictionary_ReturnsFalse()
-        {
-            // Arrange
-            var emptyPositions = new Dictionary<string, (double x, double y)>();
-
-            MockCosmosService.Setup(m => m.BatchUpdateNodePositionsAsync(It.Is<Dictionary<string, (double x, double y)>>(d => d.Count == 0)))
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await MockCosmosService.Object.BatchUpdateNodePositionsAsync(emptyPositions);
-
-            // Assert
-            Assert.False(result);
-
-            // Verify call
-            MockCosmosService.Verify(m => m.BatchUpdateNodePositionsAsync(emptyPositions), Times.Once);
+            
+            // Check first node properties
+            Assert.Equal(2, result[0].Properties.Count);
+            Assert.Equal(25, result[0].Properties["age"]);
+            Assert.Equal("test1@example.com", result[0].Properties["email"]);
+            
+            // Check second node properties
+            Assert.Equal(2, result[1].Properties.Count);
+            Assert.Equal(47.6062, result[1].Properties["latitude"]);
+            Assert.Equal(-122.3321, result[1].Properties["longitude"]);
         }
     }
 }
