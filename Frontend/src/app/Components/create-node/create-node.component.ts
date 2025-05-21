@@ -7,7 +7,7 @@ import { ThemeService } from '../../Services/Theme/theme.service';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { TypesService, NodeTypeModel } from '../../Services/Types/types.service';
 import { Observable, Subscription } from 'rxjs';
-import { Node } from '../../Models/node.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-create-node',
@@ -22,9 +22,12 @@ export class CreateNodeComponent implements OnInit, OnDestroy {
   success = false;
   error = '';
   warning = '';
+  loading = false;
   isDarkMode$: Observable<boolean>;
   nodeTypes: NodeTypeModel[] = [];
   private typeSubscription: Subscription = new Subscription();
+  private readonly messageTimeout = 3000; // 3 seconds
+  private messageTimeoutId: any = null;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -37,6 +40,7 @@ export class CreateNodeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Initialize form and node types
     this.nodeForm = this.formBuilder.group({
       name: ['', [Validators.required]],
       nodeType: ['', [Validators.required]]
@@ -45,17 +49,53 @@ export class CreateNodeComponent implements OnInit, OnDestroy {
     // Subscribe to node types
     this.typeSubscription = this.typesService.nodeTypes$.subscribe(types => {
       this.nodeTypes = types;
-      // Set default value if available and form control exists
+      // Set default value if available
       if (types.length > 0 && this.nodeForm) {
         this.nodeForm.get('nodeType')?.setValue(types[0].name);
       }
     });
 
-    // Load node types if not already loaded
+    // Load node types
     this.typesService.loadNodeTypes();
+  }
+  // Add a method to clear messages with timeout
+  private showMessageWithTimeout(type: 'success' | 'error' | 'warning', message: string = ''): void {
+    // Clear any existing timeout
+    if (this.messageTimeoutId) {
+      clearTimeout(this.messageTimeoutId);
+      this.messageTimeoutId = null;
+    }
+
+    // Reset all messages first
+    this.success = false;
+    this.error = '';
+    this.warning = '';
+
+    // Set the appropriate message
+    if (type === 'success') {
+      this.success = true;
+    } else if (type === 'error') {
+      this.error = message;
+    } else if (type === 'warning') {
+      this.warning = message;
+    }
+
+    // Set timeout to clear the message
+    this.messageTimeoutId = setTimeout(() => {
+      this.success = false;
+      this.error = '';
+      this.warning = '';
+      this.messageTimeoutId = null;
+    }, this.messageTimeout);
   }
 
   ngOnDestroy(): void {
+    // Clear timeout if component is destroyed
+    if (this.messageTimeoutId) {
+      clearTimeout(this.messageTimeoutId);
+    }
+
+    // Unsubscribe from subscriptions
     this.typeSubscription.unsubscribe();
   }
 
@@ -65,44 +105,30 @@ export class CreateNodeComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     this.submitted = true;
-    this.success = false;
-    this.error = '';
-    this.warning = '';
 
-    // Check if a graph is selected
-    if (!this.graphService.currentGraphId) {
-      this.warning = 'Please select a graph before creating a node.';
-      return;
-    }
-
-    // stop here if form is invalid
     if (this.nodeForm.invalid) {
       return;
     }
 
-    const newNode: Node = {
-      name: this.nodeForm.value.name,
-      nodeType: this.nodeForm.value.nodeType,
-      graphId: this.graphService.currentGraphId as string
-    };
+    this.loading = true;
+    const nodeData = this.nodeForm.value;
 
-    this.nodeService.createNode(newNode)
-      .subscribe({
-        next: (response) => {
-          this.success = true;
-          this.resetForm();
-          // Notify other components that a node has been created
-          this.nodeService.notifyNodeCreated();
-        },
-        error: (error) => {
-          if (error.status === 400) {
-            this.error = 'Invalid node data. Please check your inputs.';
-          } else {
-            this.error = error.message || 'An error occurred while creating the node.';
-          }
-          console.error('Error creating node:', error);
+    this.nodeService.createNode(nodeData).subscribe({
+      next: (node) => {
+        this.loading = false;
+        this.nodeService.notifyNodeCreated();
+        this.resetForm();
+        this.showMessageWithTimeout('success');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading = false;
+        if (error.status === 400) {
+          this.showMessageWithTimeout('error', 'Invalid node data. Please check your inputs.');
+        } else {
+          this.showMessageWithTimeout('error', error.message);
         }
-      });
+      }
+    });
   }
 
   resetForm(): void {
@@ -112,5 +138,7 @@ export class CreateNodeComponent implements OnInit, OnDestroy {
       name: '',
       nodeType: this.nodeTypes.length > 0 ? this.nodeTypes[0].name : ''
     });
+
+
   }
 }

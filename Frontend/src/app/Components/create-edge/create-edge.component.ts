@@ -30,6 +30,9 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   isDarkMode$: Observable<boolean>;
   edgeTypes: EdgeTypeModel[] = [];
 
+  private readonly messageTimeout = 3000; // 3 seconds
+  private messageTimeoutId: any = null;
+
   private nodeCreatedSubscription: Subscription = new Subscription();
   private nodeDeletedSubscription: Subscription = new Subscription();
   private graphChangedSubscription: Subscription = new Subscription();
@@ -62,6 +65,7 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
       }
     });
 
+
     // Load edge types if not already loaded
     this.typesService.loadEdgeTypes();
 
@@ -83,8 +87,43 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     });
   }
 
+  private showMessageWithTimeout(type: 'success' | 'error' | 'warning', message: string = ''): void {
+    // Clear any existing timeout
+    if (this.messageTimeoutId) {
+      clearTimeout(this.messageTimeoutId);
+      this.messageTimeoutId = null;
+    }
+
+    // Reset all messages first
+    this.success = false;
+    this.error = '';
+    this.warning = '';
+
+    // Set the appropriate message
+    if (type === 'success') {
+      this.success = true;
+    } else if (type === 'error') {
+      this.error = message;
+    } else if (type === 'warning') {
+      this.warning = message;
+    }
+
+    // Set timeout to clear the message
+    this.messageTimeoutId = setTimeout(() => {
+      this.success = false;
+      this.error = '';
+      this.warning = '';
+      this.messageTimeoutId = null;
+    }, this.messageTimeout);
+  }
+
   ngOnDestroy(): void {
-    // Clean up subscriptions to prevent memory leaks
+    // Clear timeout if component is destroyed
+    if (this.messageTimeoutId) {
+      clearTimeout(this.messageTimeoutId);
+    }
+
+    // Existing unsubscribe code...
     this.nodeCreatedSubscription.unsubscribe();
     this.nodeDeletedSubscription.unsubscribe();
     this.graphChangedSubscription.unsubscribe();
@@ -92,38 +131,25 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
   }
 
   loadNodes(): void {
-    // Check if a graph is selected
-    if (!this.graphService.currentGraphId) {
-      this.warning = 'Please select a graph before creating a connection.';
-      this.nodes = [];
-      return;
-    }
-
     this.loading = true;
-    this.warning = '';
-    this.error = '';
+    this.nodeService.getNodes().subscribe({
+      next: (nodes) => {
+        this.nodes = nodes;
+        this.loading = false;
 
-    this.nodeService.getNodes()
-      .subscribe({
-        next: (nodes) => {
-          this.nodes = nodes;
-          this.loading = false;
-
-          if (nodes.length < 2) {
-            this.warning = 'No nodes available. Please create at least two nodes to create a connection.';
-          }
-        },
-        error: (error: HttpErrorResponse) => {
-          this.loading = false;
-
-          if (error.status === 404) {
-            this.warning = 'No nodes found. Please create at least two nodes to create a connection.';
-          } else {
-            this.error = 'Failed to load nodes';
-            console.error('Error loading nodes:', error);
-          }
+        if (nodes.length === 0) {
+          this.showMessageWithTimeout('warning', 'No nodes available. Please create at least two nodes to create a connection.');
         }
-      });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading = false;
+        if (error.status === 404) {
+          this.showMessageWithTimeout('warning', 'No nodes found. Please create at least two nodes to create a connection.');
+        } else {
+          this.showMessageWithTimeout('error', 'Failed to load nodes');
+        }
+      }
+    });
   }
 
   get f() {
@@ -132,50 +158,33 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     this.submitted = true;
-    this.success = false;
-    this.error = '';
-    this.warning = '';
 
-    // Check if a graph is selected
-    if (!this.graphService.currentGraphId) {
-      this.warning = 'Please select a graph before creating a connection.';
-      return;
-    }
-
-    // stop here if form is invalid
     if (this.edgeForm.invalid) {
       return;
     }
 
-    const newEdge: Edge = {
-      source: this.edgeForm.value.source,
-      target: this.edgeForm.value.target,
-      edgeType: this.edgeForm.value.edgeType,
-      graphId: this.graphService.currentGraphId // Add this line to include the graphId
-    };
+    this.loading = true;
+    const edgeData = this.edgeForm.value;
 
-    this.edgeService.createEdge(newEdge)
-
-    this.edgeService.createEdge(newEdge)
-      .subscribe({
-        next: (response) => {
-          this.success = true;
-          this.resetForm();
-          // Notify other components that an edge has been created
-          this.edgeService.notifyEdgeCreated();
-        },
-        error: (error: HttpErrorResponse) => {
-          if (error.status === 404) {
-            this.warning = 'One or both of the selected nodes no longer exist. Please refresh the node list.';
-            this.loadNodes(); // Reload the node list
-          } else if (error.status === 400) {
-            this.error = 'Invalid connection data. Please check your inputs.';
-          } else {
-            this.error = error.message || 'An error occurred while creating the connection.';
-          }
-          console.error('Error creating edge:', error);
+    this.edgeService.createEdge(edgeData).subscribe({
+      next: (edge) => {
+        this.loading = false;
+        this.edgeService.notifyEdgeCreated();
+        this.resetForm();
+        this.showMessageWithTimeout('success');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loading = false;
+        if (error.status === 404) {
+          this.showMessageWithTimeout('warning', 'One or both of the selected nodes no longer exist. Please refresh the node list.');
+          this.loadNodes();
+        } else if (error.status === 400) {
+          this.showMessageWithTimeout('error', 'Invalid connection data. Please check your inputs.');
+        } else {
+          this.showMessageWithTimeout('error', error.message);
         }
-      });
+      }
+    });
   }
 
   resetForm(): void {
@@ -186,5 +195,5 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
       target: '',
       edgeType: this.edgeTypes.length > 0 ? this.edgeTypes[0].name : ''
     });
-  }
+  }  
 }
