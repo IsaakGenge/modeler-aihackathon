@@ -4,7 +4,6 @@ Import / Export Json Files for graph / edge / nodes that can be bulked by graph
 Import Fusion DataModels.gz.cs 
 Export Image from cytoscape png? jpg? 
 Zoom Controls for cytoscape 
-Edit  component that can work with nodes and edges and can be used to edit most of the fields on both including properties.
 
 Components for Import/Export and Also maybe some stuff around NodeTypes/EdgeType creation / edit 
 
