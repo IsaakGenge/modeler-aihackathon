@@ -411,3 +411,4 @@ $RECYCLE.BIN/
 *.tfstate
 *.tfstate.*
 /Frontend/tools/dist
+/Terraform/main.auto.tfvars
