@@ -1,7 +1,11 @@
 // First, let's add this to the imports at the top
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, Input, Output, EventEmitter, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import cytoscape from 'cytoscape';
+
+
+import type { NodeSingular } from 'cytoscape';
 import { Observable, Subject, combineLatest } from 'rxjs';
 import { takeUntil, startWith } from 'rxjs/operators';
 import { NodeType } from '../../Models/node-type.model';
@@ -108,7 +112,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   public isApplyingSaved = false;
   public selectedElement: any = null;
 
-  constructor(private typesService: TypesService, private nodeService: NodeService, private edgeService: EdgeService) {
+  constructor(private typesService: TypesService, private nodeService: NodeService, private edgeService: EdgeService, @Inject(PLATFORM_ID) private platformId: Object) {
     // Subscribe to node visual settings
     this.typesService.nodeVisualSettings$
       .pipe(takeUntil(this.destroy$))
@@ -312,8 +316,8 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     this.typesService.loadNodeTypes();
   }
 
-  ngAfterViewInit(): void {
-    this.initializeCytoscape();
+  async ngAfterViewInit(): Promise<void> {
+    await this.initializeCytoscape();
   }
 
   ngOnDestroy(): void {
@@ -328,7 +332,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
   // Public method to reinitialize or update the graph
   // Add this to the updateGraph method to clear selection when the graph is updated
-  public updateGraph(nodes: any[], edges: any[]): void {
+  public async updateGraph(nodes: any[], edges: any[]): Promise<void> {
     console.log("Updating graph with new data:", { nodes, edges });
 
     // Clear any selected element when the graph is updated
@@ -338,7 +342,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     this.nodes = nodes.map(node => ({ ...node }));
     this.edges = edges.map(edge => ({ ...edge }));
 
-    this.initializeCytoscape();
+    await this.initializeCytoscape();
   }
 
 
@@ -472,35 +476,6 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       'text-wrap': 'ellipsis'
     };
 
-    // Edge styles that apply to all edges
-    const baseEdgeStyles = {
-      'width': 3,
-      'line-color': isDark ? '#6E6E6E' : '#9E9E9E',
-      'target-arrow-color': isDark ? '#6E6E6E' : '#9E9E9E',
-      'target-arrow-shape': 'triangle',
-      'curve-style': 'bezier',
-      'label': 'data(label)',
-      'font-size': 12,
-      'text-rotation': 'autorotate',
-      'color': isDark ? '#FFFFFF' : '#000000',
-      'text-background-color': isDark ? '#333333' : '#F5F5F5',
-      'text-background-opacity': 1,
-      'text-background-padding': 3,
-      'text-background-shape': 'roundrectangle',
-      'text-outline-color': isDark ? '#000000' : '#FFFFFF',
-      'text-outline-width': 1,
-      'font-weight': 'bold'
-    };
-
-    // Selected element styles
-    const selectedStyles = {
-      'background-color': '#2196F3',
-      'line-color': '#2196F3',
-      'target-arrow-color': '#2196F3',
-      'text-outline-color': '#2196F3',
-      'font-weight': 'bold'
-    };
-
     // Get all node type names from the available settings
     const nodeTypeNames = Object.keys(this.nodeVisualSettings);
 
@@ -530,6 +505,38 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         'target-arrow-color': this.edgeVisualSettings[typeName]?.lineColor || this.defaultEdgeVisualSetting.lineColor
       }
     }));
+
+    const selectedStyles = {
+      'background-color': '#2196F3',
+      'line-color': '#2196F3',
+      'target-arrow-color': '#2196F3',
+      'text-outline-color': '#2196F3',
+      'font-weight': 'bold'
+    };
+
+    // Add selection box styles
+    const selectionBoxStyles = [
+      {
+        selector: 'core',  // This targets core Cytoscape functionality
+        style: {
+          'selection-box-color': isDark ? 'rgba(33, 150, 243, 0.3)' : 'rgba(33, 150, 243, 0.2)',
+          'selection-box-border-color': 'rgb(33, 150, 243)',
+          'selection-box-border-width': '2px',
+          'selection-box-opacity': 0.3,
+          'outside-texture-bg-color': 'rgba(33, 150, 243, 0.1)',
+          'outside-texture-bg-opacity': 0.5
+        }
+      },
+      // Additional style for the active selection box
+      {
+        selector: ':active',  // This targets active elements during selection
+        style: {
+          'overlay-color': isDark ? 'rgba(33, 150, 243, 0.15)' : 'rgba(33, 150, 243, 0.1)',
+          'overlay-padding': '8px',
+          'overlay-opacity': 0.3
+        }
+      }
+    ];
 
     // Return the complete style array
     return [
@@ -570,11 +577,17 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       {
         selector: ':selected',
         style: selectedStyles
-      }
+      },
+      // Add the selection box styles
+      ...selectionBoxStyles
     ];
   }
 
-  private initializeCytoscape(): void {
+  private async initializeCytoscape(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      console.debug('Skipping Cytoscape initialization in SSR');
+      return;
+    }
     // Add safety check for container
     if (!this.cyContainer?.nativeElement) {
       console.warn('Cytoscape container is not available');
@@ -595,14 +608,13 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
     // Create Cytoscape nodes with positions included directly
     const cytoscapeNodes = this.nodes.map(node => {
-      // Basic node data
-      const nodeData = {
+      // Basic node data with parent property if available
+      const nodeData: any = {
         data: {
           id: String(node.id),
           label: node.name || 'Unnamed Node',
           nodeType: node.nodeType || NodeType.Default,
-          dbPositionX: node.positionX, // Store for reference
-          dbPositionY: node.positionY  // Store for reference
+          parent: node.parent ? String(node.parent) : undefined, // Add parent reference
         }
       };
 
@@ -673,6 +685,9 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         };
       }
 
+      // Register the extension with Cytoscape
+  
+
       // Create the Cytoscape instance
       this.cy = cytoscape({
         container: this.cyContainer.nativeElement,
@@ -684,6 +699,39 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         layout: initialLayout,
         wheelSensitivity: this.wheelSensitivity
       });
+
+      // Configure the compound drag and drop extension with proper options
+      // Dynamically load and initialize the compound drag and drop extension
+      try {
+        const compoundDragAndDrop = (await import('cytoscape-compound-drag-and-drop')).default;
+        cytoscape.use(compoundDragAndDrop);
+
+        // Configure the compound drag and drop extension
+        if (this.cy.compoundDragAndDrop) {
+          this.cy.compoundDragAndDrop({
+            dropTarget: (node: NodeSingular) => node.isParent(),
+            overThreshold: 10,
+            outThreshold: 10,
+            grabbedNodeClassName: {
+              active: 'cy-compound-dnd-grabbed-node',
+              inactive: 'cy-compound-dnd-grabbed-node-inactive'
+            },
+            dropTargetClassName: {
+              active: 'cy-compound-dnd-drop-target-active',
+              over: 'cy-compound-dnd-drop-target-over'
+            },
+            dropTaskFunction: (grabbedNode: NodeSingular, dropTarget: NodeSingular) => {
+              if (dropTarget && grabbedNode) {
+                grabbedNode.move({ parent: dropTarget.id() });
+                return true;
+              }
+              return false;
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to initialize compound drag and drop:', err);
+      }
 
       // Debug data after Cytoscape is created
       this.debugPositionData();
@@ -818,6 +866,21 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         this.positionsChanged = true;
       });
 
+      // Event handlers for compound drag and drop
+      this.cy.on('cdndover', (event: any, dropTarget: NodeSingular, grabbedNode: NodeSingular) => {
+        console.log(`Node ${grabbedNode.id()} is over potential parent ${dropTarget.id()}`);
+      });
+
+      this.cy.on('cdndout', (event: any, dropTarget: NodeSingular, grabbedNode: NodeSingular) => {
+        console.log(`Node ${grabbedNode.id()} moved out from potential parent ${dropTarget.id()}`);
+      });
+
+      this.cy.on('cdnddrop', (event: any, dropTarget: NodeSingular, grabbedNode: NodeSingular) => {
+        console.log(`Node ${grabbedNode.id()} was dropped into parent ${dropTarget.id()}`);
+        // Update your data model or service to reflect the parent-child relationship
+        this.positionsChanged = true;
+      });
+
       // Log success or empty state
       if (this.cy.elements().length === 0) {
         console.warn('Graph visualization is empty - no elements to display');
@@ -828,4 +891,5 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       console.error('Error initializing Cytoscape:', error);
     }
   }
+
 }
