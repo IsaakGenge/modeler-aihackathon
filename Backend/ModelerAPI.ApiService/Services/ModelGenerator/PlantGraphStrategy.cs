@@ -13,17 +13,29 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
 
         // Component types for the plant simulation
         private readonly string[] _componentTypes = {
-        "Boiler", "Pump", "Furnace", "HeatExchanger", "Valve", "Tank", "Pipe", "Sensor",
-        "ControlSystem", "Turbine", "Condenser", "Filter", "Compressor", "CoolingTower"
-    };
+            "Boiler", "Pump", "Furnace", "HeatExchanger", "Valve", "Tank", "Pipe", "Sensor",
+            "ControlSystem", "Turbine", "Condenser", "Filter", "Compressor", "CoolingTower"
+        };
 
         // Different connection types between components
-        // In PlantGraphStrategy.cs
         private readonly string[] _connectionTypes = {
-    "FlowTo", "ConnectedTo", "ControlledBy", "Controls", "Monitors", "Heats", "Cools",
-    "Pressurizes", "Filters", "Supplies", "ReceivesFrom", "PumpsTo", "RegulatesFlowTo"
-};
+            "FlowTo", "ConnectedTo", "ControlledBy", "Controls", "Monitors", "Heats", "Cools",
+            "Pressurizes", "Filters", "Supplies", "ReceivesFrom", "PumpsTo", "RegulatesFlowTo"
+        };
 
+        // Possible property keys for nodes
+        private readonly string[] _nodePropertyKeys = {
+            "Efficiency", "Capacity", "MaxPressure", "MinPressure", "Temperature", "Status",
+            "MaintenanceDate", "Manufacturer", "ModelNumber", "InstallDate", "Power", "FlowRate",
+            "Diameter", "Material", "OperatingHours", "SerialNumber"
+        };
+
+        // Possible property keys for edges
+        private readonly string[] _edgePropertyKeys = {
+            "FlowCapacity", "Distance", "Resistance", "SignalType", "MaxTemperature",
+            "MinTemperature", "Throughput", "ConnectionMaterial", "InstallDate", "Protocol",
+            "Latency", "Reliability", "Status"
+        };
 
         public PlantGraphStrategy(ICosmosService cosmosService)
         {
@@ -80,7 +92,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     Name = nodeName,
                     NodeType = nodeType,
                     GraphId = graphId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = GenerateNodeProperties(nodeType) // Add random properties
                 };
 
                 var createdNode = await _cosmosService.CreateNodeAsync(node);
@@ -130,7 +143,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                         Target = sensor.Id,
                         EdgeType = "Monitors",
                         GraphId = graphId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        Properties = GenerateEdgeProperties("Monitors") // Add random properties
                     };
 
                     var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
@@ -146,7 +160,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                         Target = component.Id,
                         EdgeType = "Controls",
                         GraphId = graphId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        Properties = GenerateEdgeProperties("Controls") // Add random properties
                     };
 
                     var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
@@ -165,7 +180,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                         Target = boiler.Id,
                         EdgeType = "Heats",
                         GraphId = graphId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        Properties = GenerateEdgeProperties("Heats") // Add random properties
                     };
 
                     var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
@@ -187,7 +203,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                         Target = nextComponent.Id,
                         EdgeType = "FlowTo",
                         GraphId = graphId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        Properties = GenerateEdgeProperties("FlowTo") // Add random properties
                     };
 
                     var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
@@ -209,13 +226,15 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     var targetNode = nodes.FirstOrDefault(n => connectedNodes.Contains(n.Id));
                     if (targetNode != null)
                     {
+                        string edgeType = GetAppropriateConnectionType(node.NodeType, targetNode.NodeType);
                         var edge = new Edge
                         {
                             Source = node.Id,
                             Target = targetNode.Id,
-                            EdgeType = GetAppropriateConnectionType(node.NodeType, targetNode.NodeType),
+                            EdgeType = edgeType,
                             GraphId = graphId,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.UtcNow,
+                            Properties = GenerateEdgeProperties(edgeType) // Add random properties
                         };
 
                         var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
@@ -277,7 +296,8 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     Target = nextNode.Id,
                     EdgeType = "FlowTo",
                     GraphId = graphId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = GenerateEdgeProperties("FlowTo") // Add random properties
                 };
 
                 var createdEdge = await _cosmosService.CreateEdgeAsync(edge);
@@ -287,6 +307,192 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
 
                 // Continue building the flow path
                 await CreateFlowPath(nextNode, edges, graphId, allNodes, visitedNodeIds);
+            }
+        }
+
+        /// <summary>
+        /// Generates random property key-value pairs for nodes based on node type
+        /// </summary>
+        private Dictionary<string, object> GenerateNodeProperties(string nodeType)
+        {
+            var properties = new Dictionary<string, object>();
+
+            // Determine number of properties to generate (2-5)
+            int propertyCount = _random.Next(2, 6);
+
+            // Create a list to track used keys to prevent duplicates
+            var usedKeys = new HashSet<string>();
+
+            // Generate unique properties
+            for (int i = 0; i < propertyCount; i++)
+            {
+                // Try to find an unused key
+                string key = GetRandomUniqueKey(_nodePropertyKeys, usedKeys);
+                if (key == null) break; // No more unique keys available
+
+                // Decide if value should be int or string (50/50 chance)
+                object value;
+                if (_random.Next(2) == 0)
+                {
+                    // Integer value - contextual based on key
+                    value = GetContextualIntValue(key, nodeType);
+                }
+                else
+                {
+                    // String value - contextual based on key
+                    value = GetContextualStringValue(key, nodeType);
+                }
+
+                properties.Add(key, value);
+                usedKeys.Add(key);
+            }
+
+            return properties;
+        }
+
+        /// <summary>
+        /// Generates random property key-value pairs for edges based on edge type
+        /// </summary>
+        private Dictionary<string, object> GenerateEdgeProperties(string edgeType)
+        {
+            var properties = new Dictionary<string, object>();
+
+            // Determine number of properties to generate (2-5)
+            int propertyCount = _random.Next(2, 6);
+
+            // Create a list to track used keys to prevent duplicates
+            var usedKeys = new HashSet<string>();
+
+            // Generate unique properties
+            for (int i = 0; i < propertyCount; i++)
+            {
+                // Try to find an unused key
+                string key = GetRandomUniqueKey(_edgePropertyKeys, usedKeys);
+                if (key == null) break; // No more unique keys available
+
+                // Decide if value should be int or string (50/50 chance)
+                object value;
+                if (_random.Next(2) == 0)
+                {
+                    // Integer value - contextual based on key
+                    value = GetContextualIntValue(key, edgeType);
+                }
+                else
+                {
+                    // String value - contextual based on key
+                    value = GetContextualStringValue(key, edgeType);
+                }
+
+                properties.Add(key, value);
+                usedKeys.Add(key);
+            }
+
+            return properties;
+        }
+
+        /// <summary>
+        /// Returns a random unused key from the available keys
+        /// </summary>
+        private string GetRandomUniqueKey(string[] availableKeys, HashSet<string> usedKeys)
+        {
+            // Create a list of unused keys
+            var unusedKeys = availableKeys.Where(k => !usedKeys.Contains(k)).ToList();
+            if (!unusedKeys.Any()) return null;
+
+            // Return a random unused key
+            return unusedKeys[_random.Next(unusedKeys.Count)];
+        }
+
+        /// <summary>
+        /// Generates a contextual integer value based on the property key
+        /// </summary>
+        private int GetContextualIntValue(string key, string componentType)
+        {
+            switch (key)
+            {
+                case "Efficiency":
+                    return _random.Next(70, 100); // Efficiency percentage 70-99%
+                case "Capacity":
+                    return _random.Next(100, 10001); // 100-10000 units
+                case "MaxPressure":
+                    return _random.Next(50, 501); // 50-500 PSI
+                case "MinPressure":
+                    return _random.Next(1, 51); // 1-50 PSI
+                case "Temperature":
+                    return _random.Next(0, 1001); // 0-1000 degrees
+                case "FlowCapacity":
+                    return _random.Next(100, 1001); // 100-1000 units/hour
+                case "Distance":
+                    return _random.Next(1, 101); // 1-100 meters
+                case "Power":
+                    return _random.Next(5, 501) * 100; // 500-50000 watts
+                case "FlowRate":
+                    return _random.Next(10, 1001); // 10-1000 units/minute
+                case "Diameter":
+                    return _random.Next(1, 61); // 1-60 inches
+                case "OperatingHours":
+                    return _random.Next(1000, 10001); // 1000-10000 hours
+                case "Latency":
+                    return _random.Next(1, 101); // 1-100 ms
+                case "Reliability":
+                    return _random.Next(90, 100); // 90-99%
+                case "Throughput":
+                    return _random.Next(50, 501); // 50-500 units/hour
+                case "Resistance":
+                    return _random.Next(1, 101); // 1-100 ohms
+                default:
+                    return _random.Next(1, 1001); // Generic 1-1000 value
+            }
+        }
+
+        /// <summary>
+        /// Generates a contextual string value based on the property key
+        /// </summary>
+        private string GetContextualStringValue(string key, string componentType)
+        {
+            switch (key)
+            {
+                case "Status":
+                    string[] statuses = { "Online", "Standby", "Maintenance", "Offline", "Critical", "Warning" };
+                    return statuses[_random.Next(statuses.Length)];
+                case "MaintenanceDate":
+                    // Random date in the past year
+                    DateTime now = DateTime.Now;
+                    int daysInPast = _random.Next(1, 366);
+                    return now.AddDays(-daysInPast).ToString("yyyy-MM-dd");
+                case "Manufacturer":
+                    string[] manufacturers = { "IndusTech", "PowerSystems", "FlowMaster", "ThermalDynamics", "ProcessControl", "ValveTech" };
+                    return manufacturers[_random.Next(manufacturers.Length)];
+                case "ModelNumber":
+                    // Generate random model number like "X-1234"
+                    string prefix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[_random.Next(26)].ToString();
+                    int number = _random.Next(1000, 10000);
+                    return $"{prefix}-{number}";
+                case "Material":
+                    string[] materials = { "Carbon Steel", "Stainless Steel", "PVC", "Copper", "Aluminum", "Cast Iron", "Bronze" };
+                    return materials[_random.Next(materials.Length)];
+                case "SignalType":
+                    string[] signalTypes = { "Analog", "Digital", "Pneumatic", "Hydraulic", "Electric", "Wireless" };
+                    return signalTypes[_random.Next(signalTypes.Length)];
+                case "Protocol":
+                    string[] protocols = { "Modbus", "Profibus", "HART", "EtherNet/IP", "Foundation Fieldbus", "OPC UA" };
+                    return protocols[_random.Next(protocols.Length)];
+                case "InstallDate":
+                    // Random date in the past 5 years
+                    int installDaysAgo = _random.Next(1, 366 * 5);
+                    return DateTime.Now.AddDays(-installDaysAgo).ToString("yyyy-MM-dd");
+                case "SerialNumber":
+                    // Generate random serial number
+                    return $"SN-{_random.Next(10000, 100000)}";
+                case "ConnectionMaterial":
+                    string[] connMaterials = { "Steel", "Copper", "Fiber Optic", "PVC", "HDPE", "Rubber", "Composite" };
+                    return connMaterials[_random.Next(connMaterials.Length)];
+                default:
+                    // Generate a random alphanumeric string
+                    const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                    var stringValue = new string(Enumerable.Repeat(chars, 8)
+                        .Select(s => s[_random.Next(s.Length)]).ToArray());
+                    return stringValue;
             }
         }
 
