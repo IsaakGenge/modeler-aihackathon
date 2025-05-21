@@ -2,15 +2,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { EdgeService } from '../../Services/Edge/edge.service';
-import { NodeService } from '../../Services/Node/node.service';
-import { GraphService } from '../../Services/Graph/graph.service';
-import { ThemeService } from '../../Services/Theme/theme.service';
-import { TypesService, EdgeTypeModel } from '../../Services/Types/types.service';
+import { EdgeService } from '../../../Services/Edge/edge.service';
+import { NodeService } from '../../../Services/Node/node.service';
+import { GraphService } from '../../../Services/Graph/graph.service';
+import { ThemeService } from '../../../Services/Theme/theme.service';
+import { TypesService, EdgeTypeModel } from '../../../Services/Types/types.service';
 import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Edge } from '../../Models/edge.model';
-import { Node } from '../../Models/node.model';
+import { Node } from '../../../Models/node.model';
 
 @Component({
   selector: 'app-create-edge',

@@ -1,9 +1,9 @@
 // Frontend/src/app/Components/graph-picker/graph-picker.component.ts
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, Output, EventEmitter } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { GraphService } from '../../Services/Graph/graph.service';
+import { GraphService } from '../../../Services/Graph/graph.service';
 import { Observable, Subscription } from 'rxjs';
-import { ThemeService } from '../../Services/Theme/theme.service';
+import { ThemeService } from '../../../Services/Theme/theme.service';
 import { FormsModule } from '@angular/forms';
 
 @Component({

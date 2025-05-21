@@ -2,11 +2,11 @@ import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription, Observable } from 'rxjs';
-import { CreateNodeComponent } from '../create-node/create-node.component';
+import { CreateNodeComponent } from '../shared/create-node/create-node.component';
 import { ViewNodesComponent } from '../view-nodes/view-nodes.component';
-import { CreateEdgeComponent } from '../create-edge/create-edge.component';
+import { CreateEdgeComponent } from '../shared/create-edge/create-edge.component';
 import { ViewEdgesComponent } from '../view-edges/view-edges.component';
-import { GraphPickerComponent } from '../graph-picker/graph-picker.component';
+import { GraphPickerComponent } from '../shared/graph-picker/graph-picker.component';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 

@@ -2,10 +2,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { NodeService } from '../../Services/Node/node.service';
-import { ThemeService } from '../../Services/Theme/theme.service';
-import { GraphService } from '../../Services/Graph/graph.service';
-import { TypesService, NodeTypeModel } from '../../Services/Types/types.service';
+import { NodeService } from '../../../Services/Node/node.service';
+import { ThemeService } from '../../../Services/Theme/theme.service';
+import { GraphService } from '../../../Services/Graph/graph.service';
+import { TypesService, NodeTypeModel } from '../../../Services/Types/types.service';
 import { Observable, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
