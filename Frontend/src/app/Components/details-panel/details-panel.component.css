@@ -4,55 +4,45 @@
   top: 15px;
   right: 15px;
   width: 300px;
-  background-color: #fff;
+  background-color: var(--bg-secondary);
   border-radius: 6px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border);
   overflow: hidden;
   transform: translateX(350px);
   transition: transform 0.3s ease-in-out;
   z-index: 100;
+  color: var(--text-primary);
 }
 
   .details-panel.active {
     transform: translateX(0);
   }
 
-  .details-panel.dark-theme {
-    background-color: #333;
-    color: #fff;
-    border-color: #555;
-  }
+/* The dark-theme specific overrides can be removed since we'll use CSS variables */
 
 .details-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 15px;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-tertiary);
 }
 
-.dark-theme .details-header {
-  background-color: #444;
-  border-color: #555;
-}
-
-.details-header h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
+  .details-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
 
 .close-button {
   background: none;
   border: none;
   cursor: pointer;
   font-size: 18px;
-}
-
-.dark-theme .close-button {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .details-content {
@@ -70,16 +60,13 @@
 .detail-label {
   font-weight: 600;
   width: 40%;
-  color: #666;
-}
-
-.dark-theme .detail-label {
-  color: #ccc;
+  color: var(--text-secondary);
 }
 
 .detail-value {
   width: 60%;
   word-break: break-word;
+  color: var(--text-primary);
 }
 
 .loading-spinner {

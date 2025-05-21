@@ -1,59 +1,51 @@
 <!-- Frontend/src/app/Components/create-node/create-node.component.html -->
-<div class="create-node-container" [ngClass]="{'dark-mode': (isDarkMode$ | async)}">
-  <div class="create-node-card">
-    <div class="card-header">
-      <h3>Create New Node</h3>
+<div class="component-container">
+  <form [formGroup]="nodeForm" (ngSubmit)="onSubmit()">
+    <!-- Display success message -->
+    <div *ngIf="success" class="alert alert-success">
+      Node created successfully!
     </div>
 
-    <div class="card-body">
-      <form [formGroup]="nodeForm" (ngSubmit)="onSubmit()">
-        <!-- Display success message -->
-        <div *ngIf="success" class="alert alert-success">
-          Node created successfully!
-        </div>
-
-        <!-- Display error message -->
-        <div *ngIf="error" class="alert alert-danger">
-          {{ error }}
-        </div>
-
-        <!-- Display warning message -->
-        <div *ngIf="warning" class="alert alert-warning">
-          {{ warning }}
-        </div>
-
-        <div class="form-group">
-          <label for="name" class="form-label">Node Name</label>
-          <input type="text"
-                 id="name"
-                 formControlName="name"
-                 class="form-control"
-                 [ngClass]="{ 'is-invalid': submitted && f['name'].errors }" />
-          <div *ngIf="submitted && f['name'].errors" class="invalid-feedback">
-            <div *ngIf="f['name'].errors['required']">Name is required</div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="nodeType" class="form-label">Node Type</label>
-          <select id="nodeType"
-                  formControlName="nodeType"
-                  class="form-control"
-                  [ngClass]="{ 'is-invalid': submitted && f['nodeType'].errors }">
-            <option *ngFor="let type of nodeTypes" [value]="type.name">
-              {{ type.name }}
-            </option>
-          </select>
-          <div *ngIf="submitted && f['nodeType'].errors" class="invalid-feedback">
-            <div *ngIf="f['nodeType'].errors['required']">Node type is required</div>
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Create Node</button>
-          <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
-        </div>
-      </form>
+    <!-- Display error message -->
+    <div *ngIf="error" class="alert alert-danger">
+      {{ error }}
     </div>
-  </div>
+
+    <!-- Display warning message -->
+    <div *ngIf="warning" class="alert alert-warning">
+      {{ warning }}
+    </div>
+
+    <div class="form-group mb-3">
+      <label for="name" class="form-label">Node Name</label>
+      <input type="text"
+             id="name"
+             formControlName="name"
+             class="form-control"
+             [ngClass]="{ 'is-invalid': submitted && f['name'].errors }" />
+      <div *ngIf="submitted && f['name'].errors" class="invalid-feedback">
+        <div *ngIf="f['name'].errors['required']">Name is required</div>
+      </div>
+    </div>
+
+    <div class="form-group mb-3">
+      <label for="nodeType" class="form-label">Node Type</label>
+      <select id="nodeType"
+              formControlName="nodeType"
+              class="form-select"
+              [ngClass]="{ 'is-invalid': submitted && f['nodeType'].errors }">
+        <option *ngFor="let type of nodeTypes" [value]="type.name">
+          {{ type.name }}
+        </option>
+      </select>
+      <div *ngIf="submitted && f['nodeType'].errors" class="invalid-feedback">
+        <div *ngIf="f['nodeType'].errors['required']">Node type is required</div>
+      </div>
+    </div>
+
+    <div class="form-actions d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-primary">Create Node</button>
+      <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
+    </div>
+  </form>
 </div>

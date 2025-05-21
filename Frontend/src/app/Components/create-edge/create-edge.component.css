@@ -1,22 +1,15 @@
 /* Frontend/src/app/Components/create-edge/create-edge.component.css */
 .component-container {
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 0.375rem;
-  background-color: var(--bg-tertiary);
+  background-color: var(--bg-secondary);
   transition: background-color 0.3s ease;
-}
-
-h2 {
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.75rem;
-  transition: color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Form elements styling */
 .form-label {
   color: var(--text-primary);
+  font-weight: 500;
   transition: color 0.3s ease;
 }
 
@@ -39,6 +32,11 @@ h2 {
     color: var(--text-primary);
   }
 
+/* Invalid feedback */
+.invalid-feedback {
+  color: var(--alert-danger-text);
+}
+
 /* Button styling */
 .btn-primary {
   background-color: var(--primary-accent);
@@ -49,6 +47,17 @@ h2 {
   .btn-primary:hover {
     background-color: var(--primary-accent-darker);
     border-color: var(--primary-accent-darker);
+  }
+
+.btn-secondary {
+  background-color: var(--bg-elevated);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+  .btn-secondary:hover {
+    background-color: var(--secondary-accent);
+    color: var(--bg-secondary);
   }
 
 /* Alert styling */
@@ -69,4 +78,10 @@ h2 {
   background-color: var(--alert-danger-bg);
   border-color: var(--alert-danger-border);
   color: var(--alert-danger-text);
+}
+
+.alert-warning {
+  background-color: var(--alert-warning-bg);
+  border-color: var(--alert-warning-border);
+  color: var(--alert-warning-text);
 }

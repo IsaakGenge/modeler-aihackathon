@@ -8,7 +8,32 @@
   overflow-x: hidden;
   transition: width 0.3s ease;
 }
-
+.sidebar-toggle {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 0 8px 8px 0 !important;
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+  border-left: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 101 !important;
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+  padding: 0 !important;
+  font-size: 1rem !important;
+}
+  .sidebar-toggle:hover {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-highlighted) !important;
+  }
+  .sidebar-toggle:focus {
+    box-shadow: none !important;
+    outline: none !important;
+  }
   .sidebar.expanded {
     width: 250px;
   }

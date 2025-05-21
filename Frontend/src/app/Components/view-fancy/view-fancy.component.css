@@ -65,15 +65,16 @@ app-graph-picker {
 }
 
 /***************************************
- * TOOLS PANEL STYLES
+ * TOOLS PANEL STYLES - UPDATED
  ***************************************/
 /* Tools panel container */
 .tools-panel-container {
   position: absolute;
-  top: 0;
+  top: 40%; /* Move down to middle area */
   right: 0;
   width: 300px;
-  height: 100%;
+  height: auto; /* Allow height to adapt to content */
+  max-height: max-content; /* Ensure it doesn't exceed content size */
   transition: transform 0.3s ease;
   z-index: 100;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
@@ -88,32 +89,36 @@ app-graph-picker {
 /* Tools panel toggle button */
 .tools-panel-toggle {
   position: absolute;
-  left: -22px;
-  top: 120px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: var(--primary-accent);
-  color: white;
-  border: none;
+  left: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px 0 0 8px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-right: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 101;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s ease;
+  box-shadow: -1px 0 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
   pointer-events: auto;
   visibility: visible;
+  font-size: 1rem;
 }
 
   .tools-panel-toggle:hover {
-    background-color: var(--primary-accent-darker);
+    background-color: var(--bg-elevated);
+    color: var(--text-highlighted);
   }
 
 /* Tools panel content */
 .tools-panel {
-  height: 100%;
+  height: auto; /* Auto height instead of 100% */
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -125,6 +130,10 @@ app-graph-picker {
   opacity: 0;
   visibility: hidden;
   pointer-events: none; /* Disable interactions when hidden */
+}
+
+.tools-panel-container.collapsed .tools-panel-toggle {
+  left: -32px;
 }
 
 /***************************************
@@ -167,7 +176,7 @@ app-graph-picker {
   border-bottom-right-radius: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
   overflow-y: auto;
-  max-height: calc(100vh - 160px);
+  max-height: none; /* Remove max-height constraint */
 }
 
 /***************************************

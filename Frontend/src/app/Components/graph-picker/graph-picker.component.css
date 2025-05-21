@@ -43,23 +43,27 @@
 
 /* Keep toggle button compact */
 .collapse-toggle {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--bg-tertiary);
   color: var(--text-secondary);
-  width: 24px;
-  height: 24px;
+  border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s;
-  flex-shrink: 0; /* Don't let this button shrink */
+  cursor: pointer;
+  z-index: 101;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  visibility: visible;
+  font-size: 1rem;
 }
 
   .collapse-toggle:hover {
     background-color: var(--bg-elevated);
+    color: var(--text-highlighted);
   }
 
 /* Adjust labels to not wrap */

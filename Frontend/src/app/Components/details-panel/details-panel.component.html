@@ -1,7 +1,6 @@
 <!-- Frontend/src/app/Components/details-panel/details-panel.component.html -->
 <div class="details-panel" *ngIf="selectedElement"
-     [class.active]="selectedElement"
-     [ngClass]="(isDarkMode$ | async) ? 'dark-theme' : ''">
+     [class.active]="selectedElement">
   <div class="details-header">
     <h4>{{ selectedElement?.type === 'node' ? 'Node Details' : 'Edge Details' }}</h4>
     <button class="close-button" (click)="closeDetailsPanel()">

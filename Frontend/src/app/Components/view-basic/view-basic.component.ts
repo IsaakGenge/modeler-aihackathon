@@ -26,8 +26,7 @@ import { GraphService } from '../../Services/Graph/graph.service';
 })
 export class ViewBasicComponent implements OnInit, OnDestroy {
   hasSelectedGraph: boolean = false;
-  nodeCollapsed: boolean = true; // Collapsed by default
-  edgeCollapsed: boolean = true; // Collapsed by default
+  creationPanelCollapsed: boolean = true; // Collapsed by default
   private subscription: Subscription = new Subscription();
 
   constructor(
@@ -43,18 +42,13 @@ export class ViewBasicComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Load saved collapse states if in browser environment
+    // Load saved collapse state if in browser environment
     if (isPlatformBrowser(this.platformId)) {
-      const savedNodeState = localStorage.getItem('nodeCollapsed');
-      const savedEdgeState = localStorage.getItem('edgeCollapsed');
+      const savedCreationPanelState = localStorage.getItem('creationPanelCollapsed');
 
       // Only update if saved state exists, otherwise use the default (collapsed)
-      if (savedNodeState !== null) {
-        this.nodeCollapsed = savedNodeState === 'true';
-      }
-
-      if (savedEdgeState !== null) {
-        this.edgeCollapsed = savedEdgeState === 'true';
+      if (savedCreationPanelState !== null) {
+        this.creationPanelCollapsed = savedCreationPanelState === 'true';
       }
     }
   }
@@ -64,21 +58,12 @@ export class ViewBasicComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  toggleNodePanel(): void {
-    this.nodeCollapsed = !this.nodeCollapsed;
+  toggleCreationPanel(): void {
+    this.creationPanelCollapsed = !this.creationPanelCollapsed;
 
     // Save state to localStorage if in browser environment
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('nodeCollapsed', this.nodeCollapsed.toString());
-    }
-  }
-
-  toggleEdgePanel(): void {
-    this.edgeCollapsed = !this.edgeCollapsed;
-
-    // Save state to localStorage if in browser environment
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('edgeCollapsed', this.edgeCollapsed.toString());
+      localStorage.setItem('creationPanelCollapsed', this.creationPanelCollapsed.toString());
     }
   }
 }
