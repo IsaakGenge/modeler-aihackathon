@@ -34,9 +34,11 @@
                            [edges]="graphEdges"
                            [isDarkMode$]="isDarkMode$"
                            [showLayoutControls]="true"
+                           [graphId]="currentGraphId"
                            (nodeClicked)="onNodeClicked($event)"
                            (edgeClicked)="onEdgeClicked($event)"
                            (layoutChanged)="onLayoutChanged($event)"
+                           (positionsSaved)="onPositionsSaved($event)"
                            class="cytoscape-graph-component">
       </app-cytoscape-graph>
 

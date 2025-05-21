@@ -71,3 +71,14 @@
     background-color: var(--primary-accent);
     color: white;
   }
+
+  /* Add this to your existing CSS */
+  .layout-button.has-changes {
+    background-color: #ff934f;
+    color: white;
+  }
+
+  .layout-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }

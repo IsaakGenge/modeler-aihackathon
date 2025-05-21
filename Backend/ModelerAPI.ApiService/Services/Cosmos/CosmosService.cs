@@ -3,7 +3,9 @@ using Gremlin.Net.Driver.Exceptions;
 using Gremlin.Net.Structure.IO.GraphSON;
 using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
+using Newtonsoft.Json;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace ModelerAPI.ApiService.Services.Cosmos
 {
@@ -28,14 +30,16 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
 
             var gremlinHostname = configuration["CosmosDB:GremlinHostname"];
-            var gremlinPort = int.Parse(configuration["CosmosDB:GremlinPort"] ?? "443");           
+            var gremlinPort = int.Parse(configuration["CosmosDB:GremlinPort"] ?? "443");
             var gremlinPassword = configuration["CosmosDB:GremlinPassword"];
             var gremlinUsername = configuration["CosmosDB:GremlinUsername"];
 
-            var server = new GremlinServer(hostname: gremlinHostname,port: gremlinPort,username: gremlinUsername,password: gremlinPassword);
+            var server = new GremlinServer(hostname: gremlinHostname, port: gremlinPort, username: gremlinUsername, password: gremlinPassword);
 
-            var messageSerializer = new GraphSON2MessageSerializer();
-            GremlinClient = new GremlinClient(server, messageSerializer);
+            var messageSerializer = new GraphSON2MessageSerializer(new CustomGraphSON2Reader());          
+
+            // Create the Gremlin client with settings
+            GremlinClient = new GremlinClient(server, messageSerializer);          
 
             Logger.LogInformation("GremlinClient initialized successfully.");
         }
@@ -115,36 +119,130 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                     string nodeType = item["label"].ToString(); // Get the label as nodeType
                     DateTime createdAt = DateTime.UtcNow;
                     string nodeGraphId = graphId ?? ""; // Default to empty if not provided
+                    double? positionX = null;
+                    double? positionY = null;
 
                     // Extract properties safely
                     if (item["properties"] != null)
                     {
                         dynamic properties = item["properties"];
 
-                        // Extract name - check if property exists using try/catch
+
+                        // Extract name - check if property exists using a more direct approach
                         try
                         {
                             if (properties.ContainsKey("name"))
                             {
-                                name = (item["properties"] as Dictionary<string, object>).ToDictionary(x => x.Key, x => (x.Value as IEnumerable<object>).Cast<Dictionary<string, object>>().ToList()[0]["value"])["name"].ToString();
+                                var propsDict = item["properties"] as Dictionary<string, object>;
+                                if (propsDict != null && propsDict.ContainsKey("name"))
+                                {
+                                    var nameValues = propsDict["name"] as IEnumerable<object>;
+                                    if (nameValues != null)
+                                    {
+                                        var nameObj = nameValues.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                        if (nameObj != null && nameObj.ContainsKey("value"))
+                                        {
+                                            name = nameObj["value"]?.ToString() ?? "";
+                                            Logger.LogDebug("Extracted node name: {Name} for node: {Id}", name, id);
+                                        }
+                                    }
+                                }
                             }
                         }
-                        catch { /* Property doesn't exist */ }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Error extracting node name for node {Id}", id);
+                        }
 
                         // Extract createdAt
                         try
                         {
-                            if (properties["createdAt"] != null && properties["createdAt"].Count > 0)
+                            if (properties.ContainsKey("createdAt"))
                             {
-                                dynamic createdAtValue = properties["createdAt"][0]["value"];
-                                string dateString = createdAtValue.ToString();
-                                if (DateTime.TryParse(dateString, out var parsedDate))
+                                var propsDict = item["properties"] as Dictionary<string, object>;
+                                if (propsDict != null && propsDict.ContainsKey("createdAt"))
                                 {
-                                    createdAt = parsedDate;
+                                    var createdAtValues = propsDict["createdAt"] as IEnumerable<object>;
+                                    if (createdAtValues != null)
+                                    {
+                                        var createdAtObj = createdAtValues.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                        if (createdAtObj != null && createdAtObj.ContainsKey("value"))
+                                        {
+                                            string dateString = createdAtObj["value"]?.ToString() ?? "";
+                                            if (DateTime.TryParse(dateString, out var parsedDate))
+                                            {
+                                                createdAt = parsedDate;
+                                                Logger.LogDebug("Extracted createdAt: {CreatedAt} for node: {Id}", createdAt, id);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                        catch { /* Property doesn't exist */ }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Error extracting createdAt for node {Id}", id);
+                        }
+
+                        // Extract positionX
+                        try
+                        {
+                            if (properties.ContainsKey("positionX"))
+                            {
+                                var propsDict = item["properties"] as Dictionary<string, object>;
+                                if (propsDict != null && propsDict.ContainsKey("positionX"))
+                                {
+                                    var posXValues = propsDict["positionX"] as IEnumerable<object>;
+                                    if (posXValues != null)
+                                    {
+                                        var posXObj = posXValues.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                        if (posXObj != null && posXObj.ContainsKey("value"))
+                                        {
+                                            string valueString = posXObj["value"]?.ToString() ?? "";
+                                            if (Double.TryParse(valueString, out var parseX))
+                                            {
+                                                positionX = parseX;
+                                                Logger.LogDebug("Extracted positionX: {PosX} for node: {Id}", positionX, id);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Error extracting positionX for node {Id}", id);
+                        }
+
+                        // Extract positionY
+                        try
+                        {
+                            if (properties.ContainsKey("positionY"))
+                            {
+                                var propsDict = item["properties"] as Dictionary<string, object>;
+                                if (propsDict != null && propsDict.ContainsKey("positionY"))
+                                {
+                                    var posYValues = propsDict["positionY"] as IEnumerable<object>;
+                                    if (posYValues != null)
+                                    {
+                                        var posYObj = posYValues.Cast<Dictionary<string, object>>().FirstOrDefault();
+                                        if (posYObj != null && posYObj.ContainsKey("value"))
+                                        {
+                                            string valueString = posYObj["value"]?.ToString() ?? "";
+                                            if (Double.TryParse(valueString, out var parseY))
+                                            {
+                                                positionY = parseY;
+                                                Logger.LogDebug("Extracted positionY: {PosY} for node: {Id}", positionY, id);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Error extracting positionY for node {Id}", id);
+                        }
 
                         // Extract graphId if it wasn't provided as a parameter
                         if (string.IsNullOrEmpty(graphId))
@@ -171,7 +269,9 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                         Name = name,
                         NodeType = nodeType,
                         CreatedAt = createdAt,
-                        GraphId = nodeGraphId
+                        GraphId = nodeGraphId,
+                        PositionX = positionX,
+                        PositionY = positionY
                     };
 
                     nodes.Add(node);
@@ -339,6 +439,21 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
             }
 
+            if (node.PositionX.HasValue && node.PositionY.HasValue)
+            {
+                gremlinQuery += $".property('positionX', {node.PositionX})" +
+                               $".property('positionY', {node.PositionY})";
+            }
+            else
+            {
+                // Add random position if none is specified
+                var random = new Random();
+                var x = random.Next(-100, 100);
+                var y = random.Next(-100, 100);
+                gremlinQuery += $".property('positionX', {x})" +
+                               $".property('positionY', {y})";
+            }
+
             await ExecuteGremlinQueryAsync(gremlinQuery);
             return node;
         }
@@ -410,6 +525,67 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 return false;
             }
         }
+        public async Task<bool> UpdateNodePositionsAsync(string nodeId, double x, double y)
+        {
+            try
+            {
+                // Sanitize the input
+                var sanitizedId = SanitizeGremlinValue(nodeId);
+
+                // Gremlin query to update the node's position properties
+                var gremlinQuery = $"g.V('{sanitizedId}')" +
+                                  $".property('positionX', {x})" +
+                                  $".property('positionY', {y})";
+
+                await ExecuteGremlinQueryAsync(gremlinQuery);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error updating node position: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        // Batch update method for updating multiple node positions at once
+        public async Task<bool> BatchUpdateNodePositionsAsync(Dictionary<string, (double x, double y)> nodePositions)
+        {
+            try
+            {
+                foreach (var position in nodePositions)
+                {
+                    var sanitizedId = SanitizeGremlinValue(position.Key);
+                    var x = position.Value.x;
+                    var y = position.Value.y;
+
+                    Logger.LogDebug("Updating position for node {Id}: X={X}, Y={Y}", sanitizedId, x, y);
+
+                    var gremlinQuery = $"g.V('{sanitizedId}')" +
+                                      $".property('positionX', {x})" +
+                                      $".property('positionY', {y})";
+
+                    await ExecuteGremlinQueryAsync(gremlinQuery);
+                }
+
+                foreach (var position in nodePositions)
+                {
+                    // After saving, verify the position was stored correctly
+                    var verifyQuery = $"g.V('{SanitizeGremlinValue(position.Key)}').valueMap()";
+                    var verifyResult = await ExecuteGremlinQueryAsync(verifyQuery);
+                    Logger.LogInformation("Node {Id} after position update: {Data}", position.Key, verifyResult);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error batch updating node positions: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+
+
         #endregion
 
         #region Generic Cosmos DB Operations

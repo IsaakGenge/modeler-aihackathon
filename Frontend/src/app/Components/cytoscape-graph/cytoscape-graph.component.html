@@ -8,6 +8,15 @@
               class="layout-button">
         <i class="bi" [ngClass]="getLayoutIcon(layout.type)"></i>
       </button>
+
+      <!-- Add Save Positions button -->
+      <button (click)="saveNodePositions()"
+              title="Save Node Positions"
+              class="layout-button"
+              [class.has-changes]="positionsChanged"
+              [disabled]="isSaving || !positionsChanged">
+        <i class="bi" [ngClass]="isSaving ? 'bi-hourglass-split' : 'bi-save'"></i>
+      </button>
     </div>
   </div>
   <div #cyContainer class="cytoscape-container"></div>

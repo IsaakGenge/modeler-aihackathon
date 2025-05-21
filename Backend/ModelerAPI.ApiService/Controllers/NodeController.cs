@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ModelerAPI.ApiService.Models;
+using ModelerAPI.ApiService.Services.Cosmos;
 
 namespace ModelerAPI.ApiService.Controllers
 {
@@ -81,5 +82,45 @@ namespace ModelerAPI.ApiService.Controllers
             }
         }
 
+        [HttpPost("positions")]
+        public async Task<IActionResult> SavePositions([FromBody] NodePositionsDto request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.GraphId))
+                {
+                    return BadRequest("Graph ID is required");
+                }
+
+                if (request.Positions == null || !request.Positions.Any())
+                {
+                    return BadRequest("No positions provided");
+                }
+
+                // Convert positions to the tuple format expected by the service
+                var positionDictionary = request.Positions.ToDictionary(
+                    p => p.Key,
+                    p => (p.Value.X, p.Value.Y)
+                );
+
+                var result = await CosmosService.BatchUpdateNodePositionsAsync(positionDictionary);
+
+                if (result)
+                {
+                    return Ok(new { success = true, message = "Node positions updated successfully" });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message = "Failed to update node positions" });
+                }
+            }
+            catch (Exception ex)
+            {                
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
     }
+
+    
+
 }

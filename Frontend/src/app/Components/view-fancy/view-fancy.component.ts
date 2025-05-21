@@ -48,12 +48,16 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   graphNodes: any[] = [];
   graphEdges: any[] = [];
 
+  get currentGraphId(): string {
+    return this.graphService.currentGraphId || '';
+  }
+
   private subscriptions: Subscription = new Subscription();
 
   constructor(
     private edgeService: EdgeService,
     private nodeService: NodeService,
-    private graphService: GraphService,
+    public  graphService: GraphService,
     private themeService: ThemeService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
@@ -86,6 +90,11 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
       });
 
     this.setupEventSubscriptions();
+  }
+
+  onPositionsSaved(positions: any): void {
+    console.log('Node positions saved:', positions);
+    // You can add logic here to show a success message or refresh data if needed
   }
 
   toggleToolsPanel(): void {

@@ -5,4 +5,6 @@ export interface Node {
   nodeType: string;
   graphId: string;
   createdAt?: Date;
+  positionX?: number;
+  positionY?: number;
 }

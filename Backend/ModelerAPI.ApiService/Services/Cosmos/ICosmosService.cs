@@ -18,4 +18,6 @@ public interface ICosmosService
     Task<T> UpsertItemAsync<T>(T item, string partitionKey);
     Task<bool> DeleteItemAsync(string id, string partitionKey);
     Task<IEnumerable<T>> QueryItemsAsync<T>(string queryString);
+    Task<bool> UpdateNodePositionsAsync(string nodeId, double x, double y);
+    Task<bool> BatchUpdateNodePositionsAsync(Dictionary<string, (double x, double y)> nodePositions);
 }

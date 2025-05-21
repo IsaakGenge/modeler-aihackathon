@@ -7,23 +7,29 @@ import { takeUntil, startWith } from 'rxjs/operators';
 import { NodeType } from '../../Models/node-type.model';
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
 import { TypesService } from '../../Services/Types/types.service';
+import { HttpClient } from '@angular/common/http';
 
 
 // Define default layout options that can be used throughout the application
 export const DEFAULT_LAYOUT_OPTIONS = {
-  name: 'breadthfirst',
+  name: 'cose', // Changed to 'cose' for better distribution with positions
   fit: true,
   directed: false,
-  padding: 30,
-  circle: false,
-  grid: false,
-  spacingFactor: 1.75,
+  padding: 50,
+  spacingFactor: 3,
   avoidOverlap: true,
-  nodeDimensionsIncludeLabels: false,
+  nodeDimensionsIncludeLabels: true,
   animate: false,
   animationDuration: 500,
-  animateFilter: function (node: any, i: number) { return true; },
-  transform: function (node: any, position: any) { return position; }
+  // cose-specific options
+  nodeRepulsion: 10000,
+  idealEdgeLength: 100,
+  edgeElasticity: 100,
+  nestingFactor: 1.2,
+  gravity: 80,
+  numIter: 1000,
+  coolingFactor: 0.99,
+  minTemp: 1.0
 };
 
 // Define alternate layout types that can be used
@@ -57,6 +63,11 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     { type: LAYOUT_TYPES.COSE, label: 'Force-Directed' },
     { type: LAYOUT_TYPES.RANDOM, label: 'Random' }
   ];
+  @Input() graphId: string = '';
+  @Output() positionsSaved = new EventEmitter<any>();
+
+  public positionsChanged = false;
+  public isSaving = false;
 
   // New input for layout configuration with a default value
   @Input() layoutConfig: any = DEFAULT_LAYOUT_OPTIONS;
@@ -65,13 +76,11 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   @Input() initialZoom: number = 1.5;
 
   // Add this with your other @Input properties
-  @Input() wheelSensitivity: number = 0.8; // Increased from 0.3 for more aggressive zooming
-
+  @Input() wheelSensitivity: number = 0.8;
 
   @Output() nodeClicked = new EventEmitter<any>();
   @Output() edgeClicked = new EventEmitter<any>();
   @Output() layoutChanged = new EventEmitter<string>();
-
 
   private cy: any;
   private destroy$ = new Subject<void>();
@@ -95,7 +104,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     lineOpacity: '0.8'
   };
 
-  constructor(private typesService: TypesService) {
+  constructor(private typesService: TypesService, private http: HttpClient) {
     // Subscribe to node visual settings
     this.typesService.nodeVisualSettings$
       .pipe(takeUntil(this.destroy$))
@@ -117,6 +126,90 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
           this.updateCytoscapeStyles();
         }
       });
+  }
+
+  private debugPositionData(): void {
+    console.log("=== POSITION DEBUGGING ===");
+
+    // Check raw data
+    console.log("Raw node array:", this.nodes);
+
+    // Check positions in raw data
+    this.nodes.forEach(node => {
+      console.log(`Node ${node.id} DB data:`, {
+        name: node.name,
+        positionX: node.positionX,
+        positionY: node.positionY,
+        type: typeof node.positionX
+      });
+    });
+
+    // Check current Cytoscape positions
+    if (this.cy) {
+      this.cy.nodes().forEach((node: any) => {
+        console.log(`Node ${node.id()} Cytoscape position:`, node.position());
+      });
+    }
+
+    console.log("=== END POSITION DEBUGGING ===");
+  }
+
+  public getNodePositions(): { [key: string]: { x: number, y: number } } {
+    if (!this.cy) return {};
+
+    const positions: { [key: string]: { x: number, y: number } } = {};
+    this.cy.nodes().forEach((node: any) => {
+      // Use POSITION (not renderedPosition) for consistent model coordinates
+      const position = node.position();
+      positions[node.id()] = {
+        x: Math.round(position.x),
+        y: Math.round(position.y)
+      };
+
+      // Log the node data for debugging
+      console.log(`Saving position for node ${node.id()}, label: ${node.data('label')}, position: (${position.x}, ${position.y})`);
+    });
+
+    return positions;
+  }
+
+  private logNodeData(): void {
+    console.log("Current nodes data:", this.nodes);
+
+    if (this.cy) {
+      console.log("Cytoscape nodes data:");
+      this.cy.nodes().forEach((node: any) => {
+        console.log(`Node ID: ${node.id()}, Label: ${node.data('label')}, Position: (${node.position().x}, ${node.position().y})`);
+      });
+    }
+  }
+
+  // Method to save positions to the backend
+  public saveNodePositions(): void {
+    if (!this.cy || !this.graphId) {
+      console.warn('Cannot save positions: Cytoscape instance or graphId is missing');
+      return;
+    }
+
+    this.isSaving = true;
+    const positions = this.getNodePositions();
+
+    // Fix the URL to match the controller route (node is singular, not plural)
+    this.http.post('/api/node/positions', {
+      graphId: this.graphId,
+      positions: positions
+    }).subscribe({
+      next: (response) => {
+        console.log('Node positions saved successfully:', response);
+        this.positionsChanged = false;
+        this.isSaving = false;
+        this.positionsSaved.emit(positions);
+      },
+      error: (error) => {
+        console.error('Error saving node positions:', error);
+        this.isSaving = false;
+      }
+    });
   }
 
   private updateCytoscapeStyles(): void {
@@ -152,8 +245,12 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
   // Public method to reinitialize or update the graph
   public updateGraph(nodes: any[], edges: any[]): void {
-    this.nodes = nodes;
-    this.edges = edges;
+    console.log("Updating graph with new data:", { nodes, edges });
+
+    // Make a deep copy to ensure we don't lose data
+    this.nodes = nodes.map(node => ({ ...node }));
+    this.edges = edges.map(edge => ({ ...edge }));
+
     this.initializeCytoscape();
   }
 
@@ -234,10 +331,10 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       'text-valign': 'center',
       'text-halign': 'center',
       'color': '#fff',
-      'width': 60,
-      'height': 60,
-      'font-size': 14,
-      'text-outline-width': 3,
+      'width': 30, // Reduced from 60
+      'height': 30, // Reduced from 60
+      'font-size': 12, // Reduced from 14
+      'text-outline-width': 2, // Reduced from 3
       'font-weight': 'bold',
       'text-wrap': 'ellipsis'
     };
@@ -351,20 +448,45 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       return;
     }
 
+    // Log raw node data for debugging
+    console.log("Raw node data received:", JSON.stringify(this.nodes));
+    this.nodes.forEach(node => {
+      console.log(`Node ${node.id} (${node.name}): DB Position X=${node.positionX}, Y=${node.positionY}`);
+    });
+
     // Create a node map for lookup (this will help with edge references)
     const nodeMap = new Map();
     this.nodes.forEach(node => {
       nodeMap.set(node.id, node.name || 'Unnamed Node');
     });
 
-    // Convert API data to Cytoscape format with proper string IDs and nodeType
-    const cytoscapeNodes = this.nodes.map(node => ({
-      data: {
-        id: String(node.id),
-        label: node.name || 'Unnamed Node',
-        nodeType: node.nodeType || NodeType.Default // Make sure nodeType is included
+    // Create Cytoscape nodes with positions included directly
+    const cytoscapeNodes = this.nodes.map(node => {
+      // Basic node data
+      const nodeData = {
+        data: {
+          id: String(node.id),
+          label: node.name || 'Unnamed Node',
+          nodeType: node.nodeType || NodeType.Default,
+          dbPositionX: node.positionX, // Store for reference
+          dbPositionY: node.positionY  // Store for reference
+        }
+      };
+
+      // If position data exists, include it in the node
+      if (node.positionX !== undefined && node.positionY !== undefined) {
+        // Ensure we have valid numeric positions
+        const x = Number(node.positionX);
+        const y = Number(node.positionY);
+
+        if (!isNaN(x) && !isNaN(y)) {
+          // @ts-ignore - TypeScript may complain about this structure
+          nodeData.position = { x, y };
+        }
       }
-    }));
+
+      return nodeData;
+    });
 
     // Filter and validate edges (ensure both source and target exist)
     const validEdges = this.edges.filter(edge => {
@@ -383,7 +505,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         sourceLabel: nodeMap.get(edge.source),
         targetLabel: nodeMap.get(edge.target),
         label: edge.edgeType || `${nodeMap.get(edge.source)} → ${nodeMap.get(edge.target)}`,
-        edgeType: edge.edgeType  
+        edgeType: edge.edgeType
       }
     }));
 
@@ -393,10 +515,32 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     }
 
     try {
-      // Initialize with light mode styles (will be updated when isDarkMode$ emits)
+      // Initialize with light mode styles
       const initialStyles = this.getGraphStyles(false);
 
-      // Create new Cytoscape instance with the data
+      // Check if positions are available and valid
+      const hasValidPositions = this.nodes.some(
+        node => node.positionX !== undefined &&
+          node.positionY !== undefined &&
+          !isNaN(Number(node.positionX)) &&
+          !isNaN(Number(node.positionY))
+      );
+
+      console.log('Has valid saved positions:', hasValidPositions);
+
+      // Adjust layout settings based on whether we have positions
+      let initialLayout = { ...this.layoutConfig };
+
+      if (hasValidPositions) {
+        // If we have positions, don't run the automatic layout
+        initialLayout = {
+          name: 'preset', // 'preset' uses the positions we'll set
+          fit: true,
+          padding: 50
+        };
+      }
+
+      // Create the Cytoscape instance
       this.cy = cytoscape({
         container: this.cyContainer.nativeElement,
         elements: {
@@ -404,42 +548,79 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
           edges: cytoscapeEdges
         },
         style: initialStyles,
-        layout: this.layoutConfig,
+        layout: initialLayout,
         wheelSensitivity: this.wheelSensitivity
       });
 
-      // Subscribe to dark mode changes to update styles
+      // Debug data after Cytoscape is created
+      this.debugPositionData();
+
+      // Apply positions again for safety (sometimes preset layout doesn't work)
+      if (hasValidPositions) {
+        // Force positions with a small delay to ensure Cytoscape is ready
+        setTimeout(() => {
+          this.nodes.forEach(node => {
+            if (node.positionX !== undefined && node.positionY !== undefined) {
+              const x = Number(node.positionX);
+              const y = Number(node.positionY);
+
+              if (!isNaN(x) && !isNaN(y)) {
+                const cyNode = this.cy.getElementById(String(node.id));
+                if (cyNode) {
+                  cyNode.position({ x, y });
+                  console.log(`Force-set node ${node.id} position to database values: (${x}, ${y})`);
+                }
+              }
+            }
+          });
+
+          // Debug after setting positions
+          this.debugPositionData();
+
+          // Fit view after positions are set
+          this.cy.fit();
+
+          // Apply zoom centered on the graph
+          this.cy.zoom({
+            level: this.initialZoom,
+            position: this.cy.center()
+          });
+        }, 100);
+      } else {
+        // Run an automatic layout if no positions are stored
+        setTimeout(() => {
+          if (this.cy && this.cy.elements().length > 0) {
+            const animatedLayout = {
+              ...this.layoutConfig,
+              animate: true
+            };
+            this.cy.layout(animatedLayout).run();
+
+            // After layout is done
+            setTimeout(() => {
+              // Fit view
+              this.cy.fit();
+
+              // Apply zoom centered on the graph
+              this.cy.zoom({
+                level: this.initialZoom,
+                position: this.cy.center()
+              });
+
+              // Debug final positions
+              this.debugPositionData();
+            }, 1000);
+          }
+        }, 100);
+      }
+
+      // Subscribe to dark mode changes
       this.isDarkMode$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
         const styles = this.getGraphStyles(isDark);
         if (this.cy) {
           this.cy.style(styles);
         }
       });
-
-      // Run the layout to ensure everything is positioned properly
-      setTimeout(() => {
-        if (this.cy && this.cy.elements().length > 0) {
-          // Create a layout configuration with animation enabled for this run
-          const animatedLayout = {
-            ...this.layoutConfig,
-            animate: true
-          };
-
-          this.cy.layout(animatedLayout).run();
-
-          // Apply initial zoom - the higher the number, the more zoomed in
-          if (cytoscapeNodes.length > 0) {
-            // First fit to see all elements
-            this.cy.fit();
-
-            // Then apply the zoom centered on the graph
-            this.cy.zoom({
-              level: this.initialZoom,
-              position: this.cy.center()
-            });
-          }
-        }
-      }, 100);
 
       // Add event handlers
       this.cy.on('tap', 'node', (event: any) => {
@@ -463,6 +644,16 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         });
       });
 
+      // Add position change tracking
+      this.cy.on('position', 'node', () => {
+        this.positionsChanged = true;
+      });
+
+      // Add drag end event to check positions
+      this.cy.on('dragfree', 'node', () => {
+        this.positionsChanged = true;
+      });
+
       // Log success or empty state
       if (this.cy.elements().length === 0) {
         console.warn('Graph visualization is empty - no elements to display');
@@ -473,5 +664,4 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       console.error('Error initializing Cytoscape:', error);
     }
   }
-
 }
