@@ -146,6 +146,8 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
           this.resetDeleteState();
         } else {
           this.deleteError = 'Failed to delete node';
+          // Explicitly set showDeleteModal to true for non-404 errors
+          this.showDeleteModal = true;
           console.error('Error deleting node:', err);
         }
       }

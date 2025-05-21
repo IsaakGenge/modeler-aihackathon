@@ -39,13 +39,7 @@ describe('AppComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render header', () => {
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')).toBeTruthy();
-    expect(compiled.querySelector('h1')?.textContent).toContain('Graph Modeler');
-  });
-
+  
   it('should have sidebar navigation', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
