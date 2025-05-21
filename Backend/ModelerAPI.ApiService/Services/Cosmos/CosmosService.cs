@@ -3,6 +3,7 @@ using Gremlin.Net.Driver.Exceptions;
 using Gremlin.Net.Structure.IO.GraphSON;
 using Microsoft.Azure.Cosmos;
 using ModelerAPI.ApiService.Models;
+using System;
 
 namespace ModelerAPI.ApiService.Services.Cosmos
 {
@@ -15,7 +16,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
         private readonly GremlinClient GremlinClient;
         private readonly CosmosParseHelper ParseHelper;
 
-        public CosmosService(IConfiguration configuration, ILogger<CosmosService> logger)
+        public CosmosService(IConfiguration configuration, ILogger<CosmosService> logger, IWebHostEnvironment environment)
         {
             // Initialize existing properties
             Logger = logger;
@@ -31,7 +32,9 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             var gremlinPassword = configuration["CosmosDB:GremlinPassword"];
             var gremlinUsername = configuration["CosmosDB:GremlinUsername"];
 
-            var server = new GremlinServer(hostname: gremlinHostname, port: gremlinPort, username: gremlinUsername, password: gremlinPassword);
+
+            bool enableSsl = !environment.IsDevelopment();
+            var server = new GremlinServer(hostname: gremlinHostname, port: gremlinPort, username: gremlinUsername, password: gremlinPassword, enableSsl: enableSsl);
 
             var messageSerializer = new GraphSON2MessageSerializer(new CustomGraphSON2Reader());
 

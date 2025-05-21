@@ -86,15 +86,15 @@ app.UseExceptionHandler();
 app.UseCors();
 
 // Swagger UI middleware
-if (app.Environment.IsDevelopment())
+// Swagger UI middleware
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Modeler API v1");
-        options.RoutePrefix = string.Empty; // Serve the Swagger UI at the app's root
-    });
-}
+    // Use a relative path that works in both local and Azure deployments
+    options.SwaggerEndpoint("./swagger/v1/swagger.json", "Modeler API v1");
+    options.RoutePrefix = string.Empty; // Serve the Swagger UI at the app's root
+});
+
 
 app.UseHttpsRedirection();
 app.MapControllers();
