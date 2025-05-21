@@ -12,17 +12,17 @@ import { NodeService } from '../../Services/Node/node.service';
 
 // Define default layout options that can be used throughout the application
 export const DEFAULT_LAYOUT_OPTIONS = {
-  name: 'cose', // Changed to 'cose' for better distribution with positions
+  name: 'cose',
   fit: true,
   directed: false,
-  padding: 50,
-  spacingFactor: 3,
+  padding: 30, // Reduced from 50
+  spacingFactor: 1.5, // Reduced from 3
   avoidOverlap: true,
   nodeDimensionsIncludeLabels: true,
   animate: false,
   animationDuration: 500,
   // cose-specific options
-  nodeRepulsion: 10000,
+  nodeRepulsion: 5000, // Reduced from 10000
   idealEdgeLength: 100,
   edgeElasticity: 100,
   nestingFactor: 1.2,
@@ -370,15 +370,60 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   public changeLayoutType(layoutType: string): void {
     if (!this.cy) return;
 
-    // Create a new layout configuration with the new type
-    const newLayout = {
-      ...this.layoutConfig,
+    // Create layout-specific options to avoid cumulative spacing issues
+    const baseOptions = { ...DEFAULT_LAYOUT_OPTIONS };
+
+    // Add any layout-specific adjustments
+    const layoutOptions = {
+      ...baseOptions,
       name: layoutType,
-      animate: true
+      animate: true,
+      animationDuration: 500,
+      fit: true, // Ensure fit is always true
+      padding: 30 // Keep consistent padding
     };
 
-    this.layoutConfig = newLayout;
-    this.applyLayout(newLayout);
+    // Different layout types may need different parameters
+    switch (layoutType) {
+      case LAYOUT_TYPES.BREADTHFIRST:
+        layoutOptions.spacingFactor = 1.2;
+        break;
+      case LAYOUT_TYPES.CIRCLE:
+        layoutOptions.spacingFactor = 1;
+        break;
+      case LAYOUT_TYPES.GRID:
+        layoutOptions.spacingFactor = 1.1;
+        break;
+      case LAYOUT_TYPES.CONCENTRIC:
+        layoutOptions.spacingFactor = 1.2;
+        break;
+      case LAYOUT_TYPES.COSE:
+        layoutOptions.spacingFactor = 1.5;
+        break;
+      case LAYOUT_TYPES.RANDOM:
+        layoutOptions.spacingFactor = 1.3;
+        break;
+    }
+
+    // Update the component's layoutConfig
+    this.layoutConfig = layoutOptions;
+
+    // Apply the layout with a consistent approach
+    let layout = this.cy.layout(layoutOptions);
+
+    // Ensure proper zooming after layout completes
+    layout.one('layoutstop', () => {
+      // Fit the graph to view
+      this.cy.fit();
+
+      // Apply consistent zoom level
+      this.cy.zoom({
+        level: this.initialZoom,
+        position: this.cy.center()
+      });
+    });
+
+    layout.run();
 
     // Emit the layout change event
     this.layoutChanged.emit(layoutType);
