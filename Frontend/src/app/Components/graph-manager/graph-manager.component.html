@@ -73,10 +73,10 @@
           <td>{{ graph.name }}</td>
           <td>{{ graph.createdAt | date:'short' }}</td>
           <td>
-            <button class="btn btn-sm btn-outline-primary me-2" (click)="selectGraph(graph)">
-              Select
+            <button class="btn btn-sm btn-outline-primary me-2" (click)="viewGraph(graph)">
+              View
             </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="deleteGraph(graph?.id, graph?.name)">
+            <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
               Delete
             </button>
           </td>
@@ -139,10 +139,10 @@
         <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
           <td>{{ graph.name }}</td>
           <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary me-1" (click)="selectGraph(graph)">
-              Select
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="viewGraph(graph)">
+              View
             </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="deleteGraph(graph?.id, graph?.name)">
+            <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
               Delete
             </button>
           </td>
@@ -151,3 +151,14 @@
     </table>
   </div>
 </div>
+
+<!-- Add the confirmation modal component -->
+<app-confirmation-modal [show]="showDeleteModal"
+                        [title]="'Confirm Graph Deletion'"
+                        [message]="'Are you sure you want to delete this graph?'"
+                        [warningText]="'This will also delete all associated nodes and edges.'"
+                        [confirmButtonText]="'Delete'"
+                        [isLoading]="deleteInProgress"
+                        (confirm)="confirmDeleteGraph()"
+                        (cancel)="cancelDeleteGraph()">
+</app-confirmation-modal>

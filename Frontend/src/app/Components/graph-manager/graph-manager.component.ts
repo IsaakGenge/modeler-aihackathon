@@ -1,4 +1,3 @@
-// Frontend/src/app/Components/graph-manager/graph-manager.component.ts
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -6,12 +5,14 @@ import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Graph, CreateGraphDto } from '../../Models/graph.model'
+import { Graph, CreateGraphDto } from '../../Models/graph.model';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-graph-manager',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent],
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
@@ -27,10 +28,16 @@ export class GraphManagerComponent implements OnInit {
   warning = '';
   isDarkMode$: Observable<boolean>;
 
+  // Delete confirmation modal properties
+  showDeleteModal = false;
+  deleteInProgress = false;
+  graphToDelete: { id: string, name: string } | null = null;
+
   constructor(
     private formBuilder: FormBuilder,
     private graphService: GraphService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private router: Router
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -45,6 +52,10 @@ export class GraphManagerComponent implements OnInit {
 
   get f() {
     return this.graphForm.controls;
+  }
+  // Add this computed property in your component class
+  get deleteConfirmationMessage(): string {
+    return `Are you sure you want to delete the graph "${this.graphToDelete?.name || ''}"?`;
   }
 
   loadGraphs(): void {
@@ -134,43 +145,71 @@ export class GraphManagerComponent implements OnInit {
     });
   }
 
-  deleteGraph(id: string | undefined, name: string | undefined): void {
+  // Initialize delete graph process
+  initiateDeleteGraph(id: string | undefined, name: string | undefined): void {
     if (!id) {
       this.error = 'Cannot delete graph: missing ID';
       return;
     }
 
-    const graphName = name || 'this graph';
-    if (confirm(`Are you sure you want to delete the graph "${graphName}"? This will also delete all associated nodes and edges.`)) {
-      this.loading = true;
-      this.graphService.deleteGraph(id).subscribe({
-        next: () => {
-          setTimeout(() => {
-            this.loadGraphs();
-            this.graphService.notifyGraphDeleted();
-            this.loading = false;
-          }, 500);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loading = false;
-          if (err.status === 404) {
-            this.warning = 'Graph not found or already deleted';
-            this.loadGraphs();
-          } else {
-            this.error = `Failed to delete graph: ${err.message}`;
-            console.error('Error deleting graph:', err);
-          }
-        }
-      });
-    }
+    this.graphToDelete = {
+      id,
+      name: name || 'Unnamed Graph' // Provide a fallback for missing name
+    };
+    this.showDeleteModal = true;
   }
 
-  selectGraph(graph: Graph): void {
+  // Confirm delete graph
+  confirmDeleteGraph(): void {
+    if (!this.graphToDelete) return;
+
+    this.deleteInProgress = true;
+    const id = this.graphToDelete.id;
+
+    this.graphService.deleteGraph(id).subscribe({
+      next: () => {
+        setTimeout(() => {
+          this.loadGraphs();
+          this.graphService.notifyGraphDeleted();
+          this.resetDeleteState();
+        }, 500);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.deleteInProgress = false;
+        if (err.status === 404) {
+          this.warning = 'Graph not found or already deleted';
+          this.loadGraphs();
+          this.resetDeleteState();
+        } else {
+          this.error = `Failed to delete graph: ${err.message}`;
+          console.error('Error deleting graph:', err);
+          this.resetDeleteState();
+        }
+      }
+    });
+  }
+
+  // Cancel delete graph
+  cancelDeleteGraph(): void {
+    this.resetDeleteState();
+  }
+
+  // Reset delete modal state
+  private resetDeleteState(): void {
+    this.showDeleteModal = false;
+    this.deleteInProgress = false;
+    this.graphToDelete = null;
+  }
+
+  viewGraph(graph: Graph): void {
     if (!graph || !graph.id) {
-      this.error = 'Cannot select graph: invalid graph data';
+      this.error = 'Cannot view graph: invalid graph data';
       return;
     }
+    // Set current graph first
     this.graphService.setCurrentGraph(graph);
+    // Then navigate to view-fancy
+    this.router.navigate(['/view-fancy']);
   }
 
   isSelected(graph: Graph): boolean {
