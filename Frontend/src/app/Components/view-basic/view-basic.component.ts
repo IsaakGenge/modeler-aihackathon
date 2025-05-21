@@ -1,13 +1,14 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { CreateNodeComponent } from '../create-node/create-node.component';
 import { ViewNodesComponent } from '../view-nodes/view-nodes.component';
 import { CreateEdgeComponent } from '../create-edge/create-edge.component';
 import { ViewEdgesComponent } from '../view-edges/view-edges.component';
 import { GraphPickerComponent } from '../graph-picker/graph-picker.component';
 import { GraphService } from '../../Services/Graph/graph.service';
+import { ThemeService } from '../../Services/Theme/theme.service';
 
 @Component({
   selector: 'app-view-basic',
@@ -27,12 +28,19 @@ import { GraphService } from '../../Services/Graph/graph.service';
 export class ViewBasicComponent implements OnInit, OnDestroy {
   hasSelectedGraph: boolean = false;
   creationPanelCollapsed: boolean = true; // Collapsed by default
+  viewNodesPanelCollapsed: boolean = false; // Expanded by default
+  viewEdgesPanelCollapsed: boolean = false; // Expanded by default
+  isDarkMode$: Observable<boolean>; // Declare without initializing
   private subscription: Subscription = new Subscription();
 
   constructor(
     private graphService: GraphService,
+    private themeService: ThemeService,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) { }
+  ) {
+    // Initialize after constructor parameters
+    this.isDarkMode$ = this.themeService.isDarkMode$;
+  }
 
   ngOnInit(): void {
     // Subscribe to the current graph to show/hide components
@@ -45,10 +53,18 @@ export class ViewBasicComponent implements OnInit, OnDestroy {
     // Load saved collapse state if in browser environment
     if (isPlatformBrowser(this.platformId)) {
       const savedCreationPanelState = localStorage.getItem('creationPanelCollapsed');
+      const savedViewNodesPanelState = localStorage.getItem('viewNodesPanelCollapsed');
+      const savedViewEdgesPanelState = localStorage.getItem('viewEdgesPanelCollapsed');
 
-      // Only update if saved state exists, otherwise use the default (collapsed)
+      // Only update if saved state exists, otherwise use the default
       if (savedCreationPanelState !== null) {
         this.creationPanelCollapsed = savedCreationPanelState === 'true';
+      }
+      if (savedViewNodesPanelState !== null) {
+        this.viewNodesPanelCollapsed = savedViewNodesPanelState === 'true';
+      }
+      if (savedViewEdgesPanelState !== null) {
+        this.viewEdgesPanelCollapsed = savedViewEdgesPanelState === 'true';
       }
     }
   }
@@ -60,10 +76,22 @@ export class ViewBasicComponent implements OnInit, OnDestroy {
 
   toggleCreationPanel(): void {
     this.creationPanelCollapsed = !this.creationPanelCollapsed;
+    this.saveCollapseState('creationPanelCollapsed', this.creationPanelCollapsed);
+  }
 
-    // Save state to localStorage if in browser environment
+  toggleViewNodesPanel(): void {
+    this.viewNodesPanelCollapsed = !this.viewNodesPanelCollapsed;
+    this.saveCollapseState('viewNodesPanelCollapsed', this.viewNodesPanelCollapsed);
+  }
+
+  toggleViewEdgesPanel(): void {
+    this.viewEdgesPanelCollapsed = !this.viewEdgesPanelCollapsed;
+    this.saveCollapseState('viewEdgesPanelCollapsed', this.viewEdgesPanelCollapsed);
+  }
+
+  private saveCollapseState(key: string, value: boolean): void {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('creationPanelCollapsed', this.creationPanelCollapsed.toString());
+      localStorage.setItem(key, value.toString());
     }
   }
 }

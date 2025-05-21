@@ -46,8 +46,28 @@
   </div>
 
   <!-- View Nodes Component -->
-  <app-view-nodes class="mb-4 d-block" *ngIf="hasSelectedGraph"></app-view-nodes>
+  <div class="card mb-4" *ngIf="hasSelectedGraph">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Nodes</h5>
+      <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleViewNodesPanel()">
+        <i class="bi" [ngClass]="viewNodesPanelCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+      </button>
+    </div>
+    <div class="card-body" [class.d-none]="viewNodesPanelCollapsed">
+      <app-view-nodes></app-view-nodes>
+    </div>
+  </div>
 
   <!-- View Edges Component -->
-  <app-view-edges class="mb-4 d-block" *ngIf="hasSelectedGraph"></app-view-edges>
+  <div class="card mb-4" *ngIf="hasSelectedGraph">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Connections</h5>
+      <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleViewEdgesPanel()">
+        <i class="bi" [ngClass]="viewEdgesPanelCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
+      </button>
+    </div>
+    <div class="card-body" [class.d-none]="viewEdgesPanelCollapsed">
+      <app-view-edges></app-view-edges>
+    </div>
+  </div>
 </div>

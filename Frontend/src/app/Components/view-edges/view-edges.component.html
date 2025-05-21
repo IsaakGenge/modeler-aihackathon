@@ -1,7 +1,5 @@
 <!-- Frontend/src/app/Components/view-edges/view-edges.component.html -->
 <div class="edge-container mt-4" [ngClass]="(isDarkMode$ | async) ? 'dark-theme' : ''">
-  <h2>Current Connections</h2>
-
   <div *ngIf="loading" class="text-center my-3">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
