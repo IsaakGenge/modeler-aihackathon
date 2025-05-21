@@ -107,3 +107,78 @@
 .edge-container, .edge-container * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+/* Properties styling */
+.edge-properties {
+  position: relative;
+  display: inline-block;
+}
+
+.properties-card {
+  width: 220px;
+  max-height: 120px;
+  overflow-y: auto;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.properties-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.property-item {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.15rem 0;
+}
+
+.property-key {
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-right: 0.5rem;
+  white-space: nowrap;
+}
+
+.property-value {
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.properties-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 0.7rem;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom scrollbar for properties */
+.properties-card::-webkit-scrollbar {
+  width: 4px;
+}
+
+.properties-card::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.properties-card::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+
+  .properties-card::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+  }

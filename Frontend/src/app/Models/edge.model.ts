@@ -6,4 +6,5 @@ export interface Edge {
   edgeType: string;
   graphId: string;
   createdAt?: Date;
+  properties?: { [key: string]: any };
 }

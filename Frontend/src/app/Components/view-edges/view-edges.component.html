@@ -25,6 +25,7 @@
           <th>To</th>
           <th>Type</th>
           <th>Created</th>
+          <th>Properties</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -34,6 +35,20 @@
           <td>{{ getNodeName(edge.target) }}</td>
           <td>{{ edge.edgeType }}</td>
           <td>{{ edge.createdAt | date }}</td>
+          <td>
+            <div *ngIf="edge.properties && getPropertyCount(edge.properties) > 0" class="edge-properties">
+              <div class="properties-card">
+                <div class="properties-content">
+                  <div *ngFor="let prop of getPropertyEntries(edge.properties)" class="property-item">
+                    <span class="property-key">{{ prop.key }}:</span>
+                    <span class="property-value">{{ prop.value }}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="badge bg-info properties-count">{{ getPropertyCount(edge.properties) }}</span>
+            </div>
+            <span *ngIf="!edge.properties || getPropertyCount(edge.properties) === 0" class="text-muted">None</span>
+          </td>
           <td>
             <button class="btn btn-danger btn-sm"
                     (click)="initiateDeleteEdge(edge.id)"

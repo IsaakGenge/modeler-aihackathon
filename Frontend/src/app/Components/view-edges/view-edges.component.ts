@@ -153,6 +153,20 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     return id.substring(0, 8) + '...';
   }
 
+  // Helper method to get count of properties
+  getPropertyCount(properties: { [key: string]: any }): number {
+    return properties ? Object.keys(properties).length : 0;
+  }
+
+  // Helper method to convert properties to an array for ngFor
+  getPropertyEntries(properties: { [key: string]: any }): { key: string, value: any }[] {
+    if (!properties) return [];
+    return Object.entries(properties).map(([key, value]) => ({
+      key,
+      value: typeof value === 'object' ? JSON.stringify(value) : value
+    }));
+  }
+
   // Show delete confirmation modal
   initiateDeleteEdge(id: string): void {
     this.edgeToDelete = id;
@@ -173,6 +187,7 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
         this.resetDeleteState();
         this.loading = false;
       },
+
       error: (err: HttpErrorResponse) => {
         this.deleteInProgress = false;
         this.loading = false;
