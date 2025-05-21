@@ -1,0 +1,50 @@
+name: Build and Deploy Backend
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Backend/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'Backend/**'
+  workflow_dispatch: # Allows manual triggering
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  WORKING_DIRECTORY: './Backend/ModelerAPI.ApiService'
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
+    
+    - name: Build application
+      run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration Release --no-restore
+    
+    - name: Test application
+      run: dotnet test "${{ env.WORKING_DIRECTORY }}" --configuration Release --no-build
+      
+    - name: Publish application
+      run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration Release --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+      
+    - name: Deploy to Azure Web App
+      if: github.event_name != 'pull_request'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.BACKEND_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
