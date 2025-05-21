@@ -46,3 +46,27 @@ h2, h5 {
   color: var(--text-primary);
   transition: color 0.3s ease;
 }
+
+.node-card {
+  font-size: 0.85rem;
+  padding: 0.25rem;
+}
+
+  .node-card .card-body {
+    padding: 0.5rem !important;
+  }
+
+  .node-card .card-title {
+    font-size: 1rem;
+  }
+
+  .node-card .card-text,
+  .node-card .btn,
+  .node-card .bi {
+    font-size: 0.85rem;
+  }
+
+.node-shape-indicator {
+  width: 16px;
+  height: 16px;
+}

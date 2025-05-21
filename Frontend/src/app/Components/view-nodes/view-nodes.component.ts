@@ -4,6 +4,7 @@ import { NodeService } from '../../Services/Node/node.service';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { TypesService } from '../../Services/Types/types.service'
 
 declare var bootstrap: any;
 
@@ -26,7 +27,8 @@ export class ViewNodesComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private nodeService: NodeService,
-    private graphService: GraphService
+    private graphService: GraphService,
+    private typesService: TypesService
   ) { }
 
   ngOnInit(): void {
@@ -93,6 +95,15 @@ export class ViewNodesComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
     });
+  }
+  getNodeVisualStyle(nodeType: string): { [key: string]: string } {
+    const visualSetting = this.typesService.getNodeVisualSetting(nodeType);
+
+    return {
+      'background-color': visualSetting.color || '#8A2BE2',
+      'border-radius': visualSetting.shape === 'ellipse' ? '50%' :
+        visualSetting.shape === 'rectangle' ? '0%' : '10%'
+    };
   }
 
   deleteNode(id: string): void {

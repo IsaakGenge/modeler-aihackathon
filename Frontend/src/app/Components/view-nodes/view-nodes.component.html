@@ -18,9 +18,9 @@
 
   <div *ngIf="nodeData && nodeData.length > 0" class="node-data">
     <div class="row g-2">
-      <div *ngFor="let node of nodeData" class="col-md-3 col-lg-2 mb-2">
+      <div *ngFor="let node of nodeData" class="col-6 col-md-3 col-lg-2 mb-2">
         <div class="card node-card h-100">
-          <div class="card-body p-2">
+          <div class="card-body p-1">
             <div class="d-flex align-items-center mb-1">
               <div class="node-shape-indicator me-2"
                    [ngStyle]="getNodeVisualStyle(node.nodeType)">
