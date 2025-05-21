@@ -108,6 +108,17 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
     };
   }
 
+  // Helper method to get count of properties
+  getPropertyCount(properties: { [key: string]: string }): number {
+    return properties ? Object.keys(properties).length : 0;
+  }
+
+  // Helper method to convert properties to an array for ngFor
+  getPropertyEntries(properties: { [key: string]: string }): { key: string, value: string }[] {
+    if (!properties) return [];
+    return Object.entries(properties).map(([key, value]) => ({ key, value }));
+  }
+
   // Show delete confirmation modal
   initiateDeleteNode(id: string): void {
     this.nodeToDelete = id;

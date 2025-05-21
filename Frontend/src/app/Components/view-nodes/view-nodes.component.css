@@ -70,3 +70,59 @@ h2, h5 {
   width: 16px;
   height: 16px;
 }
+
+/* Properties section styling */
+.node-properties {
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+  transition: border-color 0.3s ease;
+}
+
+  .node-properties ul {
+    margin-top: 0.25rem;
+  }
+
+  .node-properties li {
+    padding: 0.1rem 0;
+    border-radius: 0.2rem;
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    transition: color 0.3s ease, background-color 0.3s ease;
+  }
+
+    .node-properties li:hover {
+      background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+
+    .node-properties li strong {
+      color: var(--text-secondary);
+      margin-right: 0.25rem;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+  /* Ensure properties section doesn't take too much space in the small cards */
+  .node-properties ul {
+    max-height: 60px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+    /* Custom scrollbar styling for the properties list */
+    .node-properties ul::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .node-properties ul::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    .node-properties ul::-webkit-scrollbar-thumb {
+      background-color: var(--border);
+      border-radius: 4px;
+    }
+
+      .node-properties ul::-webkit-scrollbar-thumb:hover {
+        background-color: var(--text-secondary);
+      }

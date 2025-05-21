@@ -33,6 +33,18 @@
               </h6>
             </div>
             <p class="card-text mb-1"><small class="theme-secondary-text">{{ node.nodeType }}</small></p>
+
+            <!-- Display properties if they exist -->
+            <div *ngIf="node.properties && getPropertyCount(node.properties) > 0" class="node-properties mt-1 mb-1">
+              <small class="d-block theme-secondary-text">Properties:</small>
+              <ul class="list-unstyled small ps-2 mb-0">
+                <li *ngFor="let prop of getPropertyEntries(node.properties)" class="text-truncate"
+                    [title]="prop.key + ': ' + prop.value">
+                  <strong>{{ prop.key }}:</strong> {{ prop.value }}
+                </li>
+              </ul>
+            </div>
+
             <div class="node-actions">
               <button class="btn btn-danger btn-sm" (click)="initiateDeleteNode(node.id)">
                 <i class="bi bi-trash"></i>
