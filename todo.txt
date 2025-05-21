@@ -1,8 +1,15 @@
-Add Authoring to cytoscape, have it save the position of graph elements when they are moved and placed....
-
-Add some additional context to to nodes / edges, maybe some attributes that can be partof a detail pane when things are clicked on in cytoscape, this can be for edges and nodes.
 
 Bulking operations for gremlin graph insert/delete
 
+Import / Export 
+
+Import Fusion DataModels.gz.cs 
+
 Import / Export functionality that works with fusion.
+
+Remove Terraform just use CICD for now
+
+
+Generate better frontend tests for components that are missing them
+
 
