@@ -494,10 +494,13 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 // Sanitize inputs to prevent Gremlin injection
                 var sanitizedId = SanitizeGremlinValue(edge.Id);
                 var sanitizedGraphId = SanitizeGremlinValue(edge.GraphId);
+                var sanitizedEdgeType = SanitizeGremlinValue(edge.EdgeType);
+
 
                 // Update basic properties
                 var gremlinQuery = $"g.E('{sanitizedId}')" +
-                                  $".property('graphId', '{sanitizedGraphId}')"; // Don't update pkey
+                          $".property('graphId', '{sanitizedGraphId}')" +                         
+                          $".property('label', '{sanitizedEdgeType}')";
 
                 await ExecuteGremlinQueryAsync(gremlinQuery);
 
@@ -525,7 +528,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 foreach (var currentProp in currentProperties.Keys.ToList()) // Use ToList() to avoid collection modified exception
                 {
                     // Skip system properties
-                    if (new[] { "id", "edgeType", "graphId", "pkey", "createdAt" }
+                    if (new[] { "id", "graphId", "pkey", "createdAt" }
                         .Contains(currentProp, StringComparer.OrdinalIgnoreCase))
                     {
                         continue;

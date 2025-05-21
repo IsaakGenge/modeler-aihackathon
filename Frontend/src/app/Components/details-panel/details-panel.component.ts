@@ -1,10 +1,11 @@
 // Modified details-panel.component.ts
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
+import { TypesService, NodeTypeModel, EdgeTypeModel } from '../../Services/Types/types.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 import { Node } from '../../Models/node.model';
@@ -17,7 +18,7 @@ import { Edge } from '../../Models/edge.model';
   templateUrl: './details-panel.component.html',
   styleUrls: ['./details-panel.component.css']
 })
-export class DetailsPanelComponent implements OnChanges {
+export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   @Input() selectedElement: any = null;
   @Input() graphId: string = '';
   @Input() isDarkMode$!: Observable<boolean>;
@@ -34,6 +35,16 @@ export class DetailsPanelComponent implements OnChanges {
   public isUpdating: boolean = false;
   public updateError: string | null = null;
 
+  // Type and name editing
+  public editableName: string = '';
+  public editableType: string = '';
+  public availableNodeTypes: NodeTypeModel[] = [];
+  public availableEdgeTypes: EdgeTypeModel[] = [];
+
+  // Subscriptions
+  private nodeTypesSubscription: Subscription | null = null;
+  private edgeTypesSubscription: Subscription | null = null;
+
   // Modal properties
   showDeleteModal: boolean = false;
   deleteInProgress: boolean = false;
@@ -41,7 +52,8 @@ export class DetailsPanelComponent implements OnChanges {
 
   constructor(
     private nodeService: NodeService,
-    private edgeService: EdgeService
+    private edgeService: EdgeService,
+    private typesService: TypesService
   ) { }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -51,6 +63,31 @@ export class DetailsPanelComponent implements OnChanges {
       this.isEditMode = false; // Reset edit mode when selection changes
     }
   }
+
+  ngOnInit(): void {
+    // Load available types
+    this.nodeTypesSubscription = this.typesService.nodeTypes$.subscribe(types => {
+      this.availableNodeTypes = types;
+    });
+
+    this.edgeTypesSubscription = this.typesService.edgeTypes$.subscribe(types => {
+      this.availableEdgeTypes = types;
+    });
+
+    this.typesService.loadNodeTypes();
+    this.typesService.loadEdgeTypes();
+  }
+
+  ngOnDestroy(): void {
+    if (this.nodeTypesSubscription) {
+      this.nodeTypesSubscription.unsubscribe();
+    }
+
+    if (this.edgeTypesSubscription) {
+      this.edgeTypesSubscription.unsubscribe();
+    }
+  }
+
 
   public closeDetailsPanel(): void {
     this.selectedElement = null;
@@ -300,6 +337,15 @@ export class DetailsPanelComponent implements OnChanges {
 
     if (!this.fullElementData) return;
 
+    // Set the editable name and type
+    if (this.selectedElement.type === 'node') {
+      this.editableName = this.fullElementData.name || '';
+      this.editableType = this.fullElementData.nodeType || '';
+    } else if (this.selectedElement.type === 'edge') {
+      // Edges don't have names, only types
+      this.editableType = this.fullElementData.edgeType || '';
+    }
+
     // If we have properties in a separate object
     if (this.fullElementData.properties && typeof this.fullElementData.properties === 'object') {
       this.editableProperties = Object.entries(this.fullElementData.properties)
@@ -394,6 +440,15 @@ export class DetailsPanelComponent implements OnChanges {
       // Create a copy of the original data
       const updatedData = { ...this.fullElementData };
 
+      // Update name and type
+      if (this.selectedElement.type === 'node') {
+        updatedData.name = this.editableName;
+        updatedData.nodeType = this.editableType;
+      } else if (this.selectedElement.type === 'edge') {
+        // This line was missing or not working properly
+        updatedData.edgeType = this.editableType;
+      }
+
       // Make sure properties object exists
       if (!updatedData.properties) {
         updatedData.properties = {};
@@ -405,6 +460,7 @@ export class DetailsPanelComponent implements OnChanges {
       }
 
       console.log('Before update - Properties object:', updatedData.properties);
+      console.log('Before update - Edge Type:', updatedData.edgeType); // Add this line for debugging
 
       // Clear existing properties to avoid mixing with properties that should be removed
       // Create a fresh properties object instead of modifying the existing one
@@ -446,6 +502,8 @@ export class DetailsPanelComponent implements OnChanges {
       updatedData.properties = newProperties;
 
       console.log('After update - Properties object:', updatedData.properties);
+      console.log('After update - Edge type:', updatedData.edgeType); // Add this line for debugging
+      console.log('Updating with name:', updatedData.name, 'type:', updatedData.nodeType || updatedData.edgeType);
 
       // Save the updated data
       if (this.selectedElement.type === 'node') {
@@ -465,6 +523,11 @@ export class DetailsPanelComponent implements OnChanges {
     this.nodeService.updateNode(updatedNode).subscribe({
       next: (result) => {
         console.log('Node updated successfully:', result);
+
+        // Notify other components that the node was updated
+        this.nodeService.notifyNodeCreated(); // Reuse the creation event to trigger refresh
+
+        // Update the local state
         this.isUpdating = false;
         this.isEditMode = false;
         this.fullElementData = result;
@@ -482,6 +545,11 @@ export class DetailsPanelComponent implements OnChanges {
     this.edgeService.updateEdge(updatedEdge).subscribe({
       next: (result) => {
         console.log('Edge updated successfully:', result);
+
+        // Notify other components that the edge was updated
+        this.edgeService.notifyEdgeCreated(); // Reuse the creation event to trigger refresh
+
+        // Update the local state
         this.isUpdating = false;
         this.isEditMode = false;
         this.fullElementData = result;
