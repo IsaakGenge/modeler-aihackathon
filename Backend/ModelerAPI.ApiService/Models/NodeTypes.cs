@@ -5,7 +5,7 @@ namespace ModelerAPI.ApiService.Models
     /// <summary>
     /// Defines all available node types in the system
     /// </summary>
-    public class NodeType
+    public class NodeTypes
     {
         /// <summary>
         /// Static dictionary mapping node types to their style properties
@@ -15,7 +15,7 @@ namespace ModelerAPI.ApiService.Models
         /// <summary>
         /// Static constructor to initialize the style mappings
         /// </summary>
-        static NodeType()
+        static NodeTypes()
         {
             NodeStyleMappings = new Dictionary<string, Dictionary<string, string>>
             {

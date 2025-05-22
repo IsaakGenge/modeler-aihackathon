@@ -16,25 +16,25 @@ namespace ModelerAPI.ApiService.Controllers
         /// </summary>
         /// <returns>A list of node types</returns>
         [HttpGet("nodes")]
-        public ActionResult<IEnumerable<NodeType>> GetNodeTypes()
+        public ActionResult<IEnumerable<NodeTypes>> GetNodeTypes()
         {
-            var nodeTypes = new List<NodeType>();
+            var nodeTypes = new List<NodeTypes>();
 
             // Get all constant values from NodeType.Types
-            var nodeTypeFields = typeof(NodeType.Types).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+            var nodeTypeFields = typeof(NodeTypes.Types).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
 
             foreach (var field in nodeTypeFields)
             {
                 if (field.IsLiteral && !field.IsInitOnly)
                 {
                     string typeName = field.GetValue(null)?.ToString();
-                    var nodeType = new NodeType
+                    var nodeType = new NodeTypes
                     {
                         Id = Guid.NewGuid().ToString(),
                         Name = typeName,
                         Description = $"Node type: {typeName}",
                         Category = GetCategoryFromFieldName(field.Name),
-                        StyleProperties = NodeType.GetStylePropertiesForType(typeName)
+                        StyleProperties = NodeTypes.GetStylePropertiesForType(typeName)
                     };
 
                     nodeTypes.Add(nodeType);
