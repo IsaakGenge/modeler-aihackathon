@@ -81,6 +81,7 @@ builder.Services.AddSingleton<ModelGenerator>();
 builder.Services.AddScoped<IExportService, ExportService>();
 // Register import service
 builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
 
 
