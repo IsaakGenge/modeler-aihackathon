@@ -217,24 +217,40 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   /**
-   * Fit the graph to the view area
-   */
+ * Fit the graph to the view area with smart padding
+ */
   public fitGraph(): void {
     if (this.cy) {
-      this.cy.fit();
+      this.smartFitGraph();
     }
   }
 
   /**
-   * Apply zoom level
-   */
+ * Apply zoom level with better positioning logic
+ */
   public applyZoom(level: number, position?: any): void {
-    if (this.cy) {
-      this.cy.zoom({
-        level: level,
-        position: position || this.cy.center()
-      });
+    if (!this.cy) return;
+
+    // For small graphs, use center of graph instead of viewport center
+    let zoomCenter;
+    if (!position) {
+      const nodeCount = this.cy.nodes().length;
+      if (nodeCount <= 10) {
+        // Use the center of the actual nodes rather than the viewport
+        const bb = this.cy.nodes().boundingBox();
+        zoomCenter = { x: bb.x1 + bb.w / 2, y: bb.y1 + bb.h / 2 };
+      } else {
+        // Use viewport center for larger graphs
+        zoomCenter = this.cy.center();
+      }
+    } else {
+      zoomCenter = position;
     }
+
+    this.cy.zoom({
+      level: level,
+      position: zoomCenter
+    });
   }
 
   /**
@@ -272,13 +288,16 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   /**
-   * Change the layout type
-   */
+ * Change the layout type with node count adaptation
+ */
   public changeLayoutType(layoutType: string): void {
     if (!this.cy) return;
 
-    // Get layout options for this layout type
-    const layoutOptions = this.layoutService.getLayoutOptions(layoutType);
+    // Get node count for adaptive options
+    const nodeCount = this.cy.nodes().length;
+
+    // Get layout options for this layout type with node count consideration
+    const layoutOptions = this.layoutService.getLayoutOptions(layoutType, nodeCount);
 
     // Update the component's layoutConfig
     this.layoutConfig = layoutOptions;
@@ -288,14 +307,71 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
     // Ensure proper zooming after layout completes
     layout.one('layoutstop', () => {
-      this.fitGraph();
-      this.applyZoom(this.initialZoom);
+      // Use smart fit instead of regular fit
+      this.smartFitGraph();
+
+      // Add null check for container
+      const container = this.cy?.container();
+      if (!container) return;
+
+      const optimalZoom = this.layoutService.getOptimalZoom(
+        nodeCount,
+        container.clientWidth,
+        container.clientHeight
+      );
+
+      // Apply the optimal zoom
+      this.applyZoom(optimalZoom);
     });
 
     layout.run();
 
     // Emit the layout change event
     this.layoutChanged.emit(layoutType);
+  }
+
+  /**
+ * Smart fit function that adjusts based on the number of elements
+ */
+  public smartFitGraph(): void {
+    if (!this.cy) return;
+
+    const nodeCount = this.cy.nodes().length;
+
+    // Apply padding based on node count
+    let padding;
+    if (nodeCount <= 5) {
+      padding = 100;
+    } else if (nodeCount <= 20) {
+      padding = 80;
+    } else if (nodeCount <= 50) {
+      padding = 60;
+    } else {
+      padding = 40;
+    }
+
+    // Use adaptive fit
+    this.cy.fit(undefined, padding);
+
+    // For small graphs, ensure they don't appear too big
+    if (nodeCount <= 5) {
+      // Calculate container dimensions - add null check
+      const container = this.cy.container();
+      if (!container) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+
+      // Get optimal zoom
+      const optimalZoom = this.layoutService.getOptimalZoom(
+        nodeCount,
+        containerWidth,
+        containerHeight
+      );
+
+      // Apply the zoom
+      this.applyZoom(optimalZoom);
+    }
   }
 
   //
@@ -701,13 +777,15 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   /**
-   * Apply initial node positions for saved layouts
-   */
+ * Apply initial node positions with better zoom handling for small graphs
+ */
   private applyInitialNodePositions(): void {
     if (!this.cy) return;
 
     // Force positions with a small delay to ensure Cytoscape is ready
     setTimeout(() => {
+      if (!this.cy) return; // Re-check cy after timeout
+
       this.nodes.forEach(node => {
         if (node.positionX !== undefined && node.positionY !== undefined) {
           const x = Number(node.positionX);
@@ -722,31 +800,62 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         }
       });
 
-      // Fit view and apply zoom
-      this.fitGraph();
-      this.applyZoom(this.initialZoom);
+      // Use smart fit and optimal zoom
+      const nodeCount = this.cy.nodes().length;
+      this.smartFitGraph();
+
+      // Get optimal zoom based on node count and container size
+      const container = this.cy.container();
+      if (!container) return;
+
+      const optimalZoom = this.layoutService.getOptimalZoom(
+        nodeCount,
+        container.clientWidth,
+        container.clientHeight
+      );
+
+      this.applyZoom(optimalZoom);
     }, 100);
   }
 
   /**
-   * Run initial layout for unsaved layouts
-   */
+ * Run initial layout with better node positioning for small graphs
+ */
   private runInitialLayout(): void {
     if (!this.cy) return;
 
     // Run an automatic layout if no positions are stored
     setTimeout(() => {
-      if (this.cy && this.cy.elements().length > 0) {
-        const animatedLayout = {
-          ...this.layoutConfig,
+      if (!this.cy) return; // Re-check cy after timeout
+
+      if (this.cy.elements().length > 0) {
+        const nodeCount = this.cy.nodes().length;
+
+        // Get adaptive options for current layout
+        const adaptiveLayout = {
+          ...this.layoutService.getLayoutOptions(this.layoutConfig.name, nodeCount),
           animate: true
         };
-        this.cy.layout(animatedLayout).run();
+
+        this.cy.layout(adaptiveLayout).run();
 
         // After layout is done
         setTimeout(() => {
-          this.fitGraph();
-          this.applyZoom(this.initialZoom);
+          if (!this.cy) return; // Re-check cy after second timeout
+
+          this.smartFitGraph();
+
+          // Get optimal zoom based on node count and container size
+          const container = this.cy.container();
+          if (!container) return;
+
+          const optimalZoom = this.layoutService.getOptimalZoom(
+            nodeCount,
+            container.clientWidth,
+            container.clientHeight
+          );
+
+          this.applyZoom(optimalZoom);
         }, 1000);
       }
     }, 100);
