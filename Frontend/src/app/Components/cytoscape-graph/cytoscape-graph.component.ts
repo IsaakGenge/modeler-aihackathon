@@ -1106,6 +1106,25 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   /**
+ * Set up compound drag and drop events
+ */
+  public exportGraphAsImage(): void {
+    if (!this.cy) {
+      console.warn('Cytoscape instance is not initialized');
+      return;
+    }
+
+    // Export the graph as a PNG image
+    const imageData = this.cy.png({ full: true });
+
+    // Create a temporary link element to download the image
+    const link = document.createElement('a');
+    link.href = imageData;
+    link.download = 'graph.png';
+    link.click();
+  }
+
+  /**
    * Log initialization status
    */
   private logInitializationStatus(nodeCount: number, edgeCount: number): void {
