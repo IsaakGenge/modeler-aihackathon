@@ -239,4 +239,44 @@ export class GraphService {
       })
     );
   }
+
+  /**
+ * Gets available graph generation strategies
+ * @returns Observable of available strategy names
+ */
+  getGenerationStrategies(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/strategies`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error fetching graph generation strategies:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Generate a graph using a specified strategy
+   * @param strategy The graph generation strategy to use
+   * @param nodeCount Number of nodes to generate
+   * @param name Optional name for the graph (auto-generated if not provided)
+   * @returns Observable with information about the generated graph
+   */
+  generateGraph(strategy: string, nodeCount: number, name?: string): Observable<any> {
+    let url = `${this.apiUrl}/generate?strategy=${strategy}&nodeCount=${nodeCount}`;
+
+    if (name) {
+      url += `&name=${encodeURIComponent(name)}`;
+    }
+
+    return this.http.get<any>(url).pipe(
+      tap(response => {
+        console.log('Graph generated successfully:', response);
+        // Notify after successful generation (same as creation)
+        this.graphCreatedSubject.next();
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error generating graph:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

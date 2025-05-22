@@ -10,12 +10,13 @@ import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirm
 import { Router } from '@angular/router';
 import { SortListPipe } from '../../Pipes/sort-list.pipe';
 import { FileUploadModalComponent } from '../shared/file-upload-modal/file-upload-modal.component';
+import { GraphGenerateComponent } from '../graph-generate/graph-generate.component';
 
 
 @Component({
   selector: 'app-graph-manager',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, SortListPipe, FileUploadModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, SortListPipe, FileUploadModalComponent, GraphGenerateComponent],
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
@@ -40,6 +41,10 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
   showImportModal = false;
   importInProgress = false;
   importError = '';
+
+  //Generate Modal properties
+  showGenerateModal = false;
+  generateInProgress = false;
 
   // Message timeout handling
   private readonly messageTimeout = 3000; // 3 seconds
@@ -327,5 +332,23 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
   cancelImport(): void {
     this.showImportModal = false;
     this.importError = '';
+  }
+
+  onGraphGenerated(result: any): void {
+    console.log('Graph generated successfully:', result);
+    this.showGenerateModal = false;
+
+    // Show success message with timeout
+    this.showMessageWithTimeout('success');
+
+    // Reload graphs
+    setTimeout(() => {
+      this.loadGraphs();
+      this.graphService.notifyGraphCreated();
+    }, 500);
+  }
+
+  cancelGenerate(): void {
+    this.showGenerateModal = false;
   }
 }

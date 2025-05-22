@@ -32,7 +32,9 @@
       <button type="button" class="btn btn-primary ms-2" (click)="showImportModal = true">
         Import Graph
       </button>
-
+      <button type="button" class="btn btn-primary ms-2" (click)="showGenerateModal = true">
+        Generate Graph
+      </button>
 
       <div *ngIf="success" class="alert alert-success mt-3">
         <i class="bi bi-check-circle-fill me-2"></i>
@@ -116,6 +118,9 @@
       <button type="button" class="btn btn-sm btn-primary ms-2" (click)="showImportModal = true">
         Import
       </button>
+      <button type="button" class="btn btn-sm btn-primary ms-2" (click)="showGenerateModal = true">
+        Generate
+      </button>
     </form>
     <div *ngIf="success" class="alert alert-success mt-2 p-2">
       <i class="bi bi-check-circle-fill me-2"></i>
@@ -187,3 +192,8 @@
                        (confirm)="onFileUploadSubmit($event)"
                        (cancel)="cancelImport()">
 </app-file-upload-modal>
+
+<app-graph-generate [show]="showGenerateModal"
+                    (close)="cancelGenerate()"
+                    (generated)="onGraphGenerated($event)">
+</app-graph-generate>
