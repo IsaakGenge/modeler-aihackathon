@@ -611,64 +611,142 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
         public async Task<List<Node>> BatchCreateNodesAsync(List<Node> nodes)
         {
-            var gremlinQueries = new List<string>();
+            const int batchSize = 10; // Process nodes in batches of 10
+            var createdNodes = new List<Node>();
 
-            foreach (var node in nodes)
+            foreach (var batch in nodes.Chunk(batchSize))
             {
-                node.Id = Guid.NewGuid().ToString();
-                var sanitizedId = SanitizeGremlinValue(node.Id);
-                var sanitizedName = SanitizeGremlinValue(node.Name);
-                var sanitizedNodeType = SanitizeGremlinValue(node.NodeType);
-                var sanitizedGraphId = SanitizeGremlinValue(node.GraphId);
+                var tasks = new List<Task>();
 
-                var gremlinQuery = $"g.addV('{sanitizedNodeType}')" +
-                                   $".property('id', '{sanitizedId}')" +
-                                   $".property('name', '{sanitizedName}')" +
-                                   $".property('graphId', '{sanitizedGraphId}')" +
-                                   $".property('pkey', '{sanitizedGraphId}')";
-
-                if (node.CreatedAt != default)
+                foreach (var node in batch)
                 {
-                    var createdAtFormatted = node.CreatedAt.ToString("o");
-                    gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            node.Id = Guid.NewGuid().ToString();
+                            var sanitizedId = SanitizeGremlinValue(node.Id);
+                            var sanitizedName = SanitizeGremlinValue(node.Name);
+                            var sanitizedNodeType = SanitizeGremlinValue(node.NodeType);
+                            var sanitizedGraphId = SanitizeGremlinValue(node.GraphId);
+
+                            var gremlinQuery = $"g.addV('{sanitizedNodeType}')" +
+                                               $".property('id', '{sanitizedId}')" +
+                                               $".property('name', '{sanitizedName}')" +
+                                               $".property('graphId', '{sanitizedGraphId}')" +
+                                               $".property('pkey', '{sanitizedGraphId}')";
+
+                            if (node.CreatedAt != default)
+                            {
+                                var createdAtFormatted = node.CreatedAt.ToString("o");
+                                gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+                            }
+
+                            if (node.PositionX.HasValue && node.PositionY.HasValue)
+                            {
+                                gremlinQuery += $".property('positionX', {node.PositionX})" +
+                                                $".property('positionY', {node.PositionY})";
+                            }
+
+                            // Add custom properties
+                            if (node.Properties != null)
+                            {
+                                foreach (var prop in node.Properties)
+                                {
+                                    if (prop.Value == null) continue;
+
+                                    var sanitizedKey = SanitizeGremlinValue(prop.Key);
+                                    var propertyValue = SerializePropertyValue(prop.Value);
+                                    gremlinQuery += $".property('{sanitizedKey}', {propertyValue})";
+                                }
+                            }
+
+                            await ExecuteGremlinQueryAsync(gremlinQuery);
+                            lock (createdNodes)
+                            {
+                                createdNodes.Add(node);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Error creating node: {NodeName}", node.Name);
+                        }
+                    }));
                 }
 
-                gremlinQueries.Add(gremlinQuery);
+                await Task.WhenAll(tasks);
             }
 
-            var combinedQuery = string.Join(";", gremlinQueries);
-            await ExecuteGremlinQueryAsync(combinedQuery);
-
-            return nodes;
+            return createdNodes;
         }
-
         public async Task<List<Edge>> BatchCreateEdgesAsync(List<Edge> edges)
         {
-            var gremlinQueries = new List<string>();
+            const int batchSize = 10; // Process edges in batches of 10
+            var createdEdges = new List<Edge>();
 
-            foreach (var edge in edges)
+            foreach (var batch in edges.Chunk(batchSize))
             {
-                edge.Id = Guid.NewGuid().ToString();
-                var sanitizedId = SanitizeGremlinValue(edge.Id);
-                var sanitizedSource = SanitizeGremlinValue(edge.Source);
-                var sanitizedTarget = SanitizeGremlinValue(edge.Target);
-                var sanitizedEdgeType = SanitizeGremlinValue(edge.EdgeType);
-                var sanitizedGraphId = SanitizeGremlinValue(edge.GraphId);
+                var tasks = new List<Task>();
 
-                var gremlinQuery = $"g.V('{sanitizedSource}').addE('{sanitizedEdgeType}')" +
-                                   $".property('id', '{sanitizedId}')" +
-                                   $".property('graphId', '{sanitizedGraphId}')" +
-                                   $".property('pkey', '{sanitizedGraphId}')" +
-                                   $".to(g.V('{sanitizedTarget}'))";
+                foreach (var edge in batch)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            edge.Id = Guid.NewGuid().ToString();
+                            var sanitizedId = SanitizeGremlinValue(edge.Id);
+                            var sanitizedSource = SanitizeGremlinValue(edge.Source);
+                            var sanitizedTarget = SanitizeGremlinValue(edge.Target);
+                            var sanitizedEdgeType = SanitizeGremlinValue(edge.EdgeType);
+                            var sanitizedGraphId = SanitizeGremlinValue(edge.GraphId);
 
-                gremlinQueries.Add(gremlinQuery);
+                            var gremlinQuery = $"g.V('{sanitizedSource}').addE('{sanitizedEdgeType}')" +
+                                               $".property('id', '{sanitizedId}')" +
+                                               $".property('graphId', '{sanitizedGraphId}')" +
+                                               $".property('pkey', '{sanitizedGraphId}')";
+
+                            if (edge.CreatedAt != default)
+                            {
+                                var createdAtFormatted = edge.CreatedAt.ToString("o");
+                                gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+                            }
+
+                            // Add custom properties
+                            if (edge.Properties != null)
+                            {
+                                foreach (var prop in edge.Properties)
+                                {
+                                    if (prop.Value == null) continue;
+
+                                    var sanitizedKey = SanitizeGremlinValue(prop.Key);
+                                    var propertyValue = SerializePropertyValue(prop.Value);
+                                    gremlinQuery += $".property('{sanitizedKey}', {propertyValue})";
+                                }
+                            }
+
+                            gremlinQuery += $".to(g.V('{sanitizedTarget}'))";
+
+                            await ExecuteGremlinQueryAsync(gremlinQuery);
+                            lock (createdEdges)
+                            {
+                                createdEdges.Add(edge);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, "Error creating edge: {EdgeId}", edge.Id);
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
             }
 
-            var combinedQuery = string.Join(";", gremlinQueries);
-            await ExecuteGremlinQueryAsync(combinedQuery);
-
-            return edges;
+            return createdEdges;
         }
+
+
 
         public async Task<bool> BatchDeleteNodesAsync(List<string> nodeIds)
         {
@@ -689,7 +767,6 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             await Task.WhenAll(tasks);
             return true;
         }
-
 
         public async Task<bool> BatchDeleteEdgesAsync(List<string> edgeIds)
         {

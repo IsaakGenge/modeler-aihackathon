@@ -123,147 +123,109 @@ namespace ModelerAPI.ApiService.Services.Import
 
             foreach (var originalNode in graphExport.Nodes)
             {
-                try
+                var oldNodeId = originalNode.Id;
+
+                // Create a new node with updated properties
+                var newNode = new Node
                 {
-                    var oldNodeId = originalNode.Id;
+                    Name = originalNode.Name,
+                    NodeType = originalNode.NodeType,
+                    GraphId = newGraphId,
+                    CreatedAt = DateTime.UtcNow,
+                    PositionX = originalNode.PositionX,
+                    PositionY = originalNode.PositionY,
+                    Properties = new Dictionary<string, object>()
+                };
 
-                    // Create a completely new node with Gremlin-compatible properties
-                    var newNode = new Node
+                // Copy original properties that aren't system properties
+                if (originalNode.Properties != null)
+                {
+                    foreach (var prop in originalNode.Properties)
                     {
-                        // Don't set ID - let CreateNodeAsync generate one
-                        Name = originalNode.Name,
-                        NodeType = originalNode.NodeType,
-                        GraphId = newGraphId, // Update to new graph ID
-                        CreatedAt = DateTime.UtcNow,
-                        PositionX = originalNode.PositionX,
-                        PositionY = originalNode.PositionY,
-                        Properties = new Dictionary<string, object>()
-                    };
-
-                    // Copy original properties that aren't system properties
-                    if (originalNode.Properties != null)
-                    {
-                        foreach (var prop in originalNode.Properties)
+                        if (!IsSystemProperty(prop.Key))
                         {
-                            if (!IsSystemProperty(prop.Key))
-                            {
-                                newNode.Properties[prop.Key] = prop.Value;
-                            }
+                            newNode.Properties[prop.Key] = prop.Value;
                         }
                     }
-
-                    // Add metadata about the import
-                    newNode.Properties["ImportedFrom"] = oldNodeId;
-                    newNode.Properties["ImportedAt"] = DateTime.UtcNow.ToString("o");
-
-                    var createdNode = await _cosmosService.CreateNodeAsync(newNode);
-                    if (createdNode != null && !string.IsNullOrEmpty(createdNode.Id))
-                    {
-                        // Store the mapping from old to new ID
-                        nodeIdMap[oldNodeId] = createdNode.Id;
-                        importedNodes.Add(createdNode);
-                        _logger.LogDebug("Successfully imported node: {OldId} -> {NewId}", oldNodeId, createdNode.Id);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to create node: {Name} of type {Type}", newNode.Name, newNode.NodeType);
-                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error creating node {NodeName}: {Message}", originalNode.Name, ex.Message);
-                    // Continue with the next node rather than failing the entire import
-                }
+
+                // Add metadata about the import
+                newNode.Properties["ImportedFrom"] = oldNodeId;
+                newNode.Properties["ImportedAt"] = DateTime.UtcNow.ToString("o");
+
+                importedNodes.Add(newNode);
+                nodeIdMap[oldNodeId] = newNode.Id; // Map old ID to new ID
             }
 
-            // Wait a moment to ensure all nodes are fully processed in Cosmos DB
-            await Task.Delay(1000);
+            // Use bulk operation to create nodes
+            var createdNodes = await _cosmosService.BatchCreateNodesAsync(importedNodes);
+
+            // Update the node ID map with the actual IDs assigned by the database
+            foreach (var createdNode in createdNodes)
+            {
+                if (!string.IsNullOrEmpty(createdNode.Id))
+                {
+                    nodeIdMap[createdNode.Properties["ImportedFrom"].ToString()] = createdNode.Id;
+                }
+            }
 
             // Import edges with new IDs, updated source/target node IDs, and updated GraphId
             var importedEdges = new List<Edge>();
 
-            int edgeCount = 0;
-            int batchSize = 10; // Process edges in smaller batches to avoid overwhelming the database
-
             foreach (var originalEdge in graphExport.Edges)
             {
-                try
+                // Skip edges where source or target nodes weren't successfully imported
+                if (!nodeIdMap.TryGetValue(originalEdge.Source, out var newSourceId) ||
+                    !nodeIdMap.TryGetValue(originalEdge.Target, out var newTargetId))
                 {
-                    // Skip edges where source or target nodes weren't successfully imported
-                    if (!nodeIdMap.TryGetValue(originalEdge.Source, out var newSourceId) ||
-                        !nodeIdMap.TryGetValue(originalEdge.Target, out var newTargetId))
-                    {
-                        _logger.LogWarning("Skipping edge {EdgeId} - source or target node not found in import", originalEdge.Id);
-                        continue;
-                    }
+                    _logger.LogWarning("Skipping edge {EdgeId} - source or target node not found in import", originalEdge.Id);
+                    continue;
+                }
 
-                    // Create a new edge connecting the newly created nodes
-                    var newEdge = new Edge
-                    {
-                        // Don't set ID - let CreateEdgeAsync generate one
-                        Source = newSourceId, // Map to new source node ID
-                        Target = newTargetId, // Map to new target node ID
-                        EdgeType = originalEdge.EdgeType,
-                        GraphId = newGraphId, // Update to new graph ID
-                        CreatedAt = DateTime.UtcNow,
-                        Properties = new Dictionary<string, object>()
-                    };
+                // Create a new edge connecting the newly created nodes
+                var newEdge = new Edge
+                {
+                    Source = newSourceId,
+                    Target = newTargetId,
+                    EdgeType = originalEdge.EdgeType,
+                    GraphId = newGraphId,
+                    CreatedAt = DateTime.UtcNow,
+                    Properties = new Dictionary<string, object>()
+                };
 
-                    // Copy original properties that aren't system properties
-                    if (originalEdge.Properties != null)
+                // Copy original properties that aren't system properties
+                if (originalEdge.Properties != null)
+                {
+                    foreach (var prop in originalEdge.Properties)
                     {
-                        foreach (var prop in originalEdge.Properties)
+                        if (!IsSystemProperty(prop.Key))
                         {
-                            if (!IsSystemProperty(prop.Key))
-                            {
-                                newEdge.Properties[prop.Key] = prop.Value;
-                            }
+                            newEdge.Properties[prop.Key] = prop.Value;
                         }
                     }
-
-                    // Add metadata about the import
-                    newEdge.Properties["ImportedFrom"] = originalEdge.Id;
-                    newEdge.Properties["ImportedAt"] = DateTime.UtcNow.ToString("o");
-
-                    _logger.LogDebug("Creating edge - Source: {SourceId}, Target: {TargetId}, Type: {EdgeType}",
-                        newSourceId, newTargetId, newEdge.EdgeType);
-
-                    var createdEdge = await _cosmosService.CreateEdgeAsync(newEdge);
-                    if (createdEdge != null && !string.IsNullOrEmpty(createdEdge.Id))
-                    {
-                        importedEdges.Add(createdEdge);
-                        _logger.LogDebug("Successfully imported edge: {OldId} -> {NewId}", originalEdge.Id, createdEdge.Id);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to create edge from {Source} to {Target}", newSourceId, newTargetId);
-                    }
-
-                    // Add a small delay every few edges to avoid overwhelming the database
-                    edgeCount++;
-                    if (edgeCount % batchSize == 0)
-                    {
-                        await Task.Delay(500);
-                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error creating edge: {Message}", ex.Message);
-                    // Continue with the next edge rather than failing the entire import
-                }
+
+                // Add metadata about the import
+                newEdge.Properties["ImportedFrom"] = originalEdge.Id;
+                newEdge.Properties["ImportedAt"] = DateTime.UtcNow.ToString("o");
+
+                importedEdges.Add(newEdge);
             }
+
+            // Use bulk operation to create edges
+            var createdEdges = await _cosmosService.BatchCreateEdgesAsync(importedEdges);
 
             var summary = new ImportSummary
             {
                 OriginalGraphId = oldGraphId,
                 NewGraphId = newGraphId,
-                NodeCount = importedNodes.Count,
-                EdgeCount = importedEdges.Count,
+                NodeCount = createdNodes.Count,
+                EdgeCount = createdEdges.Count,
                 ImportedAt = DateTime.UtcNow
             };
 
             _logger.LogInformation("Graph import completed. Original: {OriginalId}, New: {NewId}, Nodes: {NodeCount}, Edges: {EdgeCount}",
-                oldGraphId, newGraphId, importedNodes.Count, importedEdges.Count);
+                oldGraphId, newGraphId, createdNodes.Count, createdEdges.Count);
 
             return (newGraphId, summary);
         }

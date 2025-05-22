@@ -43,7 +43,7 @@ export class GraphGenerateComponent implements OnInit {
   initForm(): void {
     this.generateForm = this.formBuilder.group({
       strategy: [this.defaultValues.strategy, [Validators.required]],
-      nodeCount: [this.defaultValues.nodeCount, [Validators.required, Validators.min(1), Validators.max(100)]],
+      nodeCount: [this.defaultValues.nodeCount, [Validators.required, Validators.min(1), Validators.max(1000)]],
       name: [this.defaultValues.name]
     });
   }

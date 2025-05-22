@@ -33,7 +33,7 @@
                class="form-control"
                [ngClass]="{ 'is-invalid': submitted && f['nodeCount'].errors }"
                min="1"
-               max="100">
+               max="1000">
         <small class="text-muted">Choose how many nodes to generate (1-100)</small>
         <div *ngIf="submitted && f['nodeCount'].errors" class="invalid-feedback">
           <div *ngIf="f['nodeCount'].errors['required']">Node count is required</div>
