@@ -1,6 +1,8 @@
 using Microsoft.OpenApi.Models;
 using ModelerAPI.ApiService.Configuration;
 using ModelerAPI.ApiService.Services.Cosmos;
+using ModelerAPI.ApiService.Services.Export;
+using ModelerAPI.ApiService.Services.Import;
 using ModelerAPI.ApiService.Services.ModelGenerator;
 using System.Reflection;
 
@@ -76,6 +78,11 @@ builder.Services.AddCors(options =>
 // Register CosmosService as a singleton with the configured settings
 builder.Services.AddSingleton<ICosmosService, CosmosService>();
 builder.Services.AddSingleton<ModelGenerator>();
+builder.Services.AddScoped<IExportService, ExportService>();
+// Register import service
+builder.Services.AddScoped<IImportService, ImportService>();
+
+
 
 var app = builder.Build();
 
