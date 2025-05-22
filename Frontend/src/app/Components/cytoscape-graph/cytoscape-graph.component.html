@@ -25,6 +25,30 @@
               [disabled]="isApplyingSaved || !graphId">
         <i class="bi" [ngClass]="isApplyingSaved ? 'bi-hourglass-split' : 'bi-arrow-counterclockwise'"></i>
       </button>
+
+      <!-- Add separator -->
+      <div class="layout-button-divider"></div>
+
+      <!-- Add Zoom In button -->
+      <button (click)="zoomIn()"
+              title="Zoom In"
+              class="layout-button">
+        <i class="bi bi-zoom-in"></i>
+      </button>
+
+      <!-- Add Zoom Out button -->
+      <button (click)="zoomOut()"
+              title="Zoom Out"
+              class="layout-button">
+        <i class="bi bi-zoom-out"></i>
+      </button>
+
+      <!-- Add Fit Graph button -->
+      <button (click)="fitGraph()"
+              title="Fit to Screen"
+              class="layout-button">
+        <i class="bi bi-fullscreen"></i>
+      </button>
     </div>
   </div>
   <div #cyContainer class="cytoscape-container"></div>

@@ -66,6 +66,12 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   private nodeVisualSettings: Record<string, NodeVisualSetting> = {};
   private edgeVisualSettings: Record<string, EdgeVisualSetting> = {};
 
+  //Zoom properties
+  private readonly ZOOM_FACTOR = 1.5;
+  private readonly MAX_ZOOM_LEVEL = 5.0;
+  private readonly MIN_ZOOM_LEVEL = 0.3;
+
+
   constructor(
     private typesService: TypesService,
     private nodeService: NodeService,
@@ -381,6 +387,38 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       // Apply the zoom
       this.applyZoom(optimalZoom);
     }
+  }
+
+  /**
+ * Zoom in by a fixed factor
+ */
+  public zoomIn(): void {
+    if (!this.cy) return;
+
+    // Get current zoom level
+    const currentZoom = this.cy.zoom();
+
+    // Calculate new zoom level, but cap at maximum
+    const newZoom = Math.min(currentZoom * this.ZOOM_FACTOR, this.MAX_ZOOM_LEVEL);
+
+    // Apply the zoom
+    this.applyZoom(newZoom);
+  }
+
+  /**
+   * Zoom out by a fixed factor
+   */
+  public zoomOut(): void {
+    if (!this.cy) return;
+
+    // Get current zoom level
+    const currentZoom = this.cy.zoom();
+
+    // Calculate new zoom level, but cap at minimum
+    const newZoom = Math.max(currentZoom / this.ZOOM_FACTOR, this.MIN_ZOOM_LEVEL);
+
+    // Apply the zoom
+    this.applyZoom(newZoom);
   }
 
   //

@@ -82,6 +82,12 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+.layout-button-divider {
+  width: 1px;
+  height: 36px;
+  background-color: var(--border);
+  margin: 0 4px;
+}
 
 /* Styles for compound drag and drop */
 
