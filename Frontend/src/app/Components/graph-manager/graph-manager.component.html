@@ -66,32 +66,34 @@
       <button *ngIf="error.includes('Failed to load')" class="btn btn-sm btn-outline-danger ms-2" (click)="refreshGraphs()">Try Again</button>
     </div>
 
-    <table *ngIf="graphs.length > 0" class="table table-hover">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Created</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let graph of graphs | sortByName" [class.active]="isSelected(graph)">
-          <td>{{ graph.name }}</td>
-          <td>{{ graph.createdAt | date:'short' }}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary me-2" (click)="viewGraph(graph)">
-              View
-            </button>
-            <button class="btn btn-sm btn-outline-secondary me-2" (click)="exportGraph(graph)">
-              Export
-            </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
-              Delete
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div *ngIf="graphs.length > 0" class="table-container">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let graph of graphs | sortByName" [class.active]="isSelected(graph)">
+            <td>{{ graph.name }}</td>
+            <td>{{ graph.createdAt | date:'short' }}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary me-2" (click)="viewGraph(graph)">
+                View
+              </button>
+              <button class="btn btn-sm btn-outline-secondary me-2" (click)="exportGraph(graph)">
+                Export
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
+                Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -149,24 +151,26 @@
       {{ warning }}
     </div>
 
-    <table *ngIf="graphs.length > 0" class="table table-sm table-hover">
-      <tbody>
-        <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
-          <td>{{ graph.name }}</td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary me-1" (click)="viewGraph(graph)">
-              View
-            </button>
-            <button class="btn btn-sm btn-outline-secondary me-1" (click)="exportGraph(graph)">
-              Export
-            </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
-              Delete
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div *ngIf="graphs.length > 0" class="table-container">
+      <table class="table table-sm table-hover">
+        <tbody>
+          <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
+            <td>{{ graph.name }}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewGraph(graph)">
+                View
+              </button>
+              <button class="btn btn-sm btn-outline-secondary me-1" (click)="exportGraph(graph)">
+                Export
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
+                Delete
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

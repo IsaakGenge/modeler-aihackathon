@@ -101,4 +101,53 @@ table tbody tr.active {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+.table-container {
+  max-height: 60vh; /* Increased from 50vh to 60vh */
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  position: relative; /* For sticky header positioning */
+}
+
+/* Ensure the component container fits within the viewport without scrolling */
+.component-container {
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: auto; /* Changed from 100% to auto */
+  min-height: 0; /* Allow container to shrink if needed */
+  overflow: visible; /* Changed from hidden to visible to diagnose */
+  padding-bottom: 2rem; /* Add padding at bottom to ensure everything is visible */
+}
+
+  /* Embedded version adjustments */
+  .component-container.p-3 .table-container {
+    max-height: 50vh; /* Increased from 40vh to 50vh */
+  }
+
+/* Reduce other element margins to save space */
+.mb-4 {
+  margin-bottom: 1rem !important; /* Override bootstrap margins to be smaller */
+}
+
+/* Ensure the table is fully visible */
+.table {
+  width: 100%;
+  margin-bottom: 0;
+  table-layout: fixed;
+}
+
+  /* Adjust last row to ensure it's visible */
+  .table > tbody > tr:last-child {
+    margin-bottom: 1px; /* Ensure last row has space */
+  }
+
+  /* Ensure last cell in the table has proper padding */
+  .table > tbody > tr > td:last-child {
+    white-space: nowrap;
+    padding-bottom: 0.5rem;
+  }
 
