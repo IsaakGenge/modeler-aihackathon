@@ -38,8 +38,20 @@ namespace ModelerAPI.ApiService.Services.Cosmos
 
             var messageSerializer = new GraphSON2MessageSerializer(new CustomGraphSON2Reader());
 
-            // Create the Gremlin client with settings
-            GremlinClient = new GremlinClient(server, messageSerializer);
+            var connectionPoolSettings = new ConnectionPoolSettings
+            {
+                PoolSize = 32, // Increase the number of connections in the pool
+                MaxInProcessPerConnection = 64, // Increase the number of concurrent requests per connection
+                ReconnectionAttempts = 3, // Optional: Retry logic for reconnections
+                ReconnectionBaseDelay = TimeSpan.FromMilliseconds(500) // Optional: Delay between reconnection attempts
+            };
+
+            // Create the Gremlin client with the updated connection pool settings
+            GremlinClient = new GremlinClient(
+                server,
+                messageSerializer,
+                connectionPoolSettings: connectionPoolSettings
+            );
 
             // Initialize the parse helper
             ParseHelper = new CosmosParseHelper(logger);
@@ -50,21 +62,40 @@ namespace ModelerAPI.ApiService.Services.Cosmos
         // Helper method to execute Gremlin queries safely
         private async Task<IReadOnlyCollection<dynamic>> ExecuteGremlinQueryAsync(string query)
         {
-            try
+            int maxRetries = 5;
+            int retryCount = 0;
+
+            while (true)
             {
-                Logger.LogDebug("Executing Gremlin query: {Query}", query);
-                var result = await GremlinClient.SubmitAsync<dynamic>(query);
-                return result;
-            }
-            catch (ResponseException ex)
-            {
-                Logger.LogError(ex, "Gremlin query execution failed: {Message}", ex.Message);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Unexpected error executing Gremlin query: {Message}", ex.Message);
-                throw;
+                try
+                {
+                    Logger.LogDebug("Executing Gremlin query: {Query}", query);
+                    var result = await GremlinClient.SubmitAsync<dynamic>(query);
+                    return result;
+                }
+                catch (ResponseException ex) when (ex.StatusCode == Gremlin.Net.Driver.Messages.ResponseStatusCode.TooManyRequests) // Too Many Requests
+                {
+                    retryCount++;
+                    if (retryCount > maxRetries)
+                    {
+                        Logger.LogError(ex, "Max retry attempts reached for query: {Query}", query);
+                        throw;
+                    }
+
+                    var retryAfter = ex.StatusAttributes.ContainsKey("x-ms-retry-after-ms")
+                        ? TimeSpan.FromMilliseconds((int)ex.StatusAttributes["x-ms-retry-after-ms"])
+                        : TimeSpan.FromSeconds(1);
+
+                    Logger.LogWarning("Request rate too large. Retrying after {RetryAfter}ms. Attempt {RetryCount}/{MaxRetries}",
+                        retryAfter.TotalMilliseconds, retryCount, maxRetries);
+
+                    await Task.Delay(retryAfter);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Unexpected error executing Gremlin query: {Query}", query);
+                    throw;
+                }
             }
         }
 
@@ -578,6 +609,107 @@ namespace ModelerAPI.ApiService.Services.Cosmos
             }
         }
 
+        public async Task<List<Node>> BatchCreateNodesAsync(List<Node> nodes)
+        {
+            var gremlinQueries = new List<string>();
+
+            foreach (var node in nodes)
+            {
+                node.Id = Guid.NewGuid().ToString();
+                var sanitizedId = SanitizeGremlinValue(node.Id);
+                var sanitizedName = SanitizeGremlinValue(node.Name);
+                var sanitizedNodeType = SanitizeGremlinValue(node.NodeType);
+                var sanitizedGraphId = SanitizeGremlinValue(node.GraphId);
+
+                var gremlinQuery = $"g.addV('{sanitizedNodeType}')" +
+                                   $".property('id', '{sanitizedId}')" +
+                                   $".property('name', '{sanitizedName}')" +
+                                   $".property('graphId', '{sanitizedGraphId}')" +
+                                   $".property('pkey', '{sanitizedGraphId}')";
+
+                if (node.CreatedAt != default)
+                {
+                    var createdAtFormatted = node.CreatedAt.ToString("o");
+                    gremlinQuery += $".property('createdAt', '{createdAtFormatted}')";
+                }
+
+                gremlinQueries.Add(gremlinQuery);
+            }
+
+            var combinedQuery = string.Join(";", gremlinQueries);
+            await ExecuteGremlinQueryAsync(combinedQuery);
+
+            return nodes;
+        }
+
+        public async Task<List<Edge>> BatchCreateEdgesAsync(List<Edge> edges)
+        {
+            var gremlinQueries = new List<string>();
+
+            foreach (var edge in edges)
+            {
+                edge.Id = Guid.NewGuid().ToString();
+                var sanitizedId = SanitizeGremlinValue(edge.Id);
+                var sanitizedSource = SanitizeGremlinValue(edge.Source);
+                var sanitizedTarget = SanitizeGremlinValue(edge.Target);
+                var sanitizedEdgeType = SanitizeGremlinValue(edge.EdgeType);
+                var sanitizedGraphId = SanitizeGremlinValue(edge.GraphId);
+
+                var gremlinQuery = $"g.V('{sanitizedSource}').addE('{sanitizedEdgeType}')" +
+                                   $".property('id', '{sanitizedId}')" +
+                                   $".property('graphId', '{sanitizedGraphId}')" +
+                                   $".property('pkey', '{sanitizedGraphId}')" +
+                                   $".to(g.V('{sanitizedTarget}'))";
+
+                gremlinQueries.Add(gremlinQuery);
+            }
+
+            var combinedQuery = string.Join(";", gremlinQueries);
+            await ExecuteGremlinQueryAsync(combinedQuery);
+
+            return edges;
+        }
+
+        public async Task<bool> BatchDeleteNodesAsync(List<string> nodeIds)
+        {
+            const int batchSize = 10; // Adjust batch size based on your throughput
+            var tasks = new List<Task>();
+
+            foreach (var batch in nodeIds.Chunk(batchSize))
+            {
+                tasks.Add(Task.Run(async () =>
+                {
+                    foreach (var id in batch)
+                    {
+                        await ExecuteGremlinQueryAsync($"g.V('{SanitizeGremlinValue(id)}').drop()");
+                    }
+                }));
+            }
+
+            await Task.WhenAll(tasks);
+            return true;
+        }
+
+
+        public async Task<bool> BatchDeleteEdgesAsync(List<string> edgeIds)
+        {
+            const int batchSize = 10; // Adjust batch size based on your throughput
+            var tasks = new List<Task>();
+
+            foreach (var batch in edgeIds.Chunk(batchSize))
+            {
+                tasks.Add(Task.Run(async () =>
+                {
+                    foreach (var id in batch)
+                    {
+                        await ExecuteGremlinQueryAsync($"g.E('{SanitizeGremlinValue(id)}').drop()");
+                    }
+                }));
+            }
+
+            await Task.WhenAll(tasks);
+            return true;
+        }
 
 
 

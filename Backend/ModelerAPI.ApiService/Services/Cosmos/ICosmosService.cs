@@ -27,4 +27,8 @@ public interface ICosmosService
     Task<bool> BatchUpdateNodePositionsAsync(Dictionary<string, (double x, double y)> nodePositions);
     Task<bool> UpdateNodePropertiesAsync(string nodeId, Dictionary<string, object> properties);
     Task<bool> UpdateEdgePropertiesAsync(string edgeId, Dictionary<string, object> properties);
+    Task<List<Edge>> BatchCreateEdgesAsync(List<Edge> edges);
+    Task<bool> BatchDeleteNodesAsync(List<string> nodeIds);
+    Task<bool> BatchDeleteEdgesAsync(List<string> edgeIds);
+    Task<List<Node>> BatchCreateNodesAsync(List<Node> nodes);
 }

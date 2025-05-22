@@ -242,24 +242,20 @@ namespace ModelerAPI.ApiService.Controllers
                 var edges = await _cosmosService.GetEdges(id);
                 _logger.LogInformation("Found {Count} edges to delete", edges.Count);
 
-                // Step 3: Delete all edges first (to maintain referential integrity)
-                _logger.LogInformation("Deleting {Count} edges", edges.Count);
-                foreach (var edge in edges)
+                // Step 3: Batch delete all edges first (to maintain referential integrity)
+                if (edges.Any())
                 {
-                    if (!string.IsNullOrEmpty(edge.Id))
-                    {
-                        await _cosmosService.DeleteEdgeAsync(edge.Id);
-                    }
+                    _logger.LogInformation("Batch deleting {Count} edges", edges.Count);
+                    var edgeIds = edges.Select(edge => edge.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+                    await _cosmosService.BatchDeleteEdgesAsync(edgeIds);
                 }
 
-                // Step 4: Delete all nodes
-                _logger.LogInformation("Deleting {Count} nodes", nodes.Count);
-                foreach (var node in nodes)
+                // Step 4: Batch delete all nodes
+                if (nodes.Any())
                 {
-                    if (!string.IsNullOrEmpty(node.Id))
-                    {
-                        await _cosmosService.DeleteNodeAsync(node.Id);
-                    }
+                    _logger.LogInformation("Batch deleting {Count} nodes", nodes.Count);
+                    var nodeIds = nodes.Select(node => node.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+                    await _cosmosService.BatchDeleteNodesAsync(nodeIds);
                 }
 
                 // Step 5: Finally, delete the graph itself
@@ -276,6 +272,7 @@ namespace ModelerAPI.ApiService.Controllers
                     $"An error occurred while deleting the graph: {ex.Message}");
             }
         }
+
         /// <summary>
         /// Generates a new graph using the model generator with the specified parameters
         /// </summary>

@@ -105,6 +105,20 @@ namespace ModelerAPI.ApiService.Controllers
             }
         }
 
+        [HttpPost("batch")]
+        public async Task<IActionResult> BatchCreateNodes([FromBody] List<Node> nodes)
+        {
+            var createdNodes = await CosmosService.BatchCreateNodesAsync(nodes);
+            return Ok(createdNodes);
+        }
+
+        [HttpDelete("batch")]
+        public async Task<IActionResult> BatchDeleteNodes([FromBody] List<string> nodeIds)
+        {
+            var result = await CosmosService.BatchDeleteNodesAsync(nodeIds);
+            return result ? NoContent() : StatusCode(500, "Failed to delete nodes");
+        }
+
         [HttpPost("positions")]
         public async Task<IActionResult> SavePositions([FromBody] NodePositionsDto request)
         {
