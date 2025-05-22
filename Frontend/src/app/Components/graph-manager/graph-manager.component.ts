@@ -9,11 +9,13 @@ import { Graph, CreateGraphDto } from '../../Models/graph.model';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 import { Router } from '@angular/router';
 import { SortListPipe } from '../../Pipes/sort-list.pipe';
+import { FileUploadModalComponent } from '../shared/file-upload-modal/file-upload-modal.component';
+
 
 @Component({
   selector: 'app-graph-manager',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, SortListPipe],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, SortListPipe, FileUploadModalComponent],
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
@@ -35,9 +37,7 @@ export class GraphManagerComponent implements OnInit {
   graphToDelete: { id: string, name: string } | null = null;
 
   //Import Modal properties
-  importForm!: FormGroup;
   showImportModal = false;
-  selectedFile: File | null = null;
   importInProgress = false;
   importError = '';
 
@@ -55,9 +55,7 @@ export class GraphManagerComponent implements OnInit {
       name: ['', [Validators.required]]
     });
 
-    this.importForm = this.formBuilder.group({
-      name: ['']
-    });
+
 
     this.loadGraphs();
   }
@@ -241,29 +239,12 @@ export class GraphManagerComponent implements OnInit {
 
     this.graphService.exportGraph(graph.id);
   }
-  onFileSelected(event: Event): void {
-    const fileInput = event.target as HTMLInputElement;
-    if (fileInput.files && fileInput.files.length > 0) {
-      this.selectedFile = fileInput.files[0];
-      this.importError = '';
-    } else {
-      this.selectedFile = null;
-    }
-  }
 
-  confirmImport(): void {
-    if (!this.selectedFile) {
-      this.importError = 'Please select a file to import';
-      return;
-    }
-
+  onFileUploadSubmit(data: { file: File, name?: string }): void {
     this.importInProgress = true;
     this.importError = '';
 
-    // Get the optional name from the form
-    const newName = this.importForm.get('name')?.value;
-
-    this.graphService.importGraph(this.selectedFile, newName).subscribe({
+    this.graphService.importGraph(data.file, data.name).subscribe({
       next: (response) => {
         console.log('Import successful:', response);
         this.importInProgress = false;
@@ -275,9 +256,6 @@ export class GraphManagerComponent implements OnInit {
           this.loadGraphs();
           this.success = false;
         }, 500);
-
-        // Reset the import form
-        this.resetImportForm();
       },
       error: (error: HttpErrorResponse) => {
         this.importInProgress = false;
@@ -296,13 +274,6 @@ export class GraphManagerComponent implements OnInit {
 
   cancelImport(): void {
     this.showImportModal = false;
-    this.resetImportForm();
-  }
-
-  resetImportForm(): void {
-    this.importForm.reset();
-    this.selectedFile = null;
     this.importError = '';
-    this.importInProgress = false;
-  }
+  }  
 }
