@@ -296,8 +296,20 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     // Get node count for adaptive options
     const nodeCount = this.cy.nodes().length;
 
-    // Get layout options for this layout type with node count consideration
-    const layoutOptions = this.layoutService.getLayoutOptions(layoutType, nodeCount);
+    // Get container dimensions
+    const container = this.cy.container();
+    if (!container) return;
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    // Get layout options with container dimensions
+    const layoutOptions = this.layoutService.getLayoutOptions(
+      layoutType,
+      nodeCount,
+      containerWidth,
+      containerHeight
+    );
 
     // Update the component's layoutConfig
     this.layoutConfig = layoutOptions;
@@ -307,17 +319,14 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
     // Ensure proper zooming after layout completes
     layout.one('layoutstop', () => {
-      // Use smart fit instead of regular fit
+      // Use smart fit
       this.smartFitGraph();
 
-      // Add null check for container
-      const container = this.cy?.container();
-      if (!container) return;
-
+      // Get optimal zoom based on node count and container size
       const optimalZoom = this.layoutService.getOptimalZoom(
         nodeCount,
-        container.clientWidth,
-        container.clientHeight
+        containerWidth,
+        containerHeight
       );
 
       // Apply the optimal zoom
@@ -831,9 +840,21 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       if (this.cy.elements().length > 0) {
         const nodeCount = this.cy.nodes().length;
 
-        // Get adaptive options for current layout
+        // Get container dimensions
+        const container = this.cy.container();
+        if (!container) return;
+
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        // Get adaptive options for current layout with container dimensions
         const adaptiveLayout = {
-          ...this.layoutService.getLayoutOptions(this.layoutConfig.name, nodeCount),
+          ...this.layoutService.getLayoutOptions(
+            this.layoutConfig.name,
+            nodeCount,
+            containerWidth,
+            containerHeight
+          ),
           animate: true
         };
 
@@ -845,14 +866,11 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
           this.smartFitGraph();
 
-          // Get optimal zoom based on node count and container size
-          const container = this.cy.container();
-          if (!container) return;
-
+          // Get optimal zoom based on node count and container dimensions
           const optimalZoom = this.layoutService.getOptimalZoom(
             nodeCount,
-            container.clientWidth,
-            container.clientHeight
+            containerWidth,
+            containerHeight
           );
 
           this.applyZoom(optimalZoom);

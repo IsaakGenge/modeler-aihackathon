@@ -74,6 +74,26 @@ describe('CytoscapeGraphComponent', () => {
     }
   };
 
+  const mockLayoutOptions = {
+    name: 'cose',
+    fit: true,
+    directed: false,
+    padding: 50,
+    spacingFactor: 1.5,
+    avoidOverlap: true,
+    nodeDimensionsIncludeLabels: true,
+    animate: true,
+    animationDuration: 500,
+    nodeRepulsion: 5000,
+    idealEdgeLength: 100,
+    edgeElasticity: 100,
+    nestingFactor: 1.2,
+    gravity: 80,
+    numIter: 1000,
+    coolingFactor: 0.99,
+    minTemp: 1.0
+  };
+
   // Mock cytoscape layout
   const mockLayoutRun = jasmine.createSpy('run');
   const mockLayoutOne = jasmine.createSpy('one');
@@ -84,6 +104,12 @@ describe('CytoscapeGraphComponent', () => {
     position: () => { x: number, y: number };
     data: (key?: string) => any;
     style: jasmine.Spy;
+  }
+
+  interface MockCytoscapeCollection {
+    forEach: (callback: (item: any) => void) => void;
+    boundingBox: () => { x1: number, y1: number, w: number, h: number };
+    length: number;
   }
 
   interface MockCytoscapeEdge {
@@ -125,7 +151,7 @@ describe('CytoscapeGraphComponent', () => {
       'getAllNodeVisualSettings',
       'getAllEdgeVisualSettings'
     ]);
-    layoutServiceSpy = jasmine.createSpyObj('CytoscapeLayoutService', ['getLayoutIcon', 'getLayoutOptions']);
+    layoutServiceSpy = jasmine.createSpyObj('CytoscapeLayoutService', ['getLayoutIcon', 'getLayoutOptions', 'getOptimalZoom']);
     stylesServiceSpy = jasmine.createSpyObj('CytoscapeStylesService', ['getGraphStyles', 'getNodeTypeStyle']);
 
     // Configure mock behavior
@@ -170,7 +196,8 @@ describe('CytoscapeGraphComponent', () => {
     });
 
     layoutServiceSpy.getLayoutIcon.and.returnValue('bi-diagram-3');
-    layoutServiceSpy.getLayoutOptions.and.returnValue({ name: 'cose', fit: true });
+    layoutServiceSpy.getLayoutOptions.and.returnValue(mockLayoutOptions);
+    layoutServiceSpy.getOptimalZoom.and.returnValue(1.5);
 
     stylesServiceSpy.getGraphStyles.and.returnValue([]);
     stylesServiceSpy.getNodeTypeStyle.and.returnValue({
@@ -235,9 +262,17 @@ describe('CytoscapeGraphComponent', () => {
       createMockEdge('1', 'relates_to')
     ];
 
+    // Mock collection for nodes with boundingBox
+    const mockNodesCollection: MockCytoscapeCollection = {
+      forEach: (callback) => mockCytoscapeNodes.forEach(callback),
+      boundingBox: () => ({ x1: 0, y1: 0, w: 200, h: 200 }),
+      length: mockCytoscapeNodes.length
+    };
+
     // Create a proper jasmine spy for cy and all its methods
     const cySpyObj = jasmine.createSpyObj('cy', [
-      'fit', 'zoom', 'center', 'layout', 'style', 'nodes', 'edges', 'getElementById', 'on', 'destroy', '$'
+      'fit', 'zoom', 'center', 'layout', 'style', 'nodes', 'edges',
+      'getElementById', 'on', 'destroy', '$', 'container', 'elements'
     ]);
 
     // Properly configure the nested spies
@@ -246,9 +281,10 @@ describe('CytoscapeGraphComponent', () => {
       one: mockLayoutOne
     });
 
-    // Configure nodes to return our mock nodes
-    cySpyObj.nodes.and.returnValue(mockCytoscapeNodes);
+    // Configure nodes to return our mock nodes collection
+    cySpyObj.nodes.and.returnValue(mockNodesCollection);
     cySpyObj.edges.and.returnValue(mockCytoscapeEdges);
+    cySpyObj.elements.and.returnValue({ length: mockCytoscapeNodes.length + mockCytoscapeEdges.length });
 
     // Mock getElementById to return a node or edge
     cySpyObj.getElementById.and.callFake((id: string) => {
@@ -264,6 +300,12 @@ describe('CytoscapeGraphComponent', () => {
 
     cySpyObj.center.and.returnValue({ x: 0, y: 0 });
 
+    // Mock container method to return an object with dimensions
+    cySpyObj.container.and.returnValue({
+      clientWidth: 1000,
+      clientHeight: 800
+    });
+
     // Assign the properly configured spy to the component
     (component as any).cy = cySpyObj;
 
@@ -272,6 +314,9 @@ describe('CytoscapeGraphComponent', () => {
 
     // Spy on updateCytoscapeStyles to prevent it from running and causing errors
     spyOn<any>(component, 'updateCytoscapeStyles').and.stub();
+
+    // Spy on smartFitGraph but allow it to be called
+    spyOn<any>(component, 'smartFitGraph').and.callThrough();
 
     // Prevent subscribeToVisualSettings from running
     spyOn<any>(component, 'subscribeToVisualSettings').and.stub();
@@ -313,13 +358,23 @@ describe('CytoscapeGraphComponent', () => {
 
     it('should change layout type', () => {
       component.changeLayoutType('grid');
-      expect(layoutServiceSpy.getLayoutOptions).toHaveBeenCalledWith('grid');
+      expect(layoutServiceSpy.getLayoutOptions).toHaveBeenCalledWith('grid', 2, 1000, 800);
       expect((component as any).cy.layout).toHaveBeenCalled();
       expect(component.layoutChanged.emit).toHaveBeenCalledWith('grid');
     });
 
     it('should apply layout with options', () => {
-      const layoutOptions = { name: 'circle', fit: true };
+      const layoutOptions = {
+        name: 'circle',
+        fit: true,
+        directed: false,
+        padding: 50,
+        spacingFactor: 1.5,
+        avoidOverlap: true,
+        nodeDimensionsIncludeLabels: true,
+        animate: false,
+        animationDuration: 500
+      };
       component.applyLayout(layoutOptions);
       expect((component as any).cy.layout).toHaveBeenCalledWith(jasmine.objectContaining({
         name: 'circle',
@@ -402,14 +457,14 @@ describe('CytoscapeGraphComponent', () => {
   describe('View manipulation', () => {
     it('should fit graph', () => {
       component.fitGraph();
-      expect((component as any).cy.fit).toHaveBeenCalled();
+      expect(component.smartFitGraph).toHaveBeenCalled();
     });
 
     it('should apply zoom', () => {
       component.applyZoom(1.5);
       expect((component as any).cy.zoom).toHaveBeenCalledWith({
         level: 1.5,
-        position: { x: 0, y: 0 }
+        position: { x: 100, y: 100 }
       });
     });
 
