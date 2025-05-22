@@ -388,6 +388,15 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   //
 
   /**
+   * Determine if node is selected
+   */
+  private isNodeSelected(nodeId: string): boolean {
+    if (!this.cy) return false;
+    const node = this.cy.getElementById(nodeId);
+    return node && node.selected();
+  }
+
+  /**
    * Subscribe to visual settings
    */
   private subscribeToVisualSettings(): void {
@@ -429,8 +438,11 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
               cyNode.data('nodeType', node.nodeType);
               cyNode.data('label', node.name);
 
-              // Direct style update
-              this.updateNodeTypeStyle(String(node.id), node.nodeType as string);
+              // Only update style if not selected
+              if (!cyNode.selected()) {
+                // Direct style update
+                this.updateNodeTypeStyle(String(node.id), node.nodeType as string);
+              }
             }
           });
 
@@ -509,6 +521,10 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   private updateCytoscapeStyles(): void {
     if (!this.cy) return;
 
+    // Keep track of selected nodes to restore selection
+    const selectedNodes = this.cy.$('node:selected');
+    const selectedNodeIds = selectedNodes.map(node => node.id());
+
     this.isDarkMode$.pipe(
       takeUntil(this.destroy$),
       startWith(false)
@@ -524,11 +540,14 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       this.cy!.style().clear();
       this.cy!.style(styles);
 
-      // Apply styles to each node based on its type
-      this.applyNodeStyles();
-
       // Apply styles to each edge based on its type
       this.applyEdgeStyles();
+
+      // Apply styles to each node based on its type (but only to unselected nodes)
+      this.applyNodeStyles();
+
+      // Ensure selection styles are preserved
+      this.refreshSelectionStyles();
     });
   }
 
@@ -538,8 +557,8 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   private applyNodeStyles(): void {
     if (!this.cy) return;
 
-    // Change type annotation to NodeSingular
-    this.cy.nodes().forEach((node: NodeSingular) => {
+    // Only apply styles to unselected nodes
+    this.cy.nodes().filter(':unselected').forEach((node: NodeSingular) => {
       const nodeType = node.data('nodeType');
       if (nodeType) {
         this.updateNodeTypeStyle(node.id(), nodeType);
@@ -580,6 +599,11 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     const node = this.cy.getElementById(nodeId);
     if (!node) {
       console.warn(`Could not find node with ID: ${nodeId}`);
+      return;
+    }
+
+    // Skip applying styles if the node is selected
+    if (node.selected()) {
       return;
     }
 
@@ -901,6 +925,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     // Node click handler
     this.cy.on('tap', 'node', (event: any) => {
       const node = event.target;
+
       this.selectedElement = {
         type: 'node',
         data: {
@@ -909,6 +934,14 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
           nodeType: node.data('nodeType')
         }
       };
+
+      // Re-apply styles after a short delay to ensure selection styling works
+      // This ensures the :selected styling is correctly applied
+      setTimeout(() => {
+        if (this.cy) {
+          this.updateCytoscapeStyles();
+        }
+      }, 10);
 
       this.nodeClicked.emit({
         id: node.id(),
@@ -939,6 +972,32 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
         source: edge.data('source'),
         target: edge.data('target')
       });
+    });
+
+    //Select handler
+    this.cy.on('select', 'node', (event: any) => {
+      // Force the selected node to use the selection style
+      const node = event.target;
+
+      // Remove any direct styles that might override the selection style
+      node.removeStyle('background-color');
+      node.removeStyle('text-outline-color');
+
+      // Apply selection styles
+      node.style({
+        'background-color': '#2196F3',
+        'text-outline-color': '#2196F3'
+      });
+    });
+
+    this.cy.on('unselect', 'node', (event: any) => {
+      const node = event.target;
+      const nodeType = node.data('nodeType');
+
+      // Re-apply the node type style
+      if (nodeType) {
+        this.updateNodeTypeStyle(node.id(), nodeType);
+      }
     });
 
     // Background click handling
@@ -976,6 +1035,25 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       console.log(`Node ${grabbedNode.id()} was dropped into parent ${dropTarget.id()}`);
       this.positionsChanged = true;
     });
+  }
+
+  /**
+   * Refresh Selection Styles
+   */
+  private refreshSelectionStyles(): void {
+    if (!this.cy) return;
+
+    // Get all selected elements
+    const selectedElements = this.cy.$(':selected');
+
+    if (selectedElements.length > 0) {
+      // Temporarily unselect then reselect to force style refresh
+      selectedElements.unselect();
+      // Reselect after a short delay
+      setTimeout(() => {
+        selectedElements.select();
+      }, 5);
+    }
   }
 
   /**

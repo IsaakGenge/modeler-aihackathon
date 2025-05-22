@@ -77,6 +77,7 @@ export class CytoscapeStylesService {
       }
     }));
 
+    // Define selection styles
     const selectedStyles = {
       'background-color': '#2196F3',
       'line-color': '#2196F3',
@@ -84,6 +85,15 @@ export class CytoscapeStylesService {
       'text-outline-color': '#2196F3',
       'font-weight': 'bold'
     };
+
+    // Create specific selector styles for selected nodes of each type
+    const selectedNodeTypeStyles = nodeTypeNames.map(typeName => ({
+      selector: `node[nodeType="${typeName}"].selected, node[nodeType="${typeName}"]:selected`,
+      style: {
+        'background-color': '#2196F3',
+        'text-outline-color': '#2196F3'
+      }
+    }));
 
     // Add selection box styles
     const selectionBoxStyles = [
@@ -109,8 +119,9 @@ export class CytoscapeStylesService {
       }
     ];
 
-    // Return the complete style array
+    // Return the complete style array with proper ordering to ensure selection styles have priority
     return [
+      // Base styles first
       {
         selector: 'node',
         style: {
@@ -120,8 +131,6 @@ export class CytoscapeStylesService {
           'shape': 'ellipse'
         }
       },
-      // Add specific styles for each node type
-      ...nodeTypeStyles,
       {
         selector: 'edge',
         style: {
@@ -143,13 +152,21 @@ export class CytoscapeStylesService {
           'font-weight': 'bold'
         }
       },
-      // Add specific styles for each edge type
+      // Type-specific styles second
+      ...nodeTypeStyles,
       ...edgeTypeStyles,
+      // General selection styles
       {
-        selector: ':selected',
+        selector: 'node:selected',
         style: selectedStyles
       },
-      // Add the selection box styles
+      {
+        selector: 'edge:selected',
+        style: selectedStyles
+      },
+      // Type-specific selection styles with highest specificity
+      ...selectedNodeTypeStyles,
+      // Selection box styles last
       ...selectionBoxStyles
     ];
   }
