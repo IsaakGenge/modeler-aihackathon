@@ -279,7 +279,7 @@ namespace ModelerAPI.ApiService.Controllers
         /// <summary>
         /// Generates a new graph using the model generator with the specified parameters
         /// </summary>
-        /// <param name="strategy">The graph generation strategy to use: random, star, chain, or complete</param>
+        /// <param name="strategy">The graph generation strategy to use: tree, random, star, chain, plant or complete</param>
         /// <param name="nodeCount">Number of nodes to generate</param>
         /// <param name="name">Optional name for the graph (auto-generated if not provided)</param>
         /// <returns>Information about the generated graph</returns>
