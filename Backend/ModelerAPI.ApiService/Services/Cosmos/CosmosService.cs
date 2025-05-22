@@ -391,11 +391,13 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 var sanitizedId = SanitizeGremlinValue(node.Id);
                 var sanitizedName = SanitizeGremlinValue(node.Name);
                 var sanitizedGraphId = SanitizeGremlinValue(node.GraphId);
+                var sanitizedLabel = SanitizeGremlinValue(node.NodeType);
 
                 // First, update basic properties
                 var gremlinQuery = $"g.V('{sanitizedId}')" +
                                   $".property('name', '{sanitizedName}')" +
-                                  $".property('graphId', '{sanitizedGraphId}')";
+                                  $".property('graphId', '{sanitizedGraphId}')"+
+                                  $".property('label', '{sanitizedLabel}')";
 
                 if (node.PositionX.HasValue && node.PositionY.HasValue)
                 {
@@ -429,7 +431,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 foreach (var currentProp in currentProperties.Keys.ToList()) // Use ToList() to avoid collection modified exception
                 {
                     // Skip system properties
-                    if (new[] { "id", "name", "nodeType", "graphId", "pkey", "positionX", "positionY", "createdAt" }
+                    if (new[] { "id", "name", "graphId", "pkey", "positionX", "positionY", "createdAt" }
                         .Contains(currentProp, StringComparer.OrdinalIgnoreCase))
                     {
                         continue;

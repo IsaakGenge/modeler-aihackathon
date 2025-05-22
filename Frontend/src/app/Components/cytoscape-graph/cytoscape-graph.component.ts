@@ -5,7 +5,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import cytoscape from 'cytoscape';
 import type { NodeSingular } from 'cytoscape';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { takeUntil, startWith } from 'rxjs/operators'; 
+import { takeUntil, startWith, filter } from 'rxjs/operators'; 
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
 import { TypesService } from '../../Services/Types/types.service';
 import { NodeService } from '../../Services/Node/node.service';
@@ -156,7 +156,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
               const y = Number(pos.y);
               if (!isNaN(x) && !isNaN(y)) {
                 node.position({ x, y });
-                console.log(`Applied position to node ${nodeId}: (${x}, ${y})`);
+                //console.log(`Applied position to node ${nodeId}: (${x}, ${y})`);
               }
             }
           });
@@ -207,31 +207,31 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
 
-  private debugPositionData(): void {
-    console.log("=== POSITION DEBUGGING ===");
+  //private debugPositionData(): void {
+  //  console.log("=== POSITION DEBUGGING ===");
 
-    // Check raw data
-    console.log("Raw node array:", this.nodes);
+  //  // Check raw data
+  //  console.log("Raw node array:", this.nodes);
 
-    // Check positions in raw data
-    this.nodes.forEach(node => {
-      console.log(`Node ${node.id} DB data:`, {
-        name: node.name,
-        positionX: node.positionX,
-        positionY: node.positionY,
-        type: typeof node.positionX
-      });
-    });
+  //  // Check positions in raw data
+  //  this.nodes.forEach(node => {
+  //    console.log(`Node ${node.id} DB data:`, {
+  //      name: node.name,
+  //      positionX: node.positionX,
+  //      positionY: node.positionY,
+  //      type: typeof node.positionX
+  //    });
+  //  });
 
-    // Check current Cytoscape positions
-    if (this.cy) {
-      this.cy.nodes().forEach((node: any) => {
-        console.log(`Node ${node.id()} Cytoscape position:`, node.position());
-      });
-    }
+  //  // Check current Cytoscape positions
+  //  if (this.cy) {
+  //    this.cy.nodes().forEach((node: any) => {
+  //      console.log(`Node ${node.id()} Cytoscape position:`, node.position());
+  //    });
+  //  }
 
-    console.log("=== END POSITION DEBUGGING ===");
-  }
+  //  console.log("=== END POSITION DEBUGGING ===");
+  //}
 
   public getNodePositions(): { [key: string]: { x: number, y: number } } {
     if (!this.cy) return {};
@@ -252,16 +252,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     return positions;
   }
 
-  private logNodeData(): void {
-    console.log("Current nodes data:", this.nodes);
 
-    if (this.cy) {
-      console.log("Cytoscape nodes data:");
-      this.cy.nodes().forEach((node: any) => {
-        console.log(`Node ID: ${node.id()}, Label: ${node.data('label')}, Position: (${node.position().x}, ${node.position().y})`);
-      });
-    }
-  }
 
   // Method to save positions to the backend
   public saveNodePositions(): void {
@@ -304,13 +295,122 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       startWith(false) // Start with light mode as default
     ).subscribe(isDark => {
       const styles = this.getGraphStyles(isDark);
+
+      // Force a complete style refresh
+      this.cy.style().clear();
       this.cy.style(styles);
+
+      // Apply styles directly to each node based on its type
+      this.cy.nodes().forEach((node: cytoscape.SingularElementReturnValue) => {
+        const nodeType = node.data('nodeType');
+        if (nodeType) {
+          this.updateNodeTypeStyle(node.id(), nodeType);
+        }
+      });
+
+      // Apply styles directly to each edge based on its type
+      this.cy.edges().forEach((edge: cytoscape.SingularElementReturnValue) => {
+        const edgeType = edge.data('edgeType');
+        if (edgeType && this.edgeVisualSettings[edgeType]) {
+          const typeStyle = this.edgeVisualSettings[edgeType];
+          edge.style({
+            'line-color': typeStyle.lineColor,
+            'target-arrow-color': typeStyle.lineColor,
+            'line-style': typeStyle.lineStyle,
+            'width': typeStyle.width,
+            'target-arrow-shape': typeStyle.targetArrowShape,
+            'curve-style': typeStyle.curveStyle,
+            'opacity': typeStyle.lineOpacity
+          });
+        }
+      });
     });
   }
+
+  private updateNodeTypeStyle(nodeId: string, nodeType: string): void {
+    if (!this.cy) return;
+
+    const node = this.cy.getElementById(nodeId);
+    if (!node) {
+      console.warn(`Could not find node with ID: ${nodeId}`);
+      return;
+    }
+
+    // Get the style for this specific node type
+    const typeStyle = this.nodeVisualSettings[nodeType];
+    if (!typeStyle) {
+      console.warn(`No visual settings found for node type: ${nodeType}`);
+      console.log('Available node types:', Object.keys(this.nodeVisualSettings));
+      return;
+    }
+
+    console.log(`Applying direct style to node ${nodeId} with type ${nodeType}:`, typeStyle);
+
+    // Apply style directly to the node element
+    node.style({
+      'background-color': typeStyle.color,
+      'text-outline-color': typeStyle.color,
+      'shape': typeStyle.shape
+    });
+  }
+
 
   ngOnInit(): void {
     // Load node types to ensure we have the visual settings
     this.typesService.loadNodeTypes();
+
+    // Add this subscription to listen for node updates
+    this.nodeService.nodeCreated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        // Refresh node data when a node is updated
+        if (this.graphId) {
+          this.nodeService.getNodes(this.graphId).subscribe(nodes => {
+            if (this.cy) {
+              nodes.forEach(node => {
+                const cyNode = this.cy.getElementById(String(node.id));
+                if (cyNode) {
+                  // Update data attributes
+                  cyNode.data('nodeType', node.nodeType);
+                  cyNode.data('label', node.name);
+
+                  // Direct style update (bypassing the selector system)
+                  this.updateNodeTypeStyle(String(node.id), node.nodeType);
+
+                  console.log(`Updated node ${node.id} type to: ${node.nodeType}`);
+                }
+              });
+
+              // Still perform general style update to ensure consistency
+              this.updateCytoscapeStyles();
+            }
+          });
+        }
+      });
+
+    // We also need to handle edge type updates similarly
+    this.edgeService.edgeCreated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (this.graphId) {
+          this.edgeService.getEdges(this.graphId).subscribe(edges => {
+            if (this.cy) {
+              edges.forEach(edge => {
+                const cyEdge = this.cy.getElementById(String(edge.id));
+                if (cyEdge) {
+                  // Force a data update by removing and re-adding the edgeType property
+                  cyEdge.removeData('edgeType');
+                  cyEdge.data('edgeType', edge.edgeType);
+                  cyEdge.data('label', edge.edgeType);
+                }
+              });
+
+              // Force a complete style update
+              this.updateCytoscapeStyles();
+            }
+          });
+        }
+      });
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -536,6 +636,9 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     ];
 
     // Return the complete style array
+
+
+
     return [
       {
         selector: 'node',
@@ -731,7 +834,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       }
 
       // Debug data after Cytoscape is created
-      this.debugPositionData();
+      //this.debugPositionData();
 
       // Apply positions again for safety (sometimes preset layout doesn't work)
       if (hasValidPositions) {
@@ -746,14 +849,14 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
                 const cyNode = this.cy.getElementById(String(node.id));
                 if (cyNode) {
                   cyNode.position({ x, y });
-                  console.log(`Force-set node ${node.id} position to database values: (${x}, ${y})`);
+                  //console.log(`Force-set node ${node.id} position to database values: (${x}, ${y})`);
                 }
               }
             }
           });
 
           // Debug after setting positions
-          this.debugPositionData();
+          //this.debugPositionData();
 
           // Fit view after positions are set
           this.cy.fit();
@@ -786,7 +889,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
               });
 
               // Debug final positions
-              this.debugPositionData();
+              //this.debugPositionData();
             }, 1000);
           }
         }, 100);
