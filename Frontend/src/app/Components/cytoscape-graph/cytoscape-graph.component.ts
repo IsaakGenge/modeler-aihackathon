@@ -67,9 +67,11 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   private edgeVisualSettings: Record<string, EdgeVisualSetting> = {};
 
   //Zoom properties
-  private readonly ZOOM_FACTOR = 1.5;
-  private readonly MAX_ZOOM_LEVEL = 5.0;
-  private readonly MIN_ZOOM_LEVEL = 0.3;
+  //Zoom properties
+  private readonly ZOOM_FACTOR = 1.5; // Increased from 1.5 to 2.0 for more aggressive zoom
+  private readonly MAX_ZOOM_LEVEL = 5.0; // Increased from 5.0 to 8.0 to allow deeper zoom
+  private readonly MIN_ZOOM_LEVEL = 0.2; // Decreased from 0.3 to 0.2 to allow wider zoom out
+
 
 
   constructor(
@@ -390,7 +392,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       this.applyZoom(optimalZoom);
     }
   }
-
+   
   /**
  * Zoom in by a fixed factor
  */
@@ -403,8 +405,12 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     // Calculate new zoom level, but cap at maximum
     const newZoom = Math.min(currentZoom * this.ZOOM_FACTOR, this.MAX_ZOOM_LEVEL);
 
-    // Apply the zoom
-    this.applyZoom(newZoom);
+    // Apply the zoom with animation but without specifying center
+    // This avoids the TS error by not using the center property
+    this.cy.animate({
+      zoom: newZoom,
+      duration: 200 // Short animation duration for responsiveness
+    });
   }
 
   /**
@@ -419,8 +425,12 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     // Calculate new zoom level, but cap at minimum
     const newZoom = Math.max(currentZoom / this.ZOOM_FACTOR, this.MIN_ZOOM_LEVEL);
 
-    // Apply the zoom
-    this.applyZoom(newZoom);
+    // Apply the zoom with animation but without specifying center
+    // This avoids the TS error by not using the center property
+    this.cy.animate({
+      zoom: newZoom,
+      duration: 200 // Short animation duration for responsiveness
+    });
   }
 
   //

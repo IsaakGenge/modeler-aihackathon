@@ -13,6 +13,9 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
+            "allowedCommonJsDependencies": [
+              "cytoscape-compound-drag-and-drop"
+            ],
             "outputPath": "dist/frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
