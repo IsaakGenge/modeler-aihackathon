@@ -8,11 +8,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Graph, CreateGraphDto } from '../../Models/graph.model';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 import { Router } from '@angular/router';
+import { SortListPipe } from '../../Pipes/sort-list.pipe';
 
 @Component({
   selector: 'app-graph-manager',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, SortListPipe],
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
@@ -219,5 +220,14 @@ export class GraphManagerComponent implements OnInit {
   // Method to manually refresh the graph list
   refreshGraphs(): void {
     this.loadGraphs();
+  }
+
+  exportGraph(graph: Graph): void {
+    if (!graph || !graph.id) {
+      this.error = 'Cannot export: invalid graph data';
+      return;
+    }
+
+    this.graphService.exportGraph(graph.id);
   }
 }

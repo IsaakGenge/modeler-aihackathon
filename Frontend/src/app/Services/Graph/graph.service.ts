@@ -12,6 +12,7 @@ import { Graph, CreateGraphDto } from '../../Models/graph.model';
 })
 export class GraphService {
   private apiUrl = `${environment.apiBaseUrl}/graph`;
+  private importExportUrl = `${environment.apiBaseUrl}/importexport`;
   private isBrowser: boolean;
 
   // Store the currently selected graph
@@ -175,5 +176,35 @@ export class GraphService {
     } catch (error) {
       console.error('Error accessing localStorage:', error);
     }
+  }
+
+
+  /**
+ * Exports a graph by initiating a file download
+ * @param graphId The ID of the graph to export
+ */
+  exportGraph(graphId: string): void {
+    if (!this.isBrowser) {
+      console.error("File download is only supported in browser environments");
+      return;
+    }
+
+    if (!graphId) {
+      console.error("Cannot export: Graph ID is missing");
+      return;
+    }
+
+    // Create a direct download link to the export endpoint
+    const exportUrl = `${this.importExportUrl}/export/${graphId}`;
+
+    // Create a hidden anchor element to trigger the download
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = `graph-${graphId}-export.json`;
+
+    // Append to body, click and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

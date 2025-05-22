@@ -69,12 +69,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
+        <tr *ngFor="let graph of graphs | sortByName" [class.active]="isSelected(graph)">
           <td>{{ graph.name }}</td>
           <td>{{ graph.createdAt | date:'short' }}</td>
           <td>
             <button class="btn btn-sm btn-outline-primary me-2" (click)="viewGraph(graph)">
               View
+            </button>
+            <button class="btn btn-sm btn-outline-secondary me-2" (click)="exportGraph(graph)">
+              Export
             </button>
             <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
               Delete
@@ -141,6 +144,9 @@
           <td class="text-end">
             <button class="btn btn-sm btn-outline-primary me-1" (click)="viewGraph(graph)">
               View
+            </button>
+            <button class="btn btn-sm btn-outline-secondary me-1" (click)="exportGraph(graph)">
+              Export
             </button>
             <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
               Delete
