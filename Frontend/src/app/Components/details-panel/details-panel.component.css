@@ -53,19 +53,23 @@
 
 .detail-item {
   display: flex;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 14px;
+  flex-wrap: wrap; /* Allow wrapping for long content */
 }
 
 .detail-label {
   font-weight: 600;
-  width: 40%;
+  min-width: 40%;
+  max-width: 100%; /* Allow full width when wrapping */
   color: var(--text-secondary);
+  padding-right: 8px; /* Add some spacing between label and value */
 }
 
 .detail-value {
-  width: 60%;
-  word-break: break-word;
+  flex: 1;
+  min-width: 60%;
+  word-break: break-word; /* This already exists, but is important */
   color: var(--text-primary);
 }
 
@@ -182,5 +186,19 @@
   font-weight: 600;
   color: var(--text-primary);
   overflow: visible; /* Ensure tooltip isn't clipped */
+}
+@media (max-width: 350px) {
+  .detail-item {
+    flex-direction: column;
+  }
+
+  .detail-label {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  .detail-value {
+    width: 100%;
+  }
 }
 
