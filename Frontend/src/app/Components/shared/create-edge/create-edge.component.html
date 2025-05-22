@@ -23,7 +23,7 @@
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['source'].errors }">
         <option value="">Select source node</option>
-        <option *ngFor="let node of nodes" [value]="node.id">
+        <option *ngFor="let node of nodes | sortByName" [value]="node.id">
           {{ node.name }}
         </option>
       </select>
@@ -39,7 +39,7 @@
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['target'].errors }">
         <option value="">Select target node</option>
-        <option *ngFor="let node of nodes" [value]="node.id">
+        <option *ngFor="let node of nodes | sortByName" [value]="node.id">
           {{ node.name }}
         </option>
       </select>
@@ -54,7 +54,7 @@
               formControlName="edgeType"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['edgeType'].errors }">
-        <option *ngFor="let type of edgeTypes" [value]="type.name">
+        <option *ngFor="let type of edgeTypes | sortByName" [value]="type.name">
           {{ type.name }}
         </option>
       </select>

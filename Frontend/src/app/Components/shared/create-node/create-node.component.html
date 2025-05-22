@@ -34,7 +34,7 @@
               formControlName="nodeType"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['nodeType'].errors }">
-        <option *ngFor="let type of nodeTypes" [value]="type.name">
+        <option *ngFor="let type of nodeTypes | sortByName" [value]="type.name">
           {{ type.name }}
         </option>
       </select>

@@ -123,7 +123,7 @@
             <div class="detail-label">Type:</div>
             <div class="detail-value">
               <select class="form-select" [(ngModel)]="editableType">
-                <option *ngFor="let type of availableNodeTypes" [value]="type.name">{{ type.name }}</option>
+                <option *ngFor="let type of availableNodeTypes | sortByName" [value]="type.name">{{ type.name }}</option>
               </select>
             </div>
           </div>
@@ -139,7 +139,7 @@
             <div class="detail-label">Type:</div>
             <div class="detail-value">
               <select class="form-select" [(ngModel)]="editableType">
-                <option *ngFor="let type of availableEdgeTypes" [value]="type.name">{{ type.name }}</option>
+                <option *ngFor="let type of availableEdgeTypes | sortByName" [value]="type.name">{{ type.name }}</option>
               </select>
             </div>
           </div>

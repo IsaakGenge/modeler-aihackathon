@@ -8,11 +8,12 @@ import { GraphService } from '../../../Services/Graph/graph.service';
 import { TypesService, NodeTypeModel } from '../../../Services/Types/types.service';
 import { Observable, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { SortListPipe } from '../../../Pipes/sort-list.pipe';
 
 @Component({
   selector: 'app-create-node',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SortListPipe],
   templateUrl: './create-node.component.html',
   styleUrl: './create-node.component.css'
 })

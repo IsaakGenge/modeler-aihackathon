@@ -10,11 +10,12 @@ import { TypesService, EdgeTypeModel } from '../../../Services/Types/types.servi
 import { Subscription, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Node } from '../../../Models/node.model';
+import { SortListPipe } from '../../../Pipes/sort-list.pipe';
 
 @Component({
   selector: 'app-create-edge',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SortListPipe],
   templateUrl: './create-edge.component.html',
   styleUrl: './create-edge.component.css'
 })

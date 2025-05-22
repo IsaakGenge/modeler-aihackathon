@@ -10,11 +10,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 import { Node } from '../../Models/node.model';
 import { Edge } from '../../Models/edge.model';
+import { SortListPipe } from '../../Pipes/sort-list.pipe'
 
 @Component({
   selector: 'app-details-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmationModalComponent],
+  imports: [CommonModule, FormsModule, ConfirmationModalComponent, SortListPipe],
   templateUrl: './details-panel.component.html',
   styleUrls: ['./details-panel.component.css']
 })
