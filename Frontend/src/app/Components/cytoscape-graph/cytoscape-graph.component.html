@@ -1,34 +1,55 @@
 <div class="graph-container">
   <div class="layout-controls" *ngIf="showLayoutControls">
     <div class="layout-buttons">
-      <button *ngFor="let layout of availableLayouts"
-              [class.active]="layoutConfig.name === layout.type"
-              (click)="changeLayoutType(layout.type)"
-              title="{{layout.label}}"
-              class="layout-button">
-        <i class="bi" [ngClass]="getLayoutIcon(layout.type)"></i>
-      </button>
+      <!-- Layout dropdown -->
+      <div class="dropdown layout-dropdown">
+        <button class="layout-button dropdown-toggle" type="button" id="layoutDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Layout Options">
+          <i class="bi" [ngClass]="getLayoutIcon(layoutConfig.name)"></i>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="layoutDropdown">
+          <li *ngFor="let layout of availableLayouts">
+            <a class="dropdown-item"
+               [class.active]="layoutConfig.name === layout.type"
+               (click)="changeLayoutType(layout.type)"
+               href="javascript:void(0)">
+              <i class="bi" [ngClass]="getLayoutIcon(layout.type)"></i>
+              <span class="ms-2">{{layout.label}}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
 
-      <!-- Add Save Positions button -->
-      <button (click)="saveNodePositions()"
-              title="Save Node Positions"
-              class="layout-button"
-              [class.has-changes]="positionsChanged"
-              [disabled]="isSaving || !positionsChanged">
-        <i class="bi" [ngClass]="isSaving ? 'bi-hourglass-split' : 'bi-save'"></i>
-      </button>
-
-      <!-- Add Apply Saved Layout button -->
-      <button (click)="applySavedLayout()"
-              title="Apply Saved Layout"
-              class="layout-button"
-              [disabled]="isApplyingSaved || !graphId">
-        <i class="bi" [ngClass]="isApplyingSaved ? 'bi-hourglass-split' : 'bi-arrow-counterclockwise'"></i>
-      </button>
+      <!-- Save/Load dropdown -->
+      <div class="dropdown layout-dropdown">
+        <button class="layout-button dropdown-toggle" type="button" id="saveLoadDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Save/Load Layout">
+          <i class="bi bi-save"></i>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="saveLoadDropdown">
+          <li>
+            <a class="dropdown-item"
+               (click)="saveNodePositions()"
+               href="javascript:void(0)"
+               [class.disabled]="isSaving || !positionsChanged">
+              <i class="bi" [ngClass]="isSaving ? 'bi-hourglass-split' : 'bi-save'"></i>
+              <span class="ms-2">Save Node Positions</span>
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item"
+               (click)="applySavedLayout()"
+               href="javascript:void(0)"
+               [class.disabled]="isApplyingSaved || !graphId">
+              <i class="bi" [ngClass]="isApplyingSaved ? 'bi-hourglass-split' : 'bi-arrow-counterclockwise'"></i>
+              <span class="ms-2">Apply Saved Layout</span>
+            </a>
+          </li>
+        </ul>
+      </div>
 
       <!-- Add separator -->
       <div class="layout-button-divider"></div>
 
+      <!-- Keep zoom and fit buttons as they are -->
       <!-- Add Zoom In button -->
       <button (click)="zoomIn()"
               title="Zoom In"

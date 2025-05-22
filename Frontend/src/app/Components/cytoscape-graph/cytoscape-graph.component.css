@@ -109,4 +109,49 @@
   border-color: #2ECC40;
   background-color: rgba(46, 204, 64, 0.1);
 }
+/* Dropdown menu styling */
+.layout-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  min-width: 200px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  padding: 8px 0;
+  z-index: 1000;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+  .dropdown-item:hover {
+    background-color: var(--bg-elevated);
+  }
+
+  .dropdown-item.active {
+    background-color: var(--primary-accent);
+    color: white;
+  }
+
+  .dropdown-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+/* Make dropdown toggle button match other buttons */
+.layout-button.dropdown-toggle {
+  width: 36px;
+  height: 36px;
+}
+
+/* Ensure dropdowns appear on hover for better UX */
+.layout-dropdown:hover .dropdown-menu {
+  display: block;
+}
 
