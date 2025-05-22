@@ -8,11 +8,17 @@
   min-height: 100vh;
   position: relative;
   overflow-x: hidden; /* Prevent horizontal scrolling */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .main-content-area {
   position: relative;
   min-height: calc(100vh - 80px);
+  flex: 1; /* Allow the main content area to grow and fill available space */
+  display: flex;
+  flex-direction: column;
 }
 
 /***************************************
@@ -40,6 +46,8 @@ app-graph-picker {
   display: flex;
   flex-direction: column;
   margin-right: 0; /* Ensure no margin causing overflow */
+  flex: 1; /* Allow the graph container to grow */
+  display: flex;  
 }
 
 .graph-header {
@@ -55,6 +63,7 @@ app-graph-picker {
 
 .cytoscape-graph-component {
   flex-grow: 1;
+  flex: 1;
   width: 100%;
   height: 100%;
   display: block;
