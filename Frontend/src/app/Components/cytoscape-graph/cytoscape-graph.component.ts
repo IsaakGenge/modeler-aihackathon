@@ -94,7 +94,9 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   }
 
   async ngAfterViewInit(): Promise<void> {
-    await this.initializeCytoscape();
+    setTimeout(async () => {
+      await this.initializeCytoscape();
+    }, 100); // 100ms delay
   }
 
   ngOnDestroy(): void {
