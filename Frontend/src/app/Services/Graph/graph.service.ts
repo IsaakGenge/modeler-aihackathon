@@ -207,4 +207,36 @@ export class GraphService {
     link.click();
     document.body.removeChild(link);
   }
+
+  // Add this to the graph.service.ts
+  /**
+   * Imports a graph from a JSON file
+   * @param file The JSON file containing graph data
+   * @param newName Optional new name for the imported graph
+   * @returns Observable with information about the imported graph
+   */
+  importGraph(file: File, newName?: string): Observable<any> {
+    if (!file) {
+      return throwError(() => new Error('No file provided for import'));
+    }
+
+    const formData = new FormData();
+    formData.append('GraphFile', file);
+
+    if (newName) {
+      formData.append('NewGraphName', newName);
+    }
+
+    return this.http.post<any>(`${this.importExportUrl}/import`, formData).pipe(
+      tap(response => {
+        console.log('Graph imported successfully:', response);
+        // Notify after successful import (same as creation)
+        this.graphCreatedSubject.next();
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error importing graph:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

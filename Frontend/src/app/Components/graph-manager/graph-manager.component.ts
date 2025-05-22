@@ -34,6 +34,13 @@ export class GraphManagerComponent implements OnInit {
   deleteInProgress = false;
   graphToDelete: { id: string, name: string } | null = null;
 
+  //Import Modal properties
+  importForm!: FormGroup;
+  showImportModal = false;
+  selectedFile: File | null = null;
+  importInProgress = false;
+  importError = '';
+
   constructor(
     private formBuilder: FormBuilder,
     private graphService: GraphService,
@@ -46,6 +53,10 @@ export class GraphManagerComponent implements OnInit {
   ngOnInit(): void {
     this.graphForm = this.formBuilder.group({
       name: ['', [Validators.required]]
+    });
+
+    this.importForm = this.formBuilder.group({
+      name: ['']
     });
 
     this.loadGraphs();
@@ -229,5 +240,69 @@ export class GraphManagerComponent implements OnInit {
     }
 
     this.graphService.exportGraph(graph.id);
+  }
+  onFileSelected(event: Event): void {
+    const fileInput = event.target as HTMLInputElement;
+    if (fileInput.files && fileInput.files.length > 0) {
+      this.selectedFile = fileInput.files[0];
+      this.importError = '';
+    } else {
+      this.selectedFile = null;
+    }
+  }
+
+  confirmImport(): void {
+    if (!this.selectedFile) {
+      this.importError = 'Please select a file to import';
+      return;
+    }
+
+    this.importInProgress = true;
+    this.importError = '';
+
+    // Get the optional name from the form
+    const newName = this.importForm.get('name')?.value;
+
+    this.graphService.importGraph(this.selectedFile, newName).subscribe({
+      next: (response) => {
+        console.log('Import successful:', response);
+        this.importInProgress = false;
+        this.showImportModal = false;
+
+        // Show success message
+        this.success = true;
+        setTimeout(() => {
+          this.loadGraphs();
+          this.success = false;
+        }, 500);
+
+        // Reset the import form
+        this.resetImportForm();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.importInProgress = false;
+        console.error('Error importing graph:', error);
+
+        if (error.status === 400) {
+          this.importError = `Invalid import file: ${error.error}`;
+        } else if (error.status === 500) {
+          this.importError = `Server error: ${error.error}`;
+        } else {
+          this.importError = error.message || 'Failed to import graph';
+        }
+      }
+    });
+  }
+
+  cancelImport(): void {
+    this.showImportModal = false;
+    this.resetImportForm();
+  }
+
+  resetImportForm(): void {
+    this.importForm.reset();
+    this.selectedFile = null;
+    this.importError = '';
+    this.importInProgress = false;
   }
 }
