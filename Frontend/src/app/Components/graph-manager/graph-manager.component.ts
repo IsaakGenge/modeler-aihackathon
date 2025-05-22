@@ -54,9 +54,6 @@ export class GraphManagerComponent implements OnInit {
     this.graphForm = this.formBuilder.group({
       name: ['', [Validators.required]]
     });
-
-
-
     this.loadGraphs();
   }
 
