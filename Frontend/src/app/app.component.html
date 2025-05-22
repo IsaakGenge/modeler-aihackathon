@@ -56,15 +56,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="main-content" [ngClass]="{'expanded': sidebarCollapsed}">
-      <div class="d-flex align-items-center mb-3">
-        <!-- Mobile menu toggle button -->
-        <button class="btn d-md-none me-2"
-                [ngClass]="(isDarkMode$ | async) ? 'btn-dark' : 'btn-light'"
-                (click)="toggleSidebar()">
-          <i class="bi bi-list"></i>
-        </button>        
-      </div>
+    <div class="main-content" [ngClass]="{'expanded': sidebarCollapsed}">     
       <router-outlet></router-outlet>
     </div>
   </div>
