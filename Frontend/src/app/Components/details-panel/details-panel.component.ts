@@ -11,11 +11,12 @@ import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirm
 import { Node } from '../../Models/node.model';
 import { Edge } from '../../Models/edge.model';
 import { SortListPipe } from '../../Pipes/sort-list.pipe'
-
+import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap'
+ 
 @Component({
   selector: 'app-details-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmationModalComponent, SortListPipe],
+  imports: [CommonModule, FormsModule, ConfirmationModalComponent, SortListPipe, NgbTooltipModule],
   templateUrl: './details-panel.component.html',
   styleUrls: ['./details-panel.component.css']
 })

@@ -2,7 +2,12 @@
 <div class="details-panel" *ngIf="selectedElement"
      [class.active]="selectedElement">
   <div class="details-header">
-    <h4>{{ selectedElement?.type === 'node' ? 'Node Details' : 'Edge Details' }}</h4>
+    <h4 [ngbTooltip]="'ID: ' + selectedElement?.data?.id"
+        placement="top"
+        container="body"
+        tooltipClass="details-id-tooltip">
+      {{ selectedElement?.type === 'node' ? 'Node Details' : 'Edge Details' }}
+    </h4>
     <div class="details-actions">
       <!-- Edit button - show when not in edit mode -->
       <button *ngIf="!isEditMode" class="edit-button btn btn-primary btn-sm" (click)="toggleEditMode()">
@@ -49,10 +54,6 @@
       <div *ngIf="!isEditMode">
         <div *ngIf="selectedElement?.type === 'node'">
           <div class="detail-item">
-            <div class="detail-label">ID:</div>
-            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
-          </div>
-          <div class="detail-item">
             <div class="detail-label">Name:</div>
             <div class="detail-value">{{ selectedElement?.data?.label }}</div>
           </div>
@@ -75,10 +76,6 @@
         </div>
 
         <div *ngIf="selectedElement?.type === 'edge'">
-          <div class="detail-item">
-            <div class="detail-label">ID:</div>
-            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
-          </div>
           <div class="detail-item">
             <div class="detail-label">Type:</div>
             <div class="detail-value">{{ selectedElement?.data?.edgeType || 'Default' }}</div>
@@ -110,10 +107,6 @@
         <!-- Editable properties for a Node -->
         <div *ngIf="selectedElement?.type === 'node'" class="fixed-properties">
           <div class="detail-item">
-            <div class="detail-label">ID:</div>
-            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
-          </div>
-          <div class="detail-item">
             <div class="detail-label">Name:</div>
             <div class="detail-value">
               <input type="text" class="form-control" [(ngModel)]="editableName" placeholder="Node name">
@@ -131,10 +124,6 @@
 
         <!-- Editable properties for an Edge -->
         <div *ngIf="selectedElement?.type === 'edge'" class="fixed-properties">
-          <div class="detail-item">
-            <div class="detail-label">ID:</div>
-            <div class="detail-value">{{ selectedElement?.data?.id }}</div>
-          </div>
           <div class="detail-item">
             <div class="detail-label">Type:</div>
             <div class="detail-value">
