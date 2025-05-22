@@ -164,7 +164,15 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     }
 
     this.loading = true;
-    const edgeData = this.edgeForm.value;
+
+    // Get the graphId from the GraphService
+    const graphId = this.graphService.currentGraphId;
+
+    // Include graphId in the form data
+    const edgeData = {
+      ...this.edgeForm.value,
+      graphId
+    };
 
     this.edgeService.createEdge(edgeData).subscribe({
       next: (edge) => {
