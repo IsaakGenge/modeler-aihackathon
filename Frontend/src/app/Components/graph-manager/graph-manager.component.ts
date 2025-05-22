@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { GraphService } from '../../Services/Graph/graph.service';
@@ -19,7 +19,7 @@ import { FileUploadModalComponent } from '../shared/file-upload-modal/file-uploa
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
-export class GraphManagerComponent implements OnInit {
+export class GraphManagerComponent implements OnInit, OnDestroy {
   @Input() embedded: boolean = false;
 
   graphForm!: FormGroup;
@@ -41,6 +41,10 @@ export class GraphManagerComponent implements OnInit {
   importInProgress = false;
   importError = '';
 
+  // Message timeout handling
+  private readonly messageTimeout = 3000; // 3 seconds
+  private messageTimeoutId: any = null;
+
   constructor(
     private formBuilder: FormBuilder,
     private graphService: GraphService,
@@ -57,10 +61,49 @@ export class GraphManagerComponent implements OnInit {
     this.loadGraphs();
   }
 
+  ngOnDestroy(): void {
+    // Clear any active timeouts when component is destroyed
+    if (this.messageTimeoutId) {
+      clearTimeout(this.messageTimeoutId);
+      this.messageTimeoutId = null;
+    }
+  }
+
+  // Helper method to show messages with a timeout
+  private showMessageWithTimeout(type: 'success' | 'error' | 'warning', message: string = ''): void {
+    // Clear any existing timeout
+    if (this.messageTimeoutId) {
+      clearTimeout(this.messageTimeoutId);
+      this.messageTimeoutId = null;
+    }
+
+    // Reset all messages first
+    this.success = false;
+    this.error = '';
+    this.warning = '';
+
+    // Set the appropriate message
+    if (type === 'success') {
+      this.success = true;
+    } else if (type === 'error') {
+      this.error = message;
+    } else if (type === 'warning') {
+      this.warning = message;
+    }
+
+    // Set timeout to clear the message
+    this.messageTimeoutId = setTimeout(() => {
+      this.success = false;
+      this.error = '';
+      this.warning = '';
+      this.messageTimeoutId = null;
+    }, this.messageTimeout);
+  }
+
   get f() {
     return this.graphForm.controls;
   }
-  // Add this computed property in your component class
+
   get deleteConfirmationMessage(): string {
     return `Are you sure you want to delete the graph "${this.graphToDelete?.name || ''}"?`;
   }
@@ -77,17 +120,17 @@ export class GraphManagerComponent implements OnInit {
         this.loading = false;
 
         if (data.length === 0) {
-          this.warning = 'No graphs available. Create your first graph to get started.';
+          this.showMessageWithTimeout('warning', 'No graphs available. Create your first graph to get started.');
         }
       },
       error: (err: HttpErrorResponse) => {
         console.error('Error loading graphs:', err); // Debug logging
         this.loading = false;
         if (err.status === 404) {
-          this.warning = 'No graphs found. Create your first graph to get started.';
+          this.showMessageWithTimeout('warning', 'No graphs found. Create your first graph to get started.');
           this.graphs = [];
         } else {
-          this.error = `Failed to load graphs: ${err.message}`;
+          this.showMessageWithTimeout('error', `Failed to load graphs: ${err.message}`);
         }
       }
     });
@@ -95,6 +138,8 @@ export class GraphManagerComponent implements OnInit {
 
   onSubmit(): void {
     this.submitted = true;
+
+    // Reset messages
     this.success = false;
     this.error = '';
     this.warning = '';
@@ -113,8 +158,10 @@ export class GraphManagerComponent implements OnInit {
       .subscribe({
         next: (response) => {
           console.log('Graph created successfully:', response);
-          this.success = true;
           this.resetForm();
+
+          // Use the timeout method for success message
+          this.showMessageWithTimeout('success');
 
           // Add a small delay before reloading the graph list
           // This gives the backend time to complete any async operations
@@ -129,18 +176,21 @@ export class GraphManagerComponent implements OnInit {
           // Detailed error logging
           console.error('Error creating graph:', error);
 
+          let errorMessage = '';
           if (error.status === 500) {
             // Extract and display the server error message if available
             const serverError = error.error && typeof error.error === 'string'
               ? error.error
               : (error.error?.message || 'Unknown server error');
 
-            this.error = `Server error (500): ${serverError}`;
+            errorMessage = `Server error (500): ${serverError}`;
           } else if (error.status === 400) {
-            this.error = `Bad request: ${error.error || 'Invalid input data'}`;
+            errorMessage = `Bad request: ${error.error || 'Invalid input data'}`;
           } else {
-            this.error = error.message || 'An error occurred while creating the graph.';
+            errorMessage = error.message || 'An error occurred while creating the graph.';
           }
+
+          this.showMessageWithTimeout('error', errorMessage);
         }
       });
   }
@@ -155,7 +205,7 @@ export class GraphManagerComponent implements OnInit {
   // Initialize delete graph process
   initiateDeleteGraph(id: string | undefined, name: string | undefined): void {
     if (!id) {
-      this.error = 'Cannot delete graph: missing ID';
+      this.showMessageWithTimeout('error', 'Cannot delete graph: missing ID');
       return;
     }
 
@@ -179,16 +229,17 @@ export class GraphManagerComponent implements OnInit {
           this.loadGraphs();
           this.graphService.notifyGraphDeleted();
           this.resetDeleteState();
+          this.showMessageWithTimeout('success');
         }, 500);
       },
       error: (err: HttpErrorResponse) => {
         this.deleteInProgress = false;
         if (err.status === 404) {
-          this.warning = 'Graph not found or already deleted';
+          this.showMessageWithTimeout('warning', 'Graph not found or already deleted');
           this.loadGraphs();
           this.resetDeleteState();
         } else {
-          this.error = `Failed to delete graph: ${err.message}`;
+          this.showMessageWithTimeout('error', `Failed to delete graph: ${err.message}`);
           console.error('Error deleting graph:', err);
           this.resetDeleteState();
         }
@@ -210,7 +261,7 @@ export class GraphManagerComponent implements OnInit {
 
   viewGraph(graph: Graph): void {
     if (!graph || !graph.id) {
-      this.error = 'Cannot view graph: invalid graph data';
+      this.showMessageWithTimeout('error', 'Cannot view graph: invalid graph data');
       return;
     }
     // Set current graph first
@@ -230,7 +281,7 @@ export class GraphManagerComponent implements OnInit {
 
   exportGraph(graph: Graph): void {
     if (!graph || !graph.id) {
-      this.error = 'Cannot export: invalid graph data';
+      this.showMessageWithTimeout('error', 'Cannot export: invalid graph data');
       return;
     }
 
@@ -247,24 +298,28 @@ export class GraphManagerComponent implements OnInit {
         this.importInProgress = false;
         this.showImportModal = false;
 
-        // Show success message
-        this.success = true;
+        // Show success message with timeout
+        this.showMessageWithTimeout('success');
+
+        // Reload graphs
         setTimeout(() => {
           this.loadGraphs();
-          this.success = false;
         }, 500);
       },
       error: (error: HttpErrorResponse) => {
         this.importInProgress = false;
         console.error('Error importing graph:', error);
 
+        let errorMessage = '';
         if (error.status === 400) {
-          this.importError = `Invalid import file: ${error.error}`;
+          errorMessage = `Invalid import file: ${error.error}`;
         } else if (error.status === 500) {
-          this.importError = `Server error: ${error.error}`;
+          errorMessage = `Server error: ${error.error}`;
         } else {
-          this.importError = error.message || 'Failed to import graph';
+          errorMessage = error.message || 'Failed to import graph';
         }
+
+        this.importError = errorMessage;
       }
     });
   }
@@ -272,5 +327,5 @@ export class GraphManagerComponent implements OnInit {
   cancelImport(): void {
     this.showImportModal = false;
     this.importError = '';
-  }  
+  }
 }

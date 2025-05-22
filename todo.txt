@@ -1,11 +1,8 @@
  
 Bulking operations for gremlin graph insert/delete nodes and edges. 
-Import / Export Json Files for graph / edge / nodes that can be bulked by graph 
+
 Import Fusion DataModels.gz.cs 
 Export Image from cytoscape png? jpg? 
-Zoom Controls for cytoscape 
-
-Components for Import/Export and Also maybe some stuff around NodeTypes/EdgeType creation / edit 
 
 Cleanup
 Remove Terraform just use CICD for now
