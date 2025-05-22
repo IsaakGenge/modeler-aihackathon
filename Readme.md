@@ -28,55 +28,42 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
 
 ## Features
 
-### Core Graph Database Technology
-- **Complete Graph Management** with full CRUD operations for nodes and edges
-- **Persistent Storage** via Azure Cosmos DB with Gremlin API support
-- **RESTful API** for programmatic access to all graph operations
-- **Gremlin Query Support** for advanced graph traversal and analysis
+### Graph Management
+- Create, view, update, and delete graphs.
+- Import and export graph data in JSON format.
+- Generate graphs using predefined strategies.
 
-### Advanced Graph Generation
-- **Intelligent Plant Simulation Engine** 
-  - Creates realistic industrial plant topologies with boilers, pumps, valves, and more
-  - Automatically establishes logical process flows and control relationships
-  - Simulates monitoring systems and sensor integrations
-- **Versatile Graph Strategies**
-  - Random Graph - For general-purpose network modeling
-  - Star Graph - Hub-and-spoke structures for centralized systems
-  - Chain Graph - Linear sequential processes and workflows
+### Node and Edge Management
+- Add, edit, and delete nodes and edges.
+- Support for various node types (e.g., Plant, Random, Star, Chain).
+- Support for various edge types (e.g., FlowTo, ConnectedTo, Related).
 
-### Rich Type System
-- **Specialized Node Types**
-  - Industrial components (boilers, pumps, valves, etc.)
-  - Generic entities (person, place, thing, concept)
-  - Structural elements (hub, satellite, chain)
-- **Semantic Edge Types**
-  - Industrial relationships (flowTo, controls, monitors, heats, cools)
-  - Generic connections (related, belongs, contains, depends)
-  - Sequential links (next)
+### Graph Visualization
+- Interactive graph visualization using Cytoscape.js.
+- Drag-and-drop functionality for nodes and edges.
+- Real-time updates to the graph layout.
 
-### Interactive Visualization
-- **Cytoscape-powered Graph Rendering** with multiple layout algorithms:
-  - Hierarchical (breadthfirst)
-  - Circular
-  - Grid
-  - Concentric
-  - Force-directed (cose)
-  - Random
-- **Intelligent Visual Styling** based on node and edge types
-- **Interactive Graph Controls** for zooming, panning, and reorganizing
-- **Dark Mode Support** for comfortable viewing
+### Graph Generation Strategies
+- Predefined strategies like `PlantGraphStrategy` for industrial simulations.
+- Customizable graph generation logic.
 
-### Developer-Friendly API
-- **Comprehensive Swagger Documentation** with interactive testing
-- **TypeScript-ready Models** for frontend integration
-- **XML-documented Endpoints** for IntelliSense and documentation generation
-- **.NET 9 + Aspire** architecture for modern, distributed applications
+### API Integration
+- RESTful API for managing nodes, edges, and graph types.
+- Swagger/OpenAPI documentation for easy API exploration and testing.
 
-### User Interface
-- **Graph Manager Component** for intuitive graph interaction
-- **Node and Edge Creation Tools** with type selection
-- **Responsive Layout** that adapts to different screen sizes
-- **View Controls** for customizing the graph presentation
+### Dark Mode Support
+- Fully responsive UI with light and dark themes.
+
+### Embedded Mode
+- Compact layout for embedding the application in other platforms.
+
+### Cosmos DB Integration
+- Backend powered by Azure Cosmos DB for scalable graph storage.
+
+### Developer-Friendly Features
+- Comprehensive project structure with separate frontend and backend.
+- Built-in support for Swagger documentation.
+- Easy-to-use Angular-based frontend.
 
 ## Architecture
 
@@ -158,11 +145,6 @@ The application uses the standard .NET configuration system with the Options pat
    - For production deployments, use environment variables or secrets management
    - The connection values shown above are for the local Cosmos DB Emulator
 
-4. **Environment Variables**
-
-   Set the environment variable `ASPIRE_ALLOW_UNSECURED_TRANSPORT=true` for local development:
-   - In Windows, run Command Prompt as Administrator and enter:
-      setx ASPIRE_ALLOW_UNSECURED_TRANSPORT true
    
 ### Running the Application
 
@@ -171,23 +153,61 @@ The application uses the standard .NET configuration system with the Options pat
 3. Ensure the Cosmos DB Emulator is running (check the notification icon in your system tray)
 4. Run the application using .NET Aspire:  dotnet run --project Backend/ModelerAPI.AppHost
 
-
-
 ## API Reference
 
+### Graph Endpoints
+- **GET /api/graph**  
+  Retrieve all graphs.
+- 
+- **GET /api/graph/{id}**  
+  Retrieve a specific graph by ID.
+- 
+- **POST /api/graph**  
+  Create a new graph.  
+  Example payload:  { "name": "New Graph" }  
+- 
+- **PUT /api/graph/{id}**  
+  Update an existing graph by ID.  
+  Example payload:  { "name": "Updated Graph Name" }
+
+- **DELETE /api/graph/{id}**  
+  Delete a graph by ID, including all associated nodes and edges.
+
+- **GET /api/graph/generate**  
+  Generate a new graph using a specified strategy.  
+  Query parameters:  
+  - `strategy` (e.g., `random`, `tree`, `star`, `chain`, `plant`, `complete`)  
+  - `nodeCount` (default: 10)  
+  - `name` (optional)
+  
+- **GET /api/graph/strategies**  
+  Retrieve all available graph generation strategies.  
+
 ### Node Endpoints
+- **GET /api/node**  
+  Retrieve all nodes. Optionally filter by `graphId`.
 
-- **GET /api/node** - Retrieve all nodes
-- **POST /api/node** - Create a new node
-- { "name": "Example Node", "nodeType": "custom" }
-- **PUT /api/node/{id}** - Update an existing node
-- **DELETE /api/node/{id}** - Delete a node
+- **POST /api/node**  
+  Create a new node.  
+  Example payload:  { "name": "Example Node", "nodeType": "custom" }
 
+- **PUT /api/node/{id}**  
+  Update an existing node by ID.  
+  Example payload:  { "id": "nodeId", "name": "Updated Node", "nodeType": "custom" }  
+
+- **DELETE /api/node/{id}**  
+  Delete a node by ID.
+
+- **POST /api/node/positions**  
+  Batch update node positions for a specific graph.  
+  Example payload:  { "graphId": "graphId", "positions": { "nodeId1": { "x": 100, "y": 200 }, "nodeId2": { "x": 300, "y": 400 } } }
+  
 ### Edge Endpoints
-
 - **GET /api/edge** - Retrieve all edges
+
 - **POST /api/edge** - Create a new edge between nodes
-- { "source": "nodeId1", "target": "nodeId2", "edgeType": "related" }
+  Update an existing edge by ID.  
+  Example payload:{ "source": "nodeId1", "target": "nodeId2", "edgeType": "related" }
   
 - **PUT /api/edge/{id}** - Update an existing edge
 - **DELETE /api/edge/{id}** - Delete an edge
@@ -266,6 +286,7 @@ To add a new feature:
 2. Add necessary methods to the `ICosmosService` interface
 3. Implement the methods in the `CosmosService` class
 4. Create or update controllers to expose the functionality via API endpoints
+5. Create or update frontend components to wrap functionality for users. 
 
   
 
