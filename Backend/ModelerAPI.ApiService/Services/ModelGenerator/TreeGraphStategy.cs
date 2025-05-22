@@ -3,7 +3,8 @@ using ModelerAPI.ApiService.Models;
 namespace ModelerAPI.ApiService.Services.ModelGenerator
 {
     /// <summary>
-    /// Tree graph generation strategy that creates a hierarchical tree structure with maximum 5 levels of depth
+    /// Tree graph generation strategy that creates a hierarchical Christmas tree structure 
+    /// with a single root and predominantly leaf nodes by level 3
     /// </summary>
     public class TreeGraphStrategy : IGraphGenerationStrategy
     {
@@ -47,11 +48,11 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
 
             // All nodes in the graph
             var nodes = new List<Node>();
-            
-            // Create the root node
+
+            // Create the root node (star at the top of the Christmas tree)
             var rootNode = new Node
             {
-                Name = "Root",
+                Name = "Tree Top",
                 NodeType = "Root",
                 GraphId = graphId,
                 CreatedAt = DateTime.UtcNow,
@@ -67,82 +68,86 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
             nodes.Add(createdRootNode);
 
             // Keep track of nodes at each level for building the tree
-            // We'll use this to find potential parent nodes when creating new nodes
             var nodesByLevel = new Dictionary<int, List<Node>>
             {
                 { 1, new List<Node> { createdRootNode } }
             };
 
-            // Create remaining nodes
-            for (int i = 1; i < nodeCount; i++)
+            // Define the Christmas tree shape with fewer nodes at top, more in middle, tapering at bottom
+            var nodesPerLevel = CalculateNodesPerLevel(nodeCount);
+
+            // Track the total nodes created so far
+            int nodesCreated = 1; // starting with the root
+
+            // Create nodes level by level to achieve the Christmas tree shape
+            for (int level = 2; level <= MaxDepth && nodesCreated < nodeCount; level++)
             {
-                // Determine node level (depth) - ensuring we don't exceed MaxDepth
-                // As we approach nodeCount, increase the likelihood of deeper nodes
-                int maxPossibleLevel = Math.Min(MaxDepth, nodes.Count > 1 ? GetMaxDepth(nodes) + 1 : 2);
-                
-                // Choose a level for the new node - weighted toward deeper levels as we progress
-                int targetLevel;
-                double completionRatio = (double)i / nodeCount;
-                
-                if (completionRatio < 0.3)
-                    targetLevel = _random.Next(2, Math.Min(3, maxPossibleLevel + 1));
-                else if (completionRatio < 0.7)
-                    targetLevel = _random.Next(2, Math.Min(4, maxPossibleLevel + 1));
-                else
-                    targetLevel = _random.Next(2, maxPossibleLevel + 1);
+                int nodesToCreateAtLevel = Math.Min(nodesPerLevel[level], nodeCount - nodesCreated);
 
-                // Find a parent from the level above
-                int parentLevel = targetLevel - 1;
-                if (!nodesByLevel.ContainsKey(parentLevel) || nodesByLevel[parentLevel].Count == 0)
+                for (int i = 0; i < nodesToCreateAtLevel; i++)
                 {
-                    parentLevel = nodesByLevel.Keys.Where(k => k < targetLevel)
-                                             .OrderByDescending(k => k)
-                                             .FirstOrDefault();
-                }
+                    // Find a parent from the level above
+                    int parentLevel = level - 1;
 
-                // If we can't find a suitable parent level, default to using the root
-                if (parentLevel <= 0 || !nodesByLevel.ContainsKey(parentLevel))
-                {
-                    parentLevel = 1; // Root level
-                }
-
-                // Select a random parent from the parent level
-                Node parentNode = nodesByLevel[parentLevel][_random.Next(nodesByLevel[parentLevel].Count)];
-
-                // Create the new node
-                string nodeType = targetLevel == MaxDepth 
-                    ? "Leaf" // Nodes at max depth are leaves
-                    : _nodeTypes[_random.Next(1, _nodeTypes.Length)]; // Skip the "Root" type
-
-                var node = new Node
-                {
-                    Name = $"{nodeType} {i}",
-                    NodeType = nodeType,
-                    GraphId = graphId,
-                    CreatedAt = DateTime.UtcNow,
-                    Properties = new Dictionary<string, object>
+                    // If we somehow don't have parents at the previous level, find the nearest level with parents
+                    if (!nodesByLevel.ContainsKey(parentLevel) || nodesByLevel[parentLevel].Count == 0)
                     {
-                        { "Depth", targetLevel },
-                        { "ParentId", parentNode.Id },
-                        { "IsLeaf", targetLevel == MaxDepth },
-                        { "CreatedDate", DateTime.UtcNow.ToString("yyyy-MM-dd") }
+                        parentLevel = nodesByLevel.Keys.Where(k => k < level)
+                                                 .OrderByDescending(k => k)
+                                                 .FirstOrDefault();
                     }
-                };
 
-                var createdNode = await _cosmosService.CreateNodeAsync(node);
-                nodes.Add(createdNode);
+                    // Select a parent - ensure even distribution of children
+                    Node parentNode;
+                    if (level == 2) // First level below root always connects to root
+                    {
+                        parentNode = nodesByLevel[1][0]; // Root node
+                    }
+                    else
+                    {
+                        // Select parent from previous level based on having fewer children
+                        var possibleParents = nodesByLevel[parentLevel];
+                        parentNode = possibleParents[i % possibleParents.Count];
+                    }
 
-                // Add the node to the appropriate level collection
-                if (!nodesByLevel.ContainsKey(targetLevel))
-                {
-                    nodesByLevel[targetLevel] = new List<Node>();
+                    // Determine node type - more likely to be a leaf as we go deeper
+                    bool isLeaf = level >= 3 && (_random.NextDouble() > 0.3 || level == MaxDepth);
+                    string nodeType = isLeaf ? "Leaf" : "Branch";
+
+                    var node = new Node
+                    {
+                        Name = $"{nodeType} {nodesCreated}",
+                        NodeType = nodeType,
+                        GraphId = graphId,
+                        CreatedAt = DateTime.UtcNow,
+                        Properties = new Dictionary<string, object>
+                        {
+                            { "Depth", level },
+                            { "ParentId", parentNode.Id },
+                            { "IsLeaf", isLeaf },
+                            { "CreatedDate", DateTime.UtcNow.ToString("yyyy-MM-dd") }
+                        }
+                    };
+
+                    var createdNode = await _cosmosService.CreateNodeAsync(node);
+                    nodes.Add(createdNode);
+                    nodesCreated++;
+
+                    // Add the node to the appropriate level collection
+                    if (!nodesByLevel.ContainsKey(level))
+                    {
+                        nodesByLevel[level] = new List<Node>();
+                    }
+                    nodesByLevel[level].Add(createdNode);
+
+                    if (nodesCreated >= nodeCount)
+                        break;
                 }
-                nodesByLevel[targetLevel].Add(createdNode);
             }
 
             // Create edges to connect the nodes in a tree structure
             var edges = new List<Edge>();
-            
+
             foreach (var node in nodes.Where(n => n.NodeType != "Root"))
             {
                 if (node.Properties.TryGetValue("ParentId", out var parentIdObj) && parentIdObj is string parentId)
@@ -152,7 +157,7 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
                     {
                         // Determine appropriate edge type based on parent-child relationship
                         string edgeType = GetAppropriateEdgeType(parent.NodeType, node.NodeType);
-                        
+
                         var edge = new Edge
                         {
                             Source = parent.Id,
@@ -179,33 +184,69 @@ namespace ModelerAPI.ApiService.Services.ModelGenerator
         }
 
         /// <summary>
-        /// Gets the maximum depth level present in the current set of nodes
+        /// Calculates how many nodes should be at each level to form a Christmas tree shape
         /// </summary>
-        private int GetMaxDepth(List<Node> nodes)
+        private Dictionary<int, int> CalculateNodesPerLevel(int totalNodes)
         {
-            int maxDepth = 1; // Start with root level
-            
-            foreach (var node in nodes)
-            {
-                if (node.Properties.TryGetValue("Depth", out var depthObj) && depthObj is int depth)
-                {
-                    maxDepth = Math.Max(maxDepth, depth);
-                }
-            }
-            
-            return maxDepth;
-        }
+            var nodesPerLevel = new Dictionary<int, int>();
+
+            // Root is at level 1
+            nodesPerLevel[1] = 1;
+            int remainingNodes = totalNodes - 1;
+
+            if (remainingNodes <= 0)
+                return nodesPerLevel;
+
+            // For a Christmas tree shape:
+            // - Level 2: Few branches (near the top of the tree)
+            // - Level 3: More branches (middle of the tree, widest part)
+            // - Level 4: Fewer branches than level 3 (tapering)
+            // - Level 5: Least branches (bottom of the tree)
+
+            // Calculate percentages for each level
+            double level2Percentage = 0.15; // 15% at level 2
+            double level3Percentage = 0.45; // 45% at level 3 (bulk of the tree)
+            double level4Percentage = 0.30; // 30% at level 4
+            double level5Percentage = 0.10; // 10% at level 5
+
+            // Ensure we have at least 2 nodes at level 2
+            nodesPerLevel[2] = Math.Max(2, (int)(remainingNodes * level2Percentage));
+            remainingNodes -= nodesPerLevel[2];
+
+            if (remainingNodes <= 0)
+                return nodesPerLevel;
+
+            // Calculate nodes for remaining levels
+            double remainingPercentageTotal = level3Percentage + level4Percentage + level5Percentage;
+
+            // Level 3 - the widest part of the tree
+            nodesPerLevel[3] = (int)(totalNodes * level3Percentage / remainingPercentageTotal * remainingNodes);
+            remainingNodes -= nodesPerLevel[3];
+
+            if (remainingNodes <= 0)
+                return nodesPerLevel;
+
+            // Level 4 - tapering
+            nodesPerLevel[4] = (int)(totalNodes * level4Percentage / (level4Percentage + level5Percentage) * remainingNodes);
+            remainingNodes -= nodesPerLevel[4];
+
+            // Level 5 - bottom of the tree
+            nodesPerLevel[5] = Math.Max(0, remainingNodes);
+
+            return nodesPerLevel;
+        }        
 
         /// <summary>
         /// Determines the appropriate edge type based on the parent and child node types
         /// </summary>
         private string GetAppropriateEdgeType(string parentType, string childType)
         {
-            // Select semantic edge types based on parent-child relationship
-            if (parentType == "Root" || parentType == "Container" || parentType == "Group")
+            if (parentType == "Root")
                 return "Contains";
-            else if (childType == "Leaf")
+            else if (parentType == "Branch" && childType == "Leaf")
                 return "ParentOf";
+            else if (parentType == "Branch" && childType == "Branch")
+                return "Contains";
             else
                 return _edgeTypes[_random.Next(_edgeTypes.Length)];
         }
