@@ -361,30 +361,43 @@ export class CytoscapeLayoutService {
     // Calculate optimal radius based on container size and node count
     const minDimension = Math.min(containerWidth, containerHeight);
 
-    // Base radius on node count and container size
+    // Reduce radius to create tighter circle layouts with less node spread
+    // Previous values were 0.3, 0.25, 0.22, 0.2
     let radius: number;
-
     if (nodeCount <= 5) {
-      // Small graphs get a proportionally larger radius
-      radius = minDimension * 0.3;
+      radius = minDimension * 0.25; // Reduced from 0.3
     } else if (nodeCount <= 15) {
-      radius = minDimension * 0.25;
+      radius = minDimension * 0.2; // Reduced from 0.25
     } else if (nodeCount <= 30) {
-      radius = minDimension * 0.22;
+      radius = minDimension * 0.18; // Reduced from 0.22
     } else {
-      radius = minDimension * 0.2;
+      radius = minDimension * 0.16; // Reduced from 0.2
     }
 
     // Set the calculated radius
     layoutOptions.radius = radius;
 
-    // Ensure the circle fits well within the container by setting boundingBox
-    layoutOptions.boundingBox = this.calculateStandardBoundingBox(
+    // Create a smaller, more compact bounding box to reduce spread
+    // Use 75% of the standard bounding box
+    const standardBox = this.calculateStandardBoundingBox(
       nodeCount,
       containerWidth,
       containerHeight,
       containerAspectRatio
     );
+
+    layoutOptions.boundingBox = {
+      x1: 0,
+      y1: 0,
+      x2: Math.round(standardBox.x2 * 0.8), // Use 80% of standard width
+      y2: Math.round(standardBox.y2 * 0.8)  // Use 80% of standard height
+    };
+
+    // Increase spacing factor to prevent node overlap with larger nodes
+    layoutOptions.spacingFactor = 1.2;
+
+    // Ensure this is true to make nodes appear larger
+    layoutOptions.avoidOverlap = true;
   }
 
   /**
@@ -445,39 +458,57 @@ export class CytoscapeLayoutService {
     containerAspectRatio: number
   ): void {
     // Adjust minimum spacing based on container size
+    // Reduce spacing to create tighter concentric circles
     const minDimension = Math.min(containerWidth, containerHeight);
 
+    // Previous values were 0.15, 0.1, 0.07, 0.05
     if (nodeCount <= 5) {
-      layoutOptions.minNodeSpacing = minDimension * 0.15;
+      layoutOptions.minNodeSpacing = minDimension * 0.12; // Reduced from 0.15
     } else if (nodeCount <= 15) {
-      layoutOptions.minNodeSpacing = minDimension * 0.1;
+      layoutOptions.minNodeSpacing = minDimension * 0.08; // Reduced from 0.1
     } else if (nodeCount <= 30) {
-      layoutOptions.minNodeSpacing = minDimension * 0.07;
+      layoutOptions.minNodeSpacing = minDimension * 0.05; // Reduced from 0.07
     } else {
-      layoutOptions.minNodeSpacing = minDimension * 0.05;
+      layoutOptions.minNodeSpacing = minDimension * 0.03; // Reduced from 0.05
     }
 
     // Set concentric specific options
     layoutOptions.equidistant = true; // Better spacing between levels
 
-    // Adjust start angle and sweep based on container aspect ratio
-    if (containerAspectRatio > 1.3) {
-      // For wider containers, use a horizontal elliptical layout
-      layoutOptions.startAngle = Math.PI / 2; // Start from top
-      layoutOptions.sweep = Math.PI * 1.5;   // Cover more horizontal space
-    } else if (containerAspectRatio < 0.7) {
-      // For taller containers, use a vertical elliptical layout
-      layoutOptions.startAngle = 0;         // Start from right
-      layoutOptions.sweep = Math.PI * 1.5;  // Cover more vertical space
-    }
-
-    // Set bounding box
-    layoutOptions.boundingBox = this.calculateStandardBoundingBox(
+    // Create a smaller, more compact bounding box (80% of standard)
+    const standardBox = this.calculateStandardBoundingBox(
       nodeCount,
       containerWidth,
       containerHeight,
       containerAspectRatio
     );
+
+    layoutOptions.boundingBox = {
+      x1: 0,
+      y1: 0,
+      x2: Math.round(standardBox.x2 * 0.8),
+      y2: Math.round(standardBox.y2 * 0.8)
+    };
+
+    // Adjust sweep to create a more complete circle when appropriate
+    if (nodeCount > 10) {
+      // For larger graphs, use full 360 degrees (2π)
+      layoutOptions.sweep = Math.PI * 2;
+    } else if (containerAspectRatio > 1.3) {
+      // For wider containers, use a horizontal elliptical layout
+      layoutOptions.startAngle = Math.PI / 2; // Start from top
+      layoutOptions.sweep = Math.PI * 1.6;   // More horizontal coverage
+    } else if (containerAspectRatio < 0.7) {
+      // For taller containers, use a vertical elliptical layout
+      layoutOptions.startAngle = 0;         // Start from right
+      layoutOptions.sweep = Math.PI * 1.6;  // More vertical coverage
+    } else {
+      // For balanced containers, use full circle
+      layoutOptions.sweep = Math.PI * 2;    // Full circle for better distribution
+    }
+
+    // Ensure this is true to make nodes appear larger
+    layoutOptions.avoidOverlap = true;
   }
 
   /**
@@ -587,21 +618,21 @@ export class CytoscapeLayoutService {
    */
   private getAdaptiveSpacing(nodeCount: number): { spacingFactor: number, minNodeSpacing: number } {
     // For smaller graphs, use larger spacing to avoid nodes appearing too small
+    // Reduced spacing factors to make nodes appear larger relative to spacing
     if (nodeCount <= 5) {
-      return { spacingFactor: 2.5, minNodeSpacing: 150 };
+      return { spacingFactor: 2.0, minNodeSpacing: 120 }; // Reduced from 2.5/150
     } else if (nodeCount <= 10) {
-      return { spacingFactor: 2.0, minNodeSpacing: 120 };
+      return { spacingFactor: 1.6, minNodeSpacing: 100 }; // Reduced from 2.0/120
     } else if (nodeCount <= 30) {
-      return { spacingFactor: 1.8, minNodeSpacing: 100 };
+      return { spacingFactor: 1.4, minNodeSpacing: 80 };  // Reduced from 1.8/100
     } else if (nodeCount <= 50) {
-      return { spacingFactor: 1.5, minNodeSpacing: 80 };
+      return { spacingFactor: 1.2, minNodeSpacing: 60 };  // Reduced from 1.5/80
     } else if (nodeCount <= 100) {
-      return { spacingFactor: 1.3, minNodeSpacing: 60 };
+      return { spacingFactor: 1.0, minNodeSpacing: 50 };  // Reduced from 1.3/60
     } else {
-      return { spacingFactor: 1.0, minNodeSpacing: 40 };
+      return { spacingFactor: 0.8, minNodeSpacing: 35 };  // Reduced from 1.0/40
     }
   }
-
   /**
    * Calculate adaptive padding based on node count
    */
