@@ -7,13 +7,24 @@
   right: 0;
   transform: translateY(-50%);
   width: 300px;
-  z-index: 1000;
+  z-index: 10; /* Reduced from 1000 to a more reasonable value */
   transition: all 0.3s ease;
+  pointer-events: auto;
 }
 
+/* When collapsed, the host should not capture any pointer events */
 :host(.collapsed) {
-  transform: translate(100%, -50%); /* Changed: Remove the calc and 32px offset */
+  transform: translate(100%, -50%);
+  pointer-events: none !important; /* Force disable pointer events */
+  width: 32px;
+  z-index: -1; /* When collapsed, put behind other elements */
 }
+
+  /* Ensure the toggle button is always clickable */
+  :host(.collapsed) .tools-panel-toggle {
+    pointer-events: auto !important;
+    z-index: 11; /* Keep toggle button above other elements */
+  }
 
 /* Tools panel container */
 .tools-panel-container {
@@ -24,17 +35,19 @@
   transition: transform 0.3s ease;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   overflow: visible;
+  pointer-events: auto; /* Explicitly set pointer-events */
 }
 
-/* Position variations - only support right position consistently */
+/* Position variations */
 .position-right {
   right: 0;
   transform: translateX(0);
 }
 
   .position-right.collapsed {
-    transform: translateX(100%); /* Changed: Remove the calc and 32px offset */
+    transform: translateX(100%);
     box-shadow: none;
+    pointer-events: none; /* Disable pointer events when collapsed */
   }
 
 /* Tools panel toggle button */
@@ -43,27 +56,26 @@
   width: 32px;
   height: 100px;
   border-radius: 8px 0 0 8px;
-  background-color: var(--accent); /* Changed: Use the green accent color */
-  color: white; /* Changed: Better contrast with green background */
-  border: 1px solid var(--accent-dark); /* Changed: Use darker accent for border */
+  background-color: var(--accent);
+  color: white;
+  border: 1px solid var(--accent-dark);
   border-right: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 101;
+  z-index: 11; /* Slightly higher than host */
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  pointer-events: auto;
-  visibility: visible;
   font-size: 1rem;
   left: -32px;
   top: 50%;
   transform: translateY(-50%);
+  pointer-events: auto !important;
 }
 
   .tools-panel-toggle:hover {
-    background-color: var(--accent-light); /* Changed: Use lighter accent for hover */
+    background-color: var(--accent-light);
     color: white;
   }
 
@@ -76,12 +88,13 @@
   height: auto;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
+  pointer-events: auto; /* Explicitly set pointer-events */
 }
 
 .tools-panel-container.collapsed .tools-panel {
   opacity: 0;
   visibility: hidden;
-  pointer-events: none;
+  pointer-events: none !important; /* Force disable pointer events */
 }
 
 /***************************************
@@ -124,15 +137,15 @@
   border-bottom-right-radius: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
   position: relative;
-  z-index: 1; /* Establish a stacking context */
-  overflow: visible !important; /* Override the auto overflow to allow dropdowns */
+  z-index: 1;
+  overflow: visible !important;
 }
 
   /* Fix for dropdowns and popovers inside the panel */
   .tab-content .dropdown-menu,
   .tab-content .popover,
   .tab-content .tooltip {
-    z-index: 1060 !important; /* Higher z-index to ensure visibility */
+    z-index: 1060 !important;
   }
 
   /* Only apply scrolling to immediate children of tab-content */
@@ -156,7 +169,14 @@
 
   :host(.collapsed) {
     transform: translateY(calc(100% - 32px));
+    width: 100%; /* Restore width for mobile view */
+    pointer-events: none !important; /* Force disable pointer events */
   }
+
+    /* Ensure the toggle button remains clickable in responsive mode */
+    :host(.collapsed) .tools-panel-toggle {
+      pointer-events: auto !important; /* Force enable pointer events */
+    }
 
   .tools-panel-container {
     width: 100%;
@@ -165,7 +185,12 @@
 
   .position-right.collapsed {
     transform: translateY(calc(100% - 32px));
+    pointer-events: none; /* Disable pointer events when collapsed */
   }
+
+    .position-right.collapsed .tools-panel-toggle {
+      pointer-events: auto !important; /* Force enable pointer events */
+    }
 
   .tools-panel-toggle {
     width: 100px;
@@ -176,6 +201,7 @@
     transform: translateX(-50%);
     border: 1px solid var(--border);
     border-bottom: none;
+    pointer-events: auto !important; /* Force enable pointer events */
   }
 
   .tools-panel {
