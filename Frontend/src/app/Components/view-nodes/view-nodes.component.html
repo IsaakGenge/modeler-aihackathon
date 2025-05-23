@@ -71,10 +71,7 @@
                     [title]="prop.key + ': ' + prop.value">
                   <span class="property-key">{{ prop.key }}:</span>
                   <span class="property-value">{{ prop.value }}</span>
-                </li>
-                <li *ngIf="getPropertyCount(node.properties) > 3" class="more-properties">
-                  <i class="bi bi-three-dots"></i> {{ getPropertyCount(node.properties) - 3 }} more
-                </li>
+                </li>                
               </ul>
             </div>
           </div>

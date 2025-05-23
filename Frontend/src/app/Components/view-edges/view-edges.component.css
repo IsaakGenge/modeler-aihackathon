@@ -154,8 +154,8 @@
 
 .edge-id {
   font-size: 0.7rem;
-  color: var(--text-secondary);
-  opacity: 0.8;
+  color: var(--text-secondary) !important; /* Use !important to override Bootstrap's text-muted */
+  opacity: 1; /* Remove opacity to ensure theme color is respected */
   text-align: center;
 }
 
@@ -165,9 +165,12 @@
   font-size: 0.75rem;
   border-top: 1px solid var(--border);
   background-color: var(--bg-elevated);
-  color: var(--text-secondary);
   text-align: center;
 }
+
+  .edge-footer .text-muted {
+    color: var(--text-secondary) !important;
+  }
 
 /* Empty state styling */
 .empty-state {
