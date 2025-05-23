@@ -1,20 +1,21 @@
-/* Main Container Styles */
-.container-fluid {
-  padding: 1rem !important;
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
-  box-sizing: border-box;
-  transition: width 0.1s ease; /* Smooth transition for width change */
-}
-
-/* Core scrollbar variables */
+/* Base Structure and Variables
+   ---------------------------------------- */
 :root {
   --scrollbar-width: 0px;
   --scroll-position: 0px;
 }
 
-/* Card Improvements */
+.container-fluid {
+  padding: 1rem !important;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  transition: width 0.1s ease;
+}
+
+/* Card Components
+   ---------------------------------------- */
 .card {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -28,7 +29,6 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   }
 
-/* Card Header with more emphasis */
 .card-header {
   background-color: var(--bg-tertiary);
   transition: background-color 0.3s ease;
@@ -46,7 +46,6 @@
     font-size: 1.1rem;
   }
 
-/* Enhanced Card Body Styles */
 .card-body {
   transition: max-height 0.3s ease-out, opacity 0.3s ease, padding 0.3s ease;
   padding: 1.25rem;
@@ -63,6 +62,8 @@
     opacity: 0;
   }
 
+/* Graph Header & Picker
+   ---------------------------------------- */
 .graph-header {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border);
@@ -71,7 +72,6 @@
   transition: background-color 0.3s ease;
 }
 
-/* Graph Picker Row */
 .graph-picker-row {
   display: flex;
   align-items: center;
@@ -86,7 +86,8 @@ app-graph-picker {
   padding: 5px;
 }
 
-/* Collapse Toggle Button */
+/* Buttons & Toggles
+   ---------------------------------------- */
 .collapse-toggle {
   width: 32px;
   height: 32px;
@@ -108,30 +109,8 @@ app-graph-picker {
     color: var(--text-highlighted);
   }
 
-/* Creator Panel Styles */
-.creator-panel {
-  height: 100%;
-  padding: 15px;
-  border-radius: 8px;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border);
-  transition: all 0.3s ease;
-}
-
-  .creator-panel:hover {
-    border-color: var(--border-hover);
-  }
-
-  .creator-panel h6 {
-    color: var(--text-primary);
-    font-weight: 600;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    transition: color 0.3s ease, border-color 0.3s ease;
-    margin-bottom: 16px;
-  }
-
-/* Table Styles for Node and Edge Lists */
+/* Table Styles
+   ---------------------------------------- */
 .table-container {
   overflow-x: auto;
   border-radius: 6px;
@@ -164,7 +143,23 @@ table {
     color: var(--text-highlighted);
   }
 
-/* Empty State */
+/* Row Interactions
+   ---------------------------------------- */
+.clickable-row {
+  cursor: pointer;
+}
+
+  .clickable-row:hover {
+    background-color: var(--bg-hover);
+  }
+
+.selected-row {
+  background-color: var(--bg-accent-light) !important;
+  border-left: 3px solid var(--accent);
+}
+
+/* Empty State
+   ---------------------------------------- */
 .empty-state {
   padding: 2rem;
   text-align: center;
@@ -177,7 +172,8 @@ table {
     opacity: 0.6;
   }
 
-/* Sidebar Tools Panel Styles (like view-fancy) */
+/* Tools Panel
+   ---------------------------------------- */
 .tools-panel-container {
   position: fixed;
   top: 90px;
@@ -240,7 +236,8 @@ table {
   pointer-events: none;
 }
 
-/* Navigation Tabs Styles from view-fancy */
+/* Navigation Tabs
+   ---------------------------------------- */
 .nav-tabs {
   border-bottom: 1px solid var(--border);
   background-color: var(--bg-tertiary);
@@ -281,7 +278,8 @@ table {
   max-height: none; /* Remove max-height constraint */
 }
 
-/* Details Panel Styles */
+/* Details Panel
+   ---------------------------------------- */
 .details-panel {
   position: fixed;
   top: 0;
@@ -301,21 +299,57 @@ table {
     right: 0;
   }
 
-/* Make clickable rows in view-nodes and view-edges */
-.clickable-row {
-  cursor: pointer;
+.details-panel-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+  display: none;
+  pointer-events: none;
 }
 
-  .clickable-row:hover {
-    background-color: var(--bg-hover);
+  .details-panel-backdrop.active {
+    display: block;
+    pointer-events: auto;
   }
 
-.selected-row {
-  background-color: var(--bg-accent-light) !important;
-  border-left: 3px solid var(--accent);
+app-details-panel {
+  position: relative;
+  z-index: 1050;
+  pointer-events: none;
 }
 
-/* Modal behavior styles */
+  app-details-panel ::ng-deep .details-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 600px;
+    height: auto;
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.25s ease-out;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    right: auto;
+    z-index: 1050;
+    pointer-events: auto;
+    background-color: var(--bg-secondary);
+  }
+
+    app-details-panel ::ng-deep .details-panel.active {
+      transform: translate(-50%, -50%);
+      right: auto;
+    }
+
+/* Modal Behaviors
+   ---------------------------------------- */
 body.modal-open {
   overflow: hidden !important;
   position: fixed;
@@ -327,28 +361,69 @@ body.modal-open {
 }
 
 body:not(.modal-open) {
-  overflow-y: auto; /* Ensure scrolling is enabled when modal is closed */
+  overflow-y: auto;
 }
 
-  /* Fix for modal spacing */
-  body.modal-open app-details-panel ::ng-deep .details-panel {
-    box-sizing: border-box;
-    /* Adjust the left position to account for scrollbar */
-    left: calc(50% - var(--scrollbar-width)/2);
-    transform: translate(-50%, -50%);
+body.modal-open app-details-panel ::ng-deep .details-panel {
+  box-sizing: border-box;
+  left: calc(50% - var(--scrollbar-width)/2);
+  transform: translate(-50%, -50%);
+}
+
+/* Animations
+   ---------------------------------------- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
 
-/* Responsive adjustments */
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Scrollbar Styling
+   ---------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+  }
+
+/* Responsive Adjustments
+   ---------------------------------------- */
 @media (max-width: 768px) {
-  .creator-panel {
-    margin-bottom: 1rem;
+  /* Details panel adjustments */
+  app-details-panel ::ng-deep .details-panel {
+    width: 95%;
+    max-height: 90vh;
+    max-width: none;
   }
 
-  .details-panel {
-    width: 100%;
-    right: -100%;
-  }
-
+  /* Tools panel adjustments */
   .tools-panel-container {
     position: fixed;
     top: auto;
@@ -377,107 +452,5 @@ body:not(.modal-open) {
 
   .tools-panel-container.collapsed .tools-panel-toggle {
     transform: rotate(180deg);
-  }
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
-  }
-
-/* Details Panel Modal Background (similar to confirmation-modal) */
-.details-panel-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-in;
-  display: none;
-  /* Pointer events manipulation to ensure clicks go through to the modal */
-  pointer-events: none;
-}
-
-  .details-panel-backdrop.active {
-    display: block;
-    pointer-events: auto; /* Only enable pointer events when active */
-  }
-
-/* Override details-panel position to center it like a modal */
-app-details-panel {
-  position: relative; /* Add this to establish a stacking context */
-  z-index: 1050; /* Increase this value to be above the backdrop */
-  pointer-events: none; /* Make the component container transparent to clicks by default */
-}
-
-  app-details-panel ::ng-deep .details-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    max-width: 600px;
-    height: auto;
-    max-height: 80vh;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    animation: scaleIn 0.25s ease-out;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    right: auto; /* Override original right positioning */
-    z-index: 1050; /* Ensure it's higher than the backdrop */
-    pointer-events: auto; /* Make sure the panel itself accepts clicks */
-    background-color: var(--bg-secondary); /* Ensure it has a solid background */
-  }
-
-    app-details-panel ::ng-deep .details-panel.active {
-      transform: translate(-50%, -50%); /* Keep it centered when active */
-      right: auto; /* Ensure right positioning doesn't interfere */
-    }
-
-/* Animation keyframes */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: translate(-50%, -50%) scale(0.9);
-    opacity: 0;
-  }
-
-  to {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-
-/* Responsive adjustments for the modal */
-@media (max-width: 768px) {
-  app-details-panel ::ng-deep .details-panel {
-    width: 95%;
-    max-height: 90vh;
-    max-width: none;
   }
 }
