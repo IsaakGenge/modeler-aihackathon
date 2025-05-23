@@ -107,7 +107,10 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
   // Handle sort change
   onSortChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
+    console.log('Previous sortBy:', this.sortBy);
+    console.log('New selected value:', select.value);
     this.sortBy = select.value;
+    console.log('Updated sortBy:', this.sortBy);
     this.filterNodes();
   }
 

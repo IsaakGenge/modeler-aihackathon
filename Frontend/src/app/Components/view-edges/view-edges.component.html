@@ -30,11 +30,13 @@
         <input type="text" class="form-control border-start-0"
                placeholder="Search connections..."
                (input)="onSearchInput($event)">
-        <select class="form-select" style="max-width: 150px;" (change)="onSortChange($event)">
+        <select class="form-select" style="max-width: 150px;"
+                [value]="sortBy"
+                (change)="onSortChange($event)">
           <option value="sourceTarget">Source → Target</option>
           <option value="edgeType">Type</option>
           <option value="createdAt">Created Date</option>
-        </select>
+        </select>       
       </div>
     </div>
 

@@ -27,7 +27,9 @@
         <input type="text" class="form-control border-start-0"
                placeholder="Search nodes..."
                (input)="onSearchInput($event)">
-        <select class="form-select" style="max-width: 150px;" (change)="onSortChange($event)">
+        <select class="form-select" style="max-width: 150px;"
+                [value]="sortBy"
+                (change)="onSortChange($event)">
           <option value="name">Name</option>
           <option value="nodeType">Type</option>
           <option value="createdAt">Created Date</option>
