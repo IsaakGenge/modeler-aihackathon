@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ViewChild, AfterViewInit } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ViewChild, AfterViewInit, Renderer2 } from '@angular/core';
+import { CommonModule, isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { RouterModule, Router, NavigationStart } from '@angular/router';
 import { Subscription, Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { CreateNodeComponent } from '../shared/create-node/create-node.component';
 import { ViewNodesComponent } from '../view-nodes/view-nodes.component';
 import { CreateEdgeComponent } from '../shared/create-edge/create-edge.component';
@@ -49,8 +50,11 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private graphService: GraphService,
     private themeService: ThemeService,
-    private nodeService: NodeService, // Add NodeService
-    @Inject(PLATFORM_ID) private platformId: Object
+    private nodeService: NodeService,
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document,
+    private router: Router
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -61,6 +65,17 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
       this.graphService.currentGraph$.subscribe(graph => {
         this.hasSelectedGraph = !!graph;
         this.currentGraphId = graph ? graph.id : ''; // Set to empty string instead of null
+      })
+    );
+
+    this.subscription.add(
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationStart)
+      ).subscribe(() => {
+        // If navigating away, ensure we clean up modal-open class
+        if (this.selectedElement) {
+          this.cleanUpModalState();
+        }
       })
     );
 
@@ -95,6 +110,11 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     // Clean up subscriptions
     this.subscription.unsubscribe();
+
+    // Ensure we remove the modal-open class when the component is destroyed
+    if (isPlatformBrowser(this.platformId)) {
+      this.cleanUpModalState();
+    }
   }
 
   private setupClickHandlers(): void {
@@ -176,6 +196,8 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
       type: 'node',
       data: nodeWithLabel
     };
+
+    this.applyModalState();
   }
 
   onEdgeSelected(edge: any): void {
@@ -200,15 +222,70 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
         type: 'edge',
         data: edgeWithLabels
       };
+
+      // Move this inside the subscription to ensure it happens after data is ready
+      this.applyModalState();
     });
   }
 
+  // Add the onGraphSelected method implementation here
   onGraphSelected(graph: any): void {
     if (graph) {
       this.hasSelectedGraph = true;
       this.currentGraphId = graph.id;
+      // Update the current graph in the service if needed
+      this.graphService.setCurrentGraph(graph);
     }
   }
+
+  private applyModalState(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const scrollY = window.scrollY || window.pageYOffset;
+      const scrollbarWidth = this.calculateScrollbarWidth();
+
+      this.renderer.addClass(this.document.body, 'modal-open');
+      this.renderer.setStyle(this.document.body, 'padding-right', `${scrollbarWidth}px`);
+      this.renderer.setStyle(this.document.documentElement, 'padding-right', `${scrollbarWidth}px`);
+      this.renderer.setStyle(this.document.documentElement, '--scrollbar-width', `${scrollbarWidth}px`);
+      this.renderer.setStyle(this.document.documentElement, '--scroll-position', `-${scrollY}px`);
+      this.renderer.setStyle(this.document.body, 'overflow', 'hidden');
+      this.renderer.setStyle(this.document.documentElement, 'overflow', 'hidden');
+
+      const containerFluid = this.document.querySelector('.container-fluid');
+      if (containerFluid) {
+        this.renderer.setStyle(containerFluid, 'padding-right', `${scrollbarWidth}px`);
+      }
+    }
+  }
+
+
+
+  private calculateScrollbarWidth(): number {
+    // This method is more reliable across browsers
+    return window.innerWidth - this.document.documentElement.clientWidth;
+  }
+
+  // Helper method to clean up modal state
+  private cleanUpModalState(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const scrollPosition = this.document.documentElement.style.getPropertyValue('--scroll-position');
+      const scrollY = scrollPosition ? parseInt(scrollPosition.replace('-', '').replace('px', '')) : 0;
+
+      this.renderer.removeClass(this.document.body, 'modal-open');
+      this.renderer.removeStyle(this.document.body, 'padding-right');
+      this.renderer.removeStyle(this.document.documentElement, 'padding-right');
+      this.renderer.setStyle(this.document.documentElement, '--scrollbar-width', null);
+      this.renderer.setStyle(this.document.documentElement, '--scroll-position', null);
+
+      const containerFluid = this.document.querySelector('.container-fluid');
+      if (containerFluid) {
+        this.renderer.removeStyle(containerFluid, 'padding-right');
+      }
+
+      window.scrollTo(0, scrollY);
+    }
+  }
+
 
   onBackdropClick(): void {
     this.closeDetailsPanel();
@@ -216,6 +293,7 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
 
   closeDetailsPanel(): void {
     this.selectedElement = null;
+    this.cleanUpModalState();
   }
 
   private saveCollapseState(key: string, value: string | boolean): void {

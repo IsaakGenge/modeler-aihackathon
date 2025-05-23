@@ -4,6 +4,14 @@
   min-height: 100vh;
   position: relative;
   overflow-x: hidden; /* Prevent horizontal scrolling */
+  box-sizing: border-box;
+  transition: width 0.1s ease; /* Smooth transition for width change */
+}
+
+/* Core scrollbar variables */
+:root {
+  --scrollbar-width: 0px;
+  --scroll-position: 0px;
 }
 
 /* Card Improvements */
@@ -72,6 +80,7 @@
 app-graph-picker {
   flex-grow: 1;
 }
+
 :host ::ng-deep app-graph-picker .graph-picker {
   margin-bottom: 0;
   padding: 5px;
@@ -305,6 +314,25 @@ table {
   background-color: var(--bg-accent-light) !important;
   border-left: 3px solid var(--accent);
 }
+
+/* Modal behavior styles */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: var(--scroll-position, 0);
+  padding-right: var(--scrollbar-width) !important;
+  margin: 0;
+}
+
+  /* Fix for modal spacing */
+  body.modal-open app-details-panel ::ng-deep .details-panel {
+    box-sizing: border-box;
+    /* Adjust the left position to account for scrollbar */
+    left: calc(50% - var(--scrollbar-width)/2);
+    transform: translate(-50%, -50%);
+  }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

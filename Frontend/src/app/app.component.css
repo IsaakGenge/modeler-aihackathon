@@ -85,13 +85,13 @@
   margin-left: 250px;
   padding: 5px;
   transition: margin-left 0.3s ease;
-  width: calc(100% - 250px);
+  width: calc(100% - 250px - var(--scrollbar-width, 0px));
 }
 
   .main-content.expanded {
     margin-left: 60px;
-    width: calc(100% - 60px);
-  }
+    width: calc(100% - 60px - var(--scrollbar-width, 0px));
+  }}
 
 /* Navigation styles */
 .nav-pills .nav-link.active {

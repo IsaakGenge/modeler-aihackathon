@@ -8,6 +8,13 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+body, html {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
 // Bootstrap Component Overrides
 .card {
   background-color: var(--bg-secondary);
@@ -71,6 +78,9 @@ body {
   background-color: var(--bg-tertiary) !important;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
   transition: background-color 0.3s ease;
+}
+.container-fluid {
+  padding-right: var(--scrollbar-width, 0px);
 }
 
 // Navigation links
