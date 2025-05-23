@@ -16,7 +16,7 @@ import { GraphGenerateComponent } from '../graph-generate/graph-generate.compone
 @Component({
   selector: 'app-graph-manager',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, SortListPipe, FileUploadModalComponent, GraphGenerateComponent],
+  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, FileUploadModalComponent, GraphGenerateComponent],
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
@@ -31,6 +31,9 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
   error = '';
   warning = '';
   isDarkMode$: Observable<boolean>;
+
+  // Collapsible section state
+  isCreateSectionOpen: boolean = false;
 
   // Delete confirmation modal properties
   showDeleteModal = false;

@@ -1,101 +1,51 @@
 <!-- Frontend/src/app/Components/graph-manager/graph-manager.component.html -->
 <!-- Only show this section when not embedded -->
-<div *ngIf="!embedded" class="component-container">
-  <div class="mb-4">
-    <h2 class="mb-3">Graph Management</h2>
-    <p class="lead">
-      Create and manage your graphs. A graph is a container for related nodes and connections.
-    </p>
-    <hr>
+<<div *ngIf="!embedded" class="component-container">
+  <div class="header">
+    <h2>Graph Management</h2>
+    <p>Manage, import, export, delete, and generate graphs with ease.</p>
   </div>
-  <!-- Create Graph Form -->
-  <div class="mb-4">
-    <h4>Create New Graph</h4>
-    <form [formGroup]="graphForm" (ngSubmit)="onSubmit()">
-      <div class="mb-3">
-        <label for="name" class="form-label">Graph Name</label>
-        <input type="text"
-               id="name"
-               formControlName="name"
-               class="form-control"
-               [ngClass]="{ 'is-invalid': submitted && f['name'].errors }"
-               placeholder="Enter graph name">
-        <div *ngIf="submitted && f['name'].errors" class="invalid-feedback">
-          <div *ngIf="f['name'].errors['required']">Graph name is required</div>
+  <div class="collapsible-section">
+    <button class="btn btn-accent" (click)="isCreateSectionOpen = !isCreateSectionOpen">
+      {{ isCreateSectionOpen ? 'Hide' : 'Create New Graph' }}
+    </button>
+    <div *ngIf="isCreateSectionOpen" class="create-graph-form">
+      <form [formGroup]="graphForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label for="name">Graph Name</label>
+          <input type="text" id="name" formControlName="name" placeholder="Enter graph name" />
+          <div *ngIf="submitted && f['name'].errors" class="error">
+            Graph name is required.
+          </div>
         </div>
-      </div>
-
-      <button type="submit" class="btn btn-primary" [disabled]="loading">
-        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-        Create Graph
-      </button>
-      <button type="button" class="btn btn-primary ms-2" (click)="showImportModal = true">
-        Import Graph
-      </button>
-      <button type="button" class="btn btn-primary ms-2" (click)="showGenerateModal = true">
-        Generate Graph
-      </button>
-
-      <div *ngIf="success" class="alert alert-success mt-3">
-        <i class="bi bi-check-circle-fill me-2"></i>
-        Graph created successfully!
-      </div>
-    </form>
+        <button type="submit" class="btn btn-accent" [disabled]="loading">
+          <span *ngIf="loading" class="spinner"></span> Create Graph
+        </button>
+      </form>
+    </div>
   </div>
 
   <!-- Graph List -->
-  <div class="mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Your Graphs</h4>
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshGraphs()" [disabled]="loading">
-        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-        Refresh
-      </button>
-    </div>
-
-    <div *ngIf="loading" class="loading mb-3">Loading graphs...</div>
-
-    <div *ngIf="warning" class="alert alert-warning">
-      <i class="bi bi-info-circle-fill me-2"></i>
-      {{ warning }}
-    </div>
-
-    <div *ngIf="error" class="alert alert-danger">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ error }}
-      <button *ngIf="error.includes('Failed to load')" class="btn btn-sm btn-outline-danger ms-2" (click)="refreshGraphs()">Try Again</button>
-    </div>
-
-    <div *ngIf="graphs.length > 0" class="table-container">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let graph of graphs | sortByName" [class.active]="isSelected(graph)">
-            <td>{{ graph.name }}</td>
-            <td>{{ graph.createdAt | date:'short' }}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-primary me-2" (click)="viewGraph(graph)">
-                View
-              </button>
-              <button class="btn btn-sm btn-outline-secondary me-2" (click)="exportGraph(graph)">
-                Export
-              </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
-                Delete
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <div *ngIf="graphs.length > 0" class="row g-3">
+    <div *ngFor="let graph of graphs" class="col-sm-6 col-md-4 col-lg-3 mb-3">
+      <div class="card graph-card h-100" [class.selected-graph]="isSelected(graph)">
+        <div class="card-header graph-header">
+          <div class="d-flex align-items-center">
+            <div class="graph-shape-indicator me-2"></div>
+            <h6 class="card-title mb-0 text-truncate flex-grow-1" [title]="graph.name">{{ graph.name }}</h6>
+          </div>
+        </div>
+        <div class="card-body p-2">
+          <p class="graph-info mb-1">Created: {{ graph.createdAt | date: 'short' }}</p>
+        </div>
+        <div class="card-footer graph-footer d-flex justify-content-center gap-2">
+          <button class="btn btn-success btn-sm" (click)="viewGraph(graph)">View</button>
+          <button class="btn btn-secondary btn-sm" (click)="exportGraph(graph)">Export</button>
+          <button class="btn btn-danger btn-sm" (click)="initiateDeleteGraph(graph.id, graph.name)">Delete</button>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
 <!-- Embedded version with simplified layout -->
 <div *ngIf="embedded" class="component-container p-3">
