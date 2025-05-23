@@ -5,7 +5,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import cytoscape from 'cytoscape';
 import type { NodeSingular } from 'cytoscape';
 import { Observable, Subject } from 'rxjs';
-import { takeUntil, startWith } from 'rxjs/operators';
+import { takeUntil, startWith, take } from 'rxjs/operators';
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
 import { TypesService } from '../../Services/Types/types.service';
 import { NodeService } from '../../Services/Node/node.service';
@@ -46,7 +46,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   @Input() graphId: string = '';
   @Input() layoutConfig: any = DEFAULT_LAYOUT_OPTIONS;
   @Input() initialZoom: number = 1.5;
-  @Input() wheelSensitivity: number = 0.8;
+  @Input() wheelSensitivity: number = 1;
 
   @Output() positionsSaved = new EventEmitter<NodePositionsMap>();
   @Output() nodeClicked = new EventEmitter<any>();
@@ -728,8 +728,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
           edges: cytoscapeEdges
         },
         style: initialStyles,
-        layout: initialLayout,
-        wheelSensitivity: this.wheelSensitivity
+        layout: initialLayout        
       });
 
       // Initialize extensions
@@ -748,7 +747,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       // Log status
       this.logInitializationStatus(cytoscapeNodes.length, cytoscapeEdges.length);
     } catch (error) {
-      console.error('Error initializing Cytoscape:', error);
+      //console.error('Error initializing Cytoscape:', error);
     }
   }
 
@@ -827,13 +826,17 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
 
     try {
       const compoundDragAndDrop = (await import('cytoscape-compound-drag-and-drop')).default;
-      cytoscape.use(compoundDragAndDrop);
+
+      // Check if the plugin is already registered
+      if (!cytoscape.prototype.hasOwnProperty('compoundDragAndDrop')) {
+        cytoscape.use(compoundDragAndDrop);
+      }
 
       // Use type assertion to handle the extension
       const cyAny = this.cy as any;
-      if (cyAny.compoundDragAndDrop) {
+      if (cyAny?.compoundDragAndDrop) {
         cyAny.compoundDragAndDrop({
-          dropTarget: (node: NodeSingular) => node.isParent(),
+          dropTarget: (node: NodeSingular) => node?.isParent?.(),
           overThreshold: 10,
           outThreshold: 10,
           grabbedNodeClassName: {
@@ -857,6 +860,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       console.warn('Failed to initialize compound drag and drop:', err);
     }
   }
+
 
   /**
  * Apply initial node positions with better zoom handling for small graphs
@@ -1114,8 +1118,20 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
       return;
     }
 
-    // Export the graph as a PNG image
-    const imageData = this.cy.png({ full: true });
+    // Check the current theme by subscribing to isDarkMode$
+    let isDark: boolean = false; // Explicitly type as boolean
+    this.isDarkMode$.pipe(take(1)).subscribe((darkMode: boolean) => {
+      isDark = darkMode;
+    });
+
+    // Determine the background color based on the current theme
+    const backgroundColor = isDark ? '#121212' : '#ffffff'; // Match your theme's bg-secondary
+
+    // Generate the image with the specified background color
+    const imageData = this.cy!.png({
+      full: true, // Export the entire graph
+      bg: backgroundColor // Set the background color
+    });
 
     // Create a temporary link element to download the image
     const link = document.createElement('a');
@@ -1123,6 +1139,7 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     link.download = 'graph.png';
     link.click();
   }
+
 
   /**
    * Log initialization status
