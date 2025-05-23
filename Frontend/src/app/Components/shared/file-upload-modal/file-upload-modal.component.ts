@@ -39,6 +39,15 @@ export class FileUploadModalComponent {
     if (fileInput.files && fileInput.files.length > 0) {
       this.selectedFile = fileInput.files[0];
       this.fileSelected.emit(this.selectedFile);
+
+      // Auto-populate name field with a suggested name based on file name
+      // if the name field is currently empty
+      if (!this.uploadForm.get('name')?.value) {
+        const fileName = this.selectedFile.name;
+        const nameWithoutExtension = fileName.split('.').slice(0, -1).join('.');
+        const suggestedName = nameWithoutExtension || fileName;
+        this.uploadForm.patchValue({ name: suggestedName });
+      }
     } else {
       this.selectedFile = null;
     }
@@ -49,7 +58,13 @@ export class FileUploadModalComponent {
       return;
     }
 
-    const name = this.uploadForm.get('name')?.value;
+    let name = this.uploadForm.get('name')?.value;
+
+    // If no name is provided, generate one using the current date/time
+    if (!name) {
+      name = this.generateDefaultName();
+    }
+
     this.confirm.emit({
       file: this.selectedFile,
       name: name
@@ -64,5 +79,26 @@ export class FileUploadModalComponent {
   resetForm(): void {
     this.uploadForm.reset();
     this.selectedFile = null;
+  }
+
+  /**
+   * Generates a default name for the uploaded file if none is provided
+   * Format: "Imported Graph - May 23, 2025 at 14:30:45"
+   */
+  private generateDefaultName(): string {
+    const now = new Date();
+    const date = now.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    const time = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    return `Imported Graph - ${date} at ${time}`;
   }
 }
