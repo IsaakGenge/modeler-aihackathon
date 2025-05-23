@@ -354,3 +354,87 @@ table {
   ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
   }
+
+/* Details Panel Modal Background (similar to confirmation-modal) */
+.details-panel-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+  display: none;
+  /* Pointer events manipulation to ensure clicks go through to the modal */
+  pointer-events: none;
+}
+
+  .details-panel-backdrop.active {
+    display: block;
+    pointer-events: auto; /* Only enable pointer events when active */
+  }
+
+/* Override details-panel position to center it like a modal */
+app-details-panel {
+  position: relative; /* Add this to establish a stacking context */
+  z-index: 1050; /* Increase this value to be above the backdrop */
+  pointer-events: none; /* Make the component container transparent to clicks by default */
+}
+
+  app-details-panel ::ng-deep .details-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 600px;
+    height: auto;
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    animation: scaleIn 0.25s ease-out;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    right: auto; /* Override original right positioning */
+    z-index: 1050; /* Ensure it's higher than the backdrop */
+    pointer-events: auto; /* Make sure the panel itself accepts clicks */
+    background-color: var(--bg-secondary); /* Ensure it has a solid background */
+  }
+
+    app-details-panel ::ng-deep .details-panel.active {
+      transform: translate(-50%, -50%); /* Keep it centered when active */
+      right: auto; /* Ensure right positioning doesn't interfere */
+    }
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments for the modal */
+@media (max-width: 768px) {
+  app-details-panel ::ng-deep .details-panel {
+    width: 95%;
+    max-height: 90vh;
+    max-width: none;
+  }
+}

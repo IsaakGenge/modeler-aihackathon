@@ -68,11 +68,15 @@
       <div [ngbNavOutlet]="nav" class="tab-content"></div>
     </div>
   </div>
+  <!-- Add this right before the details-panel component -->
+  <div class="details-panel-backdrop"
+       [class.active]="selectedElement"
+       (click)="onBackdropClick()"></div>
 
-  <!-- Details Panel - Will be shown when a node or edge is selected -->
   <app-details-panel [selectedElement]="selectedElement"
                      [isDarkMode$]="isDarkMode$"
                      [graphId]="currentGraphId"
                      (closePanel)="closeDetailsPanel()">
   </app-details-panel>
+
 </div>

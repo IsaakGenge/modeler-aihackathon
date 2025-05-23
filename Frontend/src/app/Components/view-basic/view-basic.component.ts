@@ -183,7 +183,9 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
     };
   }
 
-
+  onBackdropClick(): void {
+    this.closeDetailsPanel();
+  }
 
   closeDetailsPanel(): void {
     this.selectedElement = null;
