@@ -1,29 +1,21 @@
 <!-- Frontend/src/app/Components/graph-manager/graph-manager.component.html -->
 <!-- Only show this section when not embedded -->
-<<div *ngIf="!embedded" class="component-container">
+<div *ngIf="!embedded" class="component-container">
   <div class="header">
     <h2>Graph Management</h2>
     <p>Manage, import, export, delete, and generate graphs with ease.</p>
   </div>
-  <div class="collapsible-section">
-    <button class="btn btn-accent" (click)="isCreateSectionOpen = !isCreateSectionOpen">
-      {{ isCreateSectionOpen ? 'Hide' : 'Create New Graph' }}
-    </button>
-    <div *ngIf="isCreateSectionOpen" class="create-graph-form">
-      <form [formGroup]="graphForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <label for="name">Graph Name</label>
-          <input type="text" id="name" formControlName="name" placeholder="Enter graph name" />
-          <div *ngIf="submitted && f['name'].errors" class="error">
-            Graph name is required.
-          </div>
-        </div>
-        <button type="submit" class="btn btn-accent" [disabled]="loading">
-          <span *ngIf="loading" class="spinner"></span> Create Graph
-        </button>
-      </form>
+
+  <!-- Tools Panel positioned to collapse from the right instead of bottom -->
+  <app-tools-panel [(collapsed)]="isCreateSectionOpen"
+                   [position]="'right'"
+                   [activeTab]="1"
+                   [tabs]="[{ id: 1, title: 'Create Graph' }]">
+    <!-- Graph Creation Tab -->
+    <div tabId="1">
+      <app-create-graph (graphCreated)="onGraphCreated($event)"></app-create-graph>
     </div>
-  </div>
+  </app-tools-panel>
 
   <!-- Graph List -->
   <div *ngIf="graphs.length > 0" class="row g-3">
@@ -47,107 +39,107 @@
     </div>
   </div>
 
-<!-- Embedded version with simplified layout -->
-<div *ngIf="embedded" class="component-container p-3">
-  <!-- Same content but with more compact layout -->
-  <!-- Simplified form -->
-  <div class="mb-3">
-    <h5>Create New Graph</h5>
-    <form [formGroup]="graphForm" (ngSubmit)="onSubmit()" class="d-flex gap-2 align-items-end">
-      <div class="form-group flex-grow-1 mb-0">
-        <label for="name" class="small">Graph Name</label>
-        <input type="text"
-               id="name"
-               formControlName="name"
-               class="form-control form-control-sm"
-               [ngClass]="{ 'is-invalid': submitted && f['name'].errors }"
-               placeholder="Enter graph name">
+  <!-- Embedded version with simplified layout -->
+  <div *ngIf="embedded" class="component-container p-3">
+    <!-- Same content but with more compact layout -->
+    <!-- Simplified form -->
+    <div class="mb-3">
+      <h5>Create New Graph</h5>
+      <form [formGroup]="graphForm" (ngSubmit)="onSubmit()" class="d-flex gap-2 align-items-end">
+        <div class="form-group flex-grow-1 mb-0">
+          <label for="name" class="small">Graph Name</label>
+          <input type="text"
+                 id="name"
+                 formControlName="name"
+                 class="form-control form-control-sm"
+                 [ngClass]="{ 'is-invalid': submitted && f['name'].errors }"
+                 placeholder="Enter graph name">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Create
+        </button>
+        <button type="button" class="btn btn-sm btn-primary ms-2" (click)="showImportModal = true">
+          Import
+        </button>
+        <button type="button" class="btn btn-sm btn-primary ms-2" (click)="showGenerateModal = true">
+          Generate
+        </button>
+      </form>
+      <div *ngIf="success" class="alert alert-success mt-2 p-2">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        Graph created!
       </div>
-      <button type="submit" class="btn btn-sm btn-primary" [disabled]="loading">
-        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-        Create
-      </button>
-      <button type="button" class="btn btn-sm btn-primary ms-2" (click)="showImportModal = true">
-        Import
-      </button>
-      <button type="button" class="btn btn-sm btn-primary ms-2" (click)="showGenerateModal = true">
-        Generate
-      </button>
-    </form>
-    <div *ngIf="success" class="alert alert-success mt-2 p-2">
-      <i class="bi bi-check-circle-fill me-2"></i>
-      Graph created!
-    </div>
-    <div *ngIf="error" class="alert alert-danger mt-2 p-2">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ error }}
-    </div>
-  </div>
-
-  <!-- Simplified graph list -->
-  <div>
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5 class="mb-0">Your Graphs</h5>
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshGraphs()" [disabled]="loading">
-        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-        Refresh
-      </button>
+      <div *ngIf="error" class="alert alert-danger mt-2 p-2">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error }}
+      </div>
     </div>
 
-    <div *ngIf="loading" class="loading small mb-2">Loading...</div>
+    <!-- Simplified graph list -->
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Your Graphs</h5>
+        <button class="btn btn-outline-secondary btn-sm" (click)="refreshGraphs()" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Refresh
+        </button>
+      </div>
 
-    <div *ngIf="warning" class="alert alert-warning p-2">
-      <i class="bi bi-info-circle-fill me-2"></i>
-      {{ warning }}
-    </div>
+      <div *ngIf="loading" class="loading small mb-2">Loading...</div>
 
-    <div *ngIf="graphs.length > 0" class="table-container">
-      <table class="table table-sm table-hover">
-        <tbody>
-          <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
-            <td>{{ graph.name }}</td>
-            <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary me-1" (click)="viewGraph(graph)">
-                View
-              </button>
-              <button class="btn btn-sm btn-outline-secondary me-1" (click)="exportGraph(graph)">
-                Export
-              </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
-                Delete
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div *ngIf="warning" class="alert alert-warning p-2">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        {{ warning }}
+      </div>
+
+      <div *ngIf="graphs.length > 0" class="table-container">
+        <table class="table table-sm table-hover">
+          <tbody>
+            <tr *ngFor="let graph of graphs" [class.active]="isSelected(graph)">
+              <td>{{ graph.name }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary me-1" (click)="viewGraph(graph)">
+                  View
+                </button>
+                <button class="btn btn-sm btn-outline-secondary me-1" (click)="exportGraph(graph)">
+                  Export
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="initiateDeleteGraph(graph?.id, graph?.name)">
+                  Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Add the confirmation modal component -->
-<app-confirmation-modal [show]="showDeleteModal"
-                        [title]="'Confirm Graph Deletion'"
-                        [message]="'Are you sure you want to delete this graph?'"
-                        [warningText]="'This will also delete all associated nodes and edges.'"
-                        [confirmButtonText]="'Delete'"
-                        [isLoading]="deleteInProgress"
-                        (confirm)="confirmDeleteGraph()"
-                        (cancel)="cancelDeleteGraph()">
-</app-confirmation-modal>
+  <!-- Add the confirmation modal component -->
+  <app-confirmation-modal [show]="showDeleteModal"
+                          [title]="'Confirm Graph Deletion'"
+                          [message]="'Are you sure you want to delete this graph?'"
+                          [warningText]="'This will also delete all associated nodes and edges.'"
+                          [confirmButtonText]="'Delete'"
+                          [isLoading]="deleteInProgress"
+                          (confirm)="confirmDeleteGraph()"
+                          (cancel)="cancelDeleteGraph()">
+  </app-confirmation-modal>
 
-<app-file-upload-modal [show]="showImportModal"
-                       [title]="'Import Graph'"
-                       [nameFieldLabel]="'Graph Name (Optional)'"
-                       [nameFieldPlaceholder]="'Enter a name for the imported graph'"
-                       [nameFieldHelpText]="'Leave blank to use the name from the import file'"
-                       [acceptFileTypes]="'.json'"
-                       [isLoading]="importInProgress"
-                       [error]="importError"
-                       (confirm)="onFileUploadSubmit($event)"
-                       (cancel)="cancelImport()">
-</app-file-upload-modal>
+  <app-file-upload-modal [show]="showImportModal"
+                         [title]="'Import Graph'"
+                         [nameFieldLabel]="'Graph Name (Optional)'"
+                         [nameFieldPlaceholder]="'Enter a name for the imported graph'"
+                         [nameFieldHelpText]="'Leave blank to use the name from the import file'"
+                         [acceptFileTypes]="'.json'"
+                         [isLoading]="importInProgress"
+                         [error]="importError"
+                         (confirm)="onFileUploadSubmit($event)"
+                         (cancel)="cancelImport()">
+  </app-file-upload-modal>
 
-<app-graph-generate [show]="showGenerateModal"
-                    (close)="cancelGenerate()"
-                    (generated)="onGraphGenerated($event)">
-</app-graph-generate>
+  <app-graph-generate [show]="showGenerateModal"
+                      (close)="cancelGenerate()"
+                      (generated)="onGraphGenerated($event)">
+  </app-graph-generate>

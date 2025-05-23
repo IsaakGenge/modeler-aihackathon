@@ -1,0 +1,26 @@
+<div class="tools-panel-container" [class.collapsed]="collapsed" [class.position-right]="position === 'right'"
+     [class.position-left]="position === 'left'" [class.position-bottom]="position === 'bottom'">
+  <!-- Tools Panel Toggle Button -->
+  <button class="tools-panel-toggle" (click)="togglePanel()">
+    <i class="bi" [ngClass]="{
+      'bi-chevron-right': position === 'left' && !collapsed || position === 'right' && collapsed,
+      'bi-chevron-left': position === 'left' && collapsed || position === 'right' && !collapsed,
+      'bi-chevron-up': position === 'bottom' && !collapsed,
+      'bi-chevron-down': position === 'bottom' && collapsed
+    }"></i>
+  </button>
+
+  <div class="tools-panel">
+    <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" (activeIdChange)="onTabChange($event)" class="nav-tabs">
+      <li *ngFor="let tab of tabs" [ngbNavItem]="tab.id">
+        <a ngbNavLink>{{ tab.title }}</a>
+        <ng-template ngbNavContent>
+          <ng-content *ngIf="tab.id === 1" select="[tabId='1']"></ng-content>
+          <ng-content *ngIf="tab.id === 2" select="[tabId='2']"></ng-content>
+        </ng-template>
+      </li>
+    </ul>
+
+    <div [ngbNavOutlet]="nav" class="tab-content"></div>
+  </div>
+</div>

@@ -1,23 +1,31 @@
-/* Base styling for the component */
-/* Graph List */
-.graph-list {
-  margin-top: 2rem;
+/* Host element styling */
+:host {
+  position: relative;
 }
 
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  color: var(--text-primary); /* Ensure text respects theme */
+/* Container styling */
+.component-container {
+  position: relative;
+  padding: 1.5rem;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+  padding-right: 20px;
 }
 
-.graph-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+/* Header */
+.header {
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
 }
 
+  .header h2 {
+    color: var(--accent-green);
+  }
+
+/* Graph Card Styling */
 .graph-card {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border);
@@ -33,11 +41,17 @@
     border-color: var(--border-hover);
   }
 
+  .graph-card.selected-graph {
+    border: 2px solid var(--accent-green);
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+  }
+
 .graph-header {
   padding: 0.75rem;
   background-color: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
 }
+
 .graph-shape-indicator {
   width: 16px;
   height: 16px;
@@ -46,31 +60,12 @@
   flex-shrink: 0;
 }
 
-  .graph-header .card-title {
-    color: var(--accent-green); /* Use accent color */
-    font-size: 1rem;
-    font-weight: bold;
-  }
-.graph-info {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+.graph-header .card-title {
+  color: var(--accent-green);
+  font-size: 1rem;
+  font-weight: bold;
 }
-.graph-footer {
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  border-top: 1px solid var(--border);
-  background-color: var(--bg-elevated);
-}
-  .graph-footer .btn {
-    flex: 1;
-    margin: 0 0.25rem;
-  }
 
-
-.graph-card.selected-graph {
-  border: 2px solid var(--accent-green);
-  box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
-}
 .card-title {
   font-size: 0.95rem;
   font-weight: 600;
@@ -79,164 +74,155 @@
   line-height: 1.2;
 }
 
-
-/* Container styling */
-.component-container {
-  padding: 1.5rem;
-  background-color: var(--bg-secondary); /* Use theme background */
-  color: var(--text-primary); /* Ensure text respects theme */
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.graph-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
-/* Header */
-.header {
-  margin-bottom: 1.5rem;
-  color: var(--text-primary); /* Ensure text respects theme */
+.graph-footer {
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-elevated);
 }
 
-  .header h2 {
-    color: var(--accent-green); /* Use accent color */
+  .graph-footer .btn {
+    flex: 1;
+    margin: 0 0.25rem;
   }
 
-/* Embedded version specific styles */
-.component-container.p-3 .alert {
-  font-size: 0.875rem;
-  color: var(--text-primary); /* Ensure text respects theme */
-}
-
-/* Enhanced table styling matching view-edges component */
+/* Table styling */
 .table {
-  color: var(--text-primary); /* Ensure text respects theme */
-  background-color: var(--bg-secondary); /* Use theme background */
-  border-color: var(--border); /* Use theme border */
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  border-color: var(--border);
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
   .table thead,
   .table th {
-    background-color: var(--bg-tertiary); /* Use theme background */
-    color: var(--text-primary); /* Ensure text respects theme */
-    border-color: var(--border); /* Use theme border */
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
   }
 
   .table > tbody > tr {
-    background-color: var(--bg-secondary); /* Use theme background */
-    color: var(--text-primary); /* Ensure text respects theme */
-    border-color: var(--border); /* Use theme border */
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border);
   }
 
     .table > tbody > tr:nth-of-type(odd) {
-      background-color: var(--bg-tertiary); /* Use theme background */
+      background-color: var(--bg-tertiary);
     }
 
     .table > tbody > tr:hover {
-      background-color: rgba(52, 152, 219, 0.1); /* Subtle hover effect */
+      background-color: rgba(52, 152, 219, 0.1);
     }
+
+    .table > tbody > tr > td {
+      color: var(--text-primary);
+      border-color: var(--border);
+      background-color: inherit;
+    }
+
+table tbody tr.active {
+  background-color: rgba(52, 152, 219, 0.1);
+}
 
 /* Dark theme specific overrides */
 .dark-theme .table {
-  background-color: var(--bg-secondary); /* Use theme background */
-  color: var(--text-primary); /* Ensure text respects theme */
-  border-color: var(--border); /* Use theme border */
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border);
 }
 
   .dark-theme .table thead,
   .dark-theme .table th {
-    background-color: var(--bg-tertiary); /* Use theme background */
-    color: var(--text-primary); /* Ensure text respects theme */
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
   }
 
   .dark-theme .table > tbody > tr {
-    background-color: var(--bg-secondary); /* Use theme background */
+    background-color: var(--bg-secondary);
   }
 
     .dark-theme .table > tbody > tr:nth-of-type(odd) {
-      background-color: var(--bg-tertiary); /* Use theme background */
+      background-color: var(--bg-tertiary);
     }
 
     .dark-theme .table > tbody > tr:hover {
-      background-color: rgba(52, 152, 219, 0.2); /* Subtle hover effect */
+      background-color: rgba(52, 152, 219, 0.2);
     }
 
     .dark-theme .table > tbody > tr > td {
-      color: var(--text-primary); /* Ensure text respects theme */
-      border-color: var(--border); /* Use theme border */
+      color: var(--text-primary);
+      border-color: var(--border);
     }
 
-/* Table cell styling */
-.table > tbody > tr > td {
-  color: var(--text-primary); /* Ensure text respects theme */
-  border-color: var(--border); /* Use theme border */
-  background-color: inherit; /* Ensure cells inherit the row's background */
-}
-
-/* Active row styling with theme variables */
-table tbody tr.active {
-  background-color: rgba(52, 152, 219, 0.1); /* Subtle active effect */
-}
-
 .dark-theme table tbody tr.active {
-  background-color: rgba(52, 152, 219, 0.2); /* Subtle active effect */
+  background-color: rgba(52, 152, 219, 0.2);
 }
 
-/* Add transitions for smooth theme switching */
+/* Embedded specific styles */
+.component-container.p-3 .alert {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* Form group styles */
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+/* Tools Panel styles */
+:host ::ng-deep .tools-panel-container {
+  top: 150px;
+  transform: translateY(0);
+  max-width: 300px;
+  z-index: 90;
+  overflow: visible;
+}
+
+  :host ::ng-deep .tools-panel-container.position-right.collapsed {
+    transform: translateX(100%);
+    width: 0;
+    overflow: visible;
+  }
+
+  :host ::ng-deep .tools-panel-container .tools-panel {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  :host ::ng-deep .tools-panel-container.collapsed .tools-panel {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  :host ::ng-deep .tools-panel-container.collapsed {
+    width: 0;
+    overflow: visible;
+  }
+
+/* Utility styles */
+.row.g-3 {
+  position: relative;
+  z-index: 1;
+}
+
+:host ::ng-deep html,
+:host ::ng-deep body {
+  overflow-x: hidden;
+}
+
+/* Transitions for smooth theme switching */
 .graph-manager,
 .graph-manager * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Collapsible Section */
-.collapsible-section {
-  margin-bottom: 1.5rem;
-}
-
-  .collapsible-section .btn {
-    background-color: var(--accent-green); /* Use accent color */
-    color: var(--text-on-accent); /* Ensure text is readable on accent */
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
-  }
-
-    .collapsible-section .btn:hover {
-      background-color: var(--accent-green-hover); /* Slightly darker accent */
-    }
-
-  .collapsible-section .create-graph-form {
-    margin-top: 1rem;
-    padding: 1rem;
-    background-color: var(--bg-tertiary); /* Use theme background */
-    border-radius: 4px;
-    color: var(--text-primary); /* Ensure text respects theme */
-  }
-
-.create-graph-form .form-group {
-  margin-bottom: 1rem;
-}
-
-  .create-graph-form .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary); /* Ensure text respects theme */
-  }
-
-  .create-graph-form .form-group input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border); /* Use theme border */
-    border-radius: 4px;
-    background-color: var(--bg-secondary); /* Use theme background */
-    color: var(--text-primary); /* Ensure text respects theme */
-  }
-
-    .create-graph-form .form-group input::placeholder {
-      color: var(--text-secondary); /* Use secondary text color */
-    }
-
-.create-graph-form .error {
-  color: var(--error-red); /* Use error color */
-  font-size: 0.875rem;
 }

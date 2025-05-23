@@ -11,12 +11,21 @@ import { Router } from '@angular/router';
 import { SortListPipe } from '../../Pipes/sort-list.pipe';
 import { FileUploadModalComponent } from '../shared/file-upload-modal/file-upload-modal.component';
 import { GraphGenerateComponent } from '../graph-generate/graph-generate.component';
-
+import { ToolsPanelComponent } from '../shared/tools-panel/tools-panel.component';
+import { CreateGraphComponent } from '../shared/create-graph/create-graph.component';
 
 @Component({
   selector: 'app-graph-manager',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ConfirmationModalComponent, FileUploadModalComponent, GraphGenerateComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ConfirmationModalComponent,
+    FileUploadModalComponent,
+    GraphGenerateComponent,
+    ToolsPanelComponent,
+    CreateGraphComponent
+  ],
   templateUrl: './graph-manager.component.html',
   styleUrl: './graph-manager.component.css'
 })
@@ -349,6 +358,13 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
       this.loadGraphs();
       this.graphService.notifyGraphCreated();
     }, 500);
+  }
+
+  onGraphCreated(graph: any): void {
+    console.log('Graph created from create-graph component:', graph);
+    this.loadGraphs();
+    this.graphService.notifyGraphCreated();
+    this.isCreateSectionOpen = false; // Close the creation panel after successful creation
   }
 
   cancelGenerate(): void {

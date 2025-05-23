@@ -16,6 +16,7 @@ import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { CytoscapeGraphComponent } from '../cytoscape-graph/cytoscape-graph.component';
+import { ToolsPanelComponent } from '../shared/tools-panel/tools-panel.component';
 
 @Component({
   selector: 'app-view-fancy',
@@ -27,7 +28,8 @@ import { CytoscapeGraphComponent } from '../cytoscape-graph/cytoscape-graph.comp
     CreateEdgeComponent,
     GraphPickerComponent,
     NgbNavModule,
-    CytoscapeGraphComponent
+    CytoscapeGraphComponent,
+    ToolsPanelComponent
   ],
   templateUrl: './view-fancy.component.html',
   styleUrl: './view-fancy.component.css'

@@ -1,0 +1,195 @@
+/***************************************
+ * TOOLS PANEL STYLES
+ ***************************************/
+/* Tools panel container */
+.tools-panel-container {
+  position: absolute;
+  width: 300px;
+  height: auto;
+  max-height: max-content;
+  transition: transform 0.3s ease;
+  z-index: 100;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+}
+
+/* Position variations */
+.position-right {
+  top: 40%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.position-left {
+  top: 40%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.position-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 60%;
+}
+
+/* Collapsed states */
+.position-right.collapsed {
+  transform: translateX(100%) translateY(-50%);
+  box-shadow: none;
+}
+
+.position-left.collapsed {
+  transform: translateX(-100%) translateY(-50%);
+  box-shadow: none;
+}
+
+.position-bottom.collapsed {
+  transform: translateY(100%);
+  box-shadow: none;
+}
+
+/* Tools panel toggle button */
+.tools-panel-toggle {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 101;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  visibility: visible;
+  font-size: 1rem;
+}
+
+.position-right .tools-panel-toggle {
+  left: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+
+.position-left .tools-panel-toggle {
+  right: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 0 8px 8px 0;
+  border-left: none;
+}
+
+.position-bottom .tools-panel-toggle {
+  left: auto;
+  right: 10px;
+  top: -15px;
+  border-radius: 8px 8px 0 0;
+  border-bottom: none;
+}
+
+.tools-panel-toggle:hover {
+  background-color: var(--bg-elevated);
+  color: var(--text-highlighted);
+}
+
+/* Tools panel content */
+.tools-panel {
+  height: auto;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.tools-panel-container.collapsed .tools-panel {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/***************************************
+ * NAVIGATION TABS STYLES
+ ***************************************/
+.nav-tabs {
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-tertiary);
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+  .nav-tabs .nav-link {
+    color: var(--text-primary);
+    background-color: transparent;
+    border: 1px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+    .nav-tabs .nav-link:hover {
+      border-color: var(--border) var(--border) transparent;
+      background-color: var(--bg-elevated);
+      color: var(--text-highlighted);
+    }
+
+    .nav-tabs .nav-link.active {
+      color: var(--text-highlighted);
+      font-weight: bold;
+      background-color: var(--bg-secondary);
+      border-color: var(--border) var(--border) var(--bg-secondary);
+      border-bottom-color: transparent;
+    }
+
+.tab-content {
+  padding: 15px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  overflow-y: auto;
+  max-height: none;
+}
+
+/***************************************
+ * RESPONSIVE STYLES
+ ***************************************/
+@media (max-width: 991.98px) {
+  .tools-panel-container {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    max-height: 60%;
+    transform: translateY(0);
+  }
+
+    .tools-panel-container.collapsed {
+      transform: translateY(100%);
+    }
+
+  .tools-panel-toggle {
+    left: auto;
+    right: 10px;
+    top: -15px;
+    transform: rotate(90deg);
+  }
+
+  .tools-panel-container.collapsed .tools-panel-toggle {
+    transform: rotate(180deg);
+  }
+
+  .tools-panel {
+    height: 100%;
+    border-radius: 4px 4px 0 0;
+  }
+}

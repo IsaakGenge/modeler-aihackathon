@@ -45,30 +45,22 @@
     </div>
 
     <!-- Tools Panel - Collapsible -->
-    <div class="tools-panel-container" [class.collapsed]="toolsPanelCollapsed">
-      <!-- Tools Panel Toggle Button -->
-      <button class="tools-panel-toggle" (click)="toggleToolsPanel()">
-        <i class="bi" [ngClass]="toolsPanelCollapsed ? 'bi-chevron-left' : 'bi-chevron-right'"></i>
-      </button>
-
-      <div class="tools-panel">
-        <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" class="nav-tabs">
-          <li [ngbNavItem]="1">
-            <a ngbNavLink>Nodes</a>
-            <ng-template ngbNavContent>
-              <app-create-node></app-create-node>
-            </ng-template>
-          </li>
-          <li [ngbNavItem]="2">
-            <a ngbNavLink>Edges</a>
-            <ng-template ngbNavContent>
-              <app-create-edge></app-create-edge>
-            </ng-template>
-          </li>
-        </ul>
-
-        <div [ngbNavOutlet]="nav" class="tab-content"></div>
+    <app-tools-panel [(collapsed)]="toolsPanelCollapsed"
+                     [position]="'right'"
+                     [(activeTab)]="activeTab"
+                     [tabs]="[
+                   { id: 1, title: 'Nodes' },
+                   { id: 2, title: 'Edges' }
+                 ]">
+      <!-- Node Creation Tab -->
+      <div tabId="1">
+        <app-create-node></app-create-node>
       </div>
-    </div>
+
+      <!-- Edge Creation Tab -->
+      <div tabId="2">
+        <app-create-edge></app-create-edge>
+      </div>
+    </app-tools-panel>
   </div>
 </div>

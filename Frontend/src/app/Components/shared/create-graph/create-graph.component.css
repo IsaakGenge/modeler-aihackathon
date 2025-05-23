@@ -1,0 +1,47 @@
+.create-graph-container {
+  padding: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.error {
+  color: var(--error-red);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.is-invalid {
+  border-color: var(--error-red);
+}
+
+.btn-accent {
+  background-color: var(--accent-green);
+  color: var(--text-on-accent);
+  border: none;
+}
+
+  .btn-accent:hover:not([disabled]) {
+    background-color: var(--accent-green-hover);
+  }
+
+  .btn-accent:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
