@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ModelerAPI.ApiService.Models
 {
     /// <summary>
@@ -22,9 +24,13 @@ namespace ModelerAPI.ApiService.Models
 
         /// <summary>
         /// Unique identifier for the graph
-        /// </summary>
+        /// </summary>        
         public string GraphId { get; set; }
 
+        /// <summary>
+        /// Partition key for Cosmos DB, maps to GraphId
+        /// </summary>       
+        public string pKey { get; set; }
         /// <summary>
         /// When the node was created
         /// </summary>

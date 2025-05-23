@@ -1,4 +1,6 @@
-﻿namespace ModelerAPI.ApiService.Models
+﻿using System.Text.Json.Serialization;
+
+namespace ModelerAPI.ApiService.Models
 {
     /// <summary>
     /// Represents an edge (connection) in the graph database
@@ -30,6 +32,11 @@
         /// </summary>
         public string GraphId { get; set; }
 
+        /// <summary>
+        /// Partition key for Cosmos DB, maps to GraphId
+        /// </summary>
+        [JsonPropertyName("pkey")]
+        public string pKey => GraphId;
         /// <summary>
         /// When the edge was created
         /// </summary>

@@ -155,41 +155,41 @@ namespace ModelerAPI.ApiService.Controllers
         /// Imports a graph from a csv file
         /// </summary>
         /// <returns>Information about the imported graph</returns>
-        //[HttpPost("import-csv")]
-        //[ProducesResponseType(StatusCodes.Status201Created)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        //public async Task<IActionResult> ImportGraphFromCsv([FromForm] ImportGraphRequest request)
-        //{
-        //    try
-        //    {
-        //        _logger.LogInformation("Importing graph from CSV file");
+        [HttpPost("import-csv")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> ImportGraphFromCsv([FromForm] ImportGraphRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Importing graph from CSV file");
 
-        //        if (request.GraphFile == null || request.GraphFile.Length == 0)
-        //        {
-        //            return BadRequest("No file uploaded or file is empty");
-        //        }
+                if (request.GraphFile == null || request.GraphFile.Length == 0)
+                {
+                    return BadRequest("No file uploaded or file is empty");
+                }
 
-        //        // Read the file content
-        //        using var stream = request.GraphFile.OpenReadStream();
-        //        var newGraphId = await _csvImportService.ImportGraphFromCsvAsync(stream, request.NewGraphName);
+                // Read the file content
+                using var stream = request.GraphFile.OpenReadStream();
+                var newGraphId = await _csvImportService.ImportGraphFromCsvAsync(stream, request.NewGraphName);
 
-        //        // Return success with location header pointing to the new graph
-        //        var locationUri = $"{Request.Scheme}://{Request.Host}/api/Graph/{newGraphId}";
-        //        return Created(locationUri, new { GraphId = newGraphId, Message = "Graph imported successfully" });
-        //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        _logger.LogWarning(ex, "Invalid import data: {Message}", ex.Message);
-        //        return BadRequest(ex.Message);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error importing graph from CSV");
-        //        return StatusCode(StatusCodes.Status500InternalServerError,
-        //            $"An error occurred while importing the graph: {ex.Message}");
-        //    }
-        //}
+                // Return success with location header pointing to the new graph
+                var locationUri = $"{Request.Scheme}://{Request.Host}/api/Graph/{newGraphId}";
+                return Created(locationUri, new { GraphId = newGraphId, Message = "Graph imported successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid import data: {Message}", ex.Message);
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing graph from CSV");
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    $"An error occurred while importing the graph: {ex.Message}");
+            }
+        }
     }
 
     public class ImportGraphRequest

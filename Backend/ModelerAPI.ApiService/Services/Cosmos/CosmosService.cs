@@ -681,7 +681,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
         }
         public async Task<List<Edge>> BatchCreateEdgesAsync(List<Edge> edges)
         {
-            const int batchSize = 10; // Process edges in batches of 10
+            const int batchSize = 5; // Process edges in batches of 10
             var createdEdges = new List<Edge>();
 
             foreach (var batch in edges.Chunk(batchSize))
@@ -741,6 +741,7 @@ namespace ModelerAPI.ApiService.Services.Cosmos
                 }
 
                 await Task.WhenAll(tasks);
+                await Task.Delay(500);
             }
 
             return createdEdges;

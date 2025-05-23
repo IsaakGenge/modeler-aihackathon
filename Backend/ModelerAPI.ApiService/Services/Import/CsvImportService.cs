@@ -32,24 +32,25 @@ namespace ModelerAPI.ApiService.Services.Import
 
             // Parse and group records by the top-level path
             var groupedByPath = records
-    .GroupBy(record =>
-    {
-        try
-        {
-            // Parse the path column as a JSON array
-            var pathJson = record.Path;
-            var pathArray = JsonConvert.DeserializeObject<List<string>>(pathJson);
+                .GroupBy(record =>
+                {
+                    try
+                    {
+                        // Extract the path column
+                        var pathJson = record.Path;
 
-            // Return the top-level path (first element)
-            return pathArray?[0] ?? "Unknown";
-        }
-        catch (Exception ex)
-        {
-            // Log the error and return a default value
-            Console.WriteLine($"Error parsing path: {ex.Message}. Path value: {record.Path}");
-            return "Unknown";
-        }
-    });
+                        // Parse the path column as a JSON array
+                        var pathArray = JsonConvert.DeserializeObject<List<string>>(pathJson);
+
+                        // Return the top-level path (first element)
+                        return pathArray?[0] ?? "Unknown";
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing path: {ex.Message}. Path value: {record.Path}");
+                        return "Unknown";
+                    }
+                });
 
             var createdGraphIds = new List<string>();
 
@@ -69,37 +70,71 @@ namespace ModelerAPI.ApiService.Services.Import
 
                 await _cosmosService.CreateItemAsync(graph, graphId);
 
-                var nodes = new List<Node>();
+                var nodes = new Dictionary<string, Node>();
                 var edges = new List<Edge>();
+                var batchNodes = new List<Node>();
+                var batchEdges = new List<Edge>();
 
                 foreach (var record in group)
                 {
-                    if (record.Class == "Node")
+                    try
                     {
-                        var node = new Node
+                        // Parse the path column
+                        var pathJson = record.Path;
+                        var pathArray = JsonConvert.DeserializeObject<List<string>>(pathJson);
+
+                        if (pathArray == null || pathArray.Count == 0)
+                            continue;
+
+                        // Traverse the path array to create nodes and edges
+                        string? parentId = null;
+                        foreach (var segment in pathArray)
                         {
-                            Id = Guid.NewGuid().ToString(),
-                            Name = record.PropertyName,
-                            NodeType = record.PropertyType,
-                            GraphId = graphId,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        nodes.Add(await _cosmosService.CreateNodeAsync(node));
+                            if (!nodes.ContainsKey(segment))
+                            {
+                                // Create a new node for the segment
+                                var node = new Node
+                                {
+                                    Id = Guid.NewGuid().ToString(),
+                                    Name = segment,
+                                    NodeType = "TreeNode",
+                                    GraphId = graphId,
+                                    CreatedAt = DateTime.UtcNow
+                                };
+
+                                nodes[segment] = node;
+                                batchNodes.Add(node);
+                            }
+
+                            if (parentId != null)
+                            {
+                                // Create an edge between the parent and the current node
+                                var edge = new Edge
+                                {
+                                    Id = Guid.NewGuid().ToString(),
+                                    Source = parentId,
+                                    Target = nodes[segment].Id,
+                                    EdgeType = "ParentChild",
+                                    GraphId = graphId,
+                                    CreatedAt = DateTime.UtcNow
+                                };
+
+                                batchEdges.Add(edge);
+                            }
+
+                            // Update the parent ID for the next iteration
+                            parentId = nodes[segment].Id;
+                        }
                     }
-                    else if (record.Class == "Edge")
+                    catch (Exception ex)
                     {
-                        var edge = new Edge
-                        {
-                            Id = Guid.NewGuid().ToString(),
-                            Source = record.Source,
-                            Target = record.Target,
-                            EdgeType = record.PropertyType,
-                            GraphId = graphId,
-                            CreatedAt = DateTime.UtcNow
-                        };
-                        edges.Add(await _cosmosService.CreateEdgeAsync(edge));
+                        Console.WriteLine($"Error processing record: {ex.Message}");
                     }
                 }
+
+                // Batch create nodes and edges
+                await _cosmosService.BatchCreateNodesAsync(batchNodes);
+                await _cosmosService.BatchCreateEdgesAsync(batchEdges);
 
                 createdGraphIds.Add(graphId);
             }
