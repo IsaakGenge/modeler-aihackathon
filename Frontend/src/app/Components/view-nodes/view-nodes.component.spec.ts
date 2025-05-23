@@ -268,6 +268,7 @@ describe('ViewNodesComponent', () => {
 
     it('should render node cards when there is data', () => {
       component.nodeData = [...mockNodes];
+      component.filteredNodes = [...mockNodes]; // This was missing
       fixture.detectChanges();
 
       const nodeCards = fixture.debugElement.queryAll(By.css('.node-card'));
@@ -281,9 +282,10 @@ describe('ViewNodesComponent', () => {
       component.warning = null;
       fixture.detectChanges();
 
-      const emptyMessage = fixture.debugElement.query(By.css('.alert-info'));
+      // Changed from alert-info to empty-state to match the actual component HTML
+      const emptyMessage = fixture.debugElement.query(By.css('.empty-state'));
       expect(emptyMessage).toBeTruthy();
-      expect(emptyMessage.nativeElement.textContent).toContain('No nodes available');
+      expect(emptyMessage.nativeElement.textContent).toContain('No Nodes Available');
     });
   });
 

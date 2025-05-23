@@ -4,6 +4,8 @@ import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { GraphService } from '../../Services/Graph/graph.service';
+import { TypesService } from '../../Services/Types/types.service';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError, BehaviorSubject } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -19,6 +21,7 @@ describe('ViewEdgesComponent', () => {
   let nodeServiceSpy: jasmine.SpyObj<NodeService>;
   let themeServiceSpy: jasmine.SpyObj<ThemeService>;
   let graphServiceSpy: jasmine.SpyObj<GraphService>;
+  let typesServiceSpy: jasmine.SpyObj<TypesService>;
 
   // Create subjects for the observables - making them accessible for tests
   let edgeCreatedSubject: BehaviorSubject<void>;
@@ -97,6 +100,17 @@ describe('ViewEdgesComponent', () => {
       currentGraphId: 'graph1'
     });
 
+    typesServiceSpy = jasmine.createSpyObj('TypesService', ['getEdgeVisualSetting']);
+    // Fix: Provide all required properties for EdgeVisualSetting
+    typesServiceSpy.getEdgeVisualSetting.and.returnValue({
+      lineColor: '#FF0000',
+      lineStyle: 'solid',
+      width: '2',
+      targetArrowShape: 'triangle',
+      curveStyle: 'bezier',
+      lineOpacity: '1'
+    });
+
     // Configure spy behavior
     edgeServiceSpy.getEdges.and.returnValue(of(mockEdges));
     edgeServiceSpy.deleteEdge.and.returnValue(of({ success: true }));
@@ -126,13 +140,15 @@ describe('ViewEdgesComponent', () => {
       imports: [
         CommonModule,
         ViewEdgesComponent,
-        ConfirmationModalComponent
+        ConfirmationModalComponent,
+        HttpClientTestingModule // Add this to fix HttpClient provider error
       ],
       providers: [
         { provide: EdgeService, useValue: edgeServiceSpy },
         { provide: NodeService, useValue: nodeServiceSpy },
         { provide: ThemeService, useValue: themeServiceSpy },
-        { provide: GraphService, useValue: graphServiceSpy }
+        { provide: GraphService, useValue: graphServiceSpy },
+        { provide: TypesService, useValue: typesServiceSpy } // Use the spy instead of the real service
       ],
       schemas: [NO_ERRORS_SCHEMA] // Ignore unknown elements/attributes
     }).compileComponents();
