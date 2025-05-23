@@ -1,6 +1,6 @@
 <div class="node-container">
-  <div *ngIf="loading" class="d-flex align-items-center">
-    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+  <div *ngIf="loading" class="d-flex align-items-center justify-content-center py-3">
+    <div class="spinner-border text-primary me-2" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
     <span>Loading node data...</span>
@@ -16,56 +16,95 @@
     {{ warning }}
   </div>
 
+  <!-- Node list view -->
   <div *ngIf="nodeData && nodeData.length > 0" class="node-data">
-    <div class="row g-2">
-      <div *ngFor="let node of nodeData" class="col-6 col-md-3 col-lg-2 mb-2">
-        <div class="card node-card h-100 clickable-row" (click)="selectNode(node)">
-          <div class="card-body p-1">
-            <div class="d-flex align-items-center mb-1">
-              <div class="node-shape-indicator me-2"
-                   [ngStyle]="getNodeVisualStyle(node.nodeType)">
-              </div>
-              <h6 class="card-title mb-0 text-truncate"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
-                  [title]="'ID: ' + node.id">
+    <!-- Filtering and sorting options -->
+    <div class="node-controls mb-3">
+      <div class="input-group">
+        <span class="input-group-text bg-transparent border-end-0">
+          <i class="bi bi-search"></i>
+        </span>
+        <input type="text" class="form-control border-start-0"
+               placeholder="Search nodes..."
+               (input)="onSearchInput($event)">
+        <select class="form-select" style="max-width: 150px;" (change)="onSortChange($event)">
+          <option value="name">Name</option>
+          <option value="nodeType">Type</option>
+          <option value="createdAt">Created Date</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Grid view of nodes -->
+    <div class="row g-3">
+      <div *ngFor="let node of filteredNodes" class="col-sm-6 col-md-4 col-lg-3 mb-3">
+        <div class="card node-card h-100"
+             [class.selected-node]="selectedNodeId === node.id"
+             (click)="selectNode(node, $event)">
+          <div class="card-header node-header">
+            <div class="d-flex align-items-center">
+              <div class="node-shape-indicator me-2" [ngStyle]="getNodeVisualStyle(node.nodeType)"></div>
+              <h6 class="card-title mb-0 text-truncate flex-grow-1" [title]="node.name || 'Unnamed Node'">
                 {{ node.name || 'Unnamed Node' }}
               </h6>
+              <div class="node-actions">
+                <button class="btn btn-sm btn-icon" (click)="initiateDeleteNode(node.id, $event)" title="Delete node">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
             </div>
-            <p class="card-text mb-1"><small class="theme-secondary-text">{{ node.nodeType }}</small></p>
+          </div>
+          <div class="card-body p-2">
+            <div class="node-info">
+              <div class="node-type-badge" [ngStyle]="{'background-color': getNodeTypeColor(node.nodeType)}">
+                {{ node.nodeType }}
+              </div>
+              <div class="node-id small text-muted mt-1" title="Node ID">ID: {{ node.id | slice:0:8 }}...</div>
+            </div>
 
             <!-- Display properties if they exist -->
-            <div *ngIf="node.properties && getPropertyCount(node.properties) > 0" class="node-properties mt-1 mb-1">
-              <small class="d-block theme-secondary-text">Properties:</small>
-              <ul class="list-unstyled small ps-2 mb-0">
-                <li *ngFor="let prop of getPropertyEntries(node.properties)" class="text-truncate"
+            <div *ngIf="node.properties && getPropertyCount(node.properties) > 0" class="node-properties mt-2">
+              <div class="properties-header">
+                <span class="properties-title">Properties</span>
+                <span class="badge bg-secondary rounded-pill">{{ getPropertyCount(node.properties) }}</span>
+              </div>
+              <ul class="property-list">
+                <li *ngFor="let prop of getPropertyEntries(node.properties) | slice:0:3"
+                    class="property-item"
                     [title]="prop.key + ': ' + prop.value">
-                  <strong>{{ prop.key }}:</strong> {{ prop.value }}
+                  <span class="property-key">{{ prop.key }}:</span>
+                  <span class="property-value">{{ prop.value }}</span>
+                </li>
+                <li *ngIf="getPropertyCount(node.properties) > 3" class="more-properties">
+                  <i class="bi bi-three-dots"></i> {{ getPropertyCount(node.properties) - 3 }} more
                 </li>
               </ul>
             </div>
-
-            <div class="node-actions">
-              <button class="btn btn-danger btn-sm" (click)="initiateDeleteNode(node.id)">
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
+          </div>
+          <div class="card-footer node-footer">
+            <small class="text-muted">
+              <i class="bi bi-clock"></i>
+              {{ node.createdAt ? (node.createdAt | date:'short') : 'Unknown date' }}
+            </small>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="!loading && !error && !warning && nodeData && nodeData.length === 0" class="alert alert-info">
-    <i class="bi bi-info-circle-fill me-2"></i>
-    No nodes available. Create a node to get started.
+  <div *ngIf="!loading && !error && !warning && nodeData && nodeData.length === 0" class="empty-state">
+    <div class="text-center py-5">
+      <i class="bi bi-diagram-3 fs-1 mb-3 d-block text-muted"></i>
+      <h5>No Nodes Available</h5>
+      <p class="text-muted">Create a node to get started.</p>
+    </div>
   </div>
 </div>
 
-<!-- Add the confirmation modal component -->
+<!-- Confirmation modal for deleting nodes -->
 <app-confirmation-modal [show]="showDeleteModal"
                         [title]="'Confirm Node Deletion'"
-                        [message]="'Are you sure you want to delete this node?'"
+                        [message]="'Are you sure you want to delete this node? This action cannot be undone.'"
                         [confirmButtonText]="'Delete'"
                         [isLoading]="deleteInProgress"
                         [error]="deleteError"

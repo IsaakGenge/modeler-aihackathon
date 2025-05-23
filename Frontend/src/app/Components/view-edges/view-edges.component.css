@@ -1,184 +1,207 @@
 /* Frontend/src/app/Components/view-edges/view-edges.component.css */
 
-/* Base container styling using theme variables */
+/* Container for all edge-related content */
 .edge-container {
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  border: 1px solid var(--border);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-  /* Basic text styling */
-  .edge-container h2 {
-    color: var(--text-primary);
-    transition: color 0.3s ease;
-  }
-
-/* Enhanced table styling that extends the global table styles */
-.table {
-  color: var(--text-primary);
-  background-color: var(--bg-secondary);
-  border-color: var(--border);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+/* Search and filter controls */
+.edge-controls {
+  margin-bottom: 1rem;
 }
 
-  /* Table header styling */
-  .table thead,
-  .table th {
+  .edge-controls .input-group-text,
+  .edge-controls .form-control,
+  .edge-controls .form-select {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
     border-color: var(--border);
+    transition: all 0.2s ease;
   }
 
-  /* Table row styling */
-  .table > tbody > tr {
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    border-color: var(--border);
-  }
-
-    /* Striped table rows */
-    .table > tbody > tr:nth-of-type(odd) {
-      background-color: var(--bg-tertiary);
+    .edge-controls .form-control:focus,
+    .edge-controls .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
     }
 
-    /* Hover state for rows */
-    .table > tbody > tr:hover {
-      background-color: rgba(52, 152, 219, 0.1);
-    }
-
-/* Dark theme specific overrides */
-.dark-theme .table {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border-color: var(--border);
-}
-
-  .dark-theme .table thead,
-  .dark-theme .table th {
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  .dark-theme .table > tbody > tr {
-    background-color: var(--bg-secondary);
-  }
-
-    .dark-theme .table > tbody > tr:nth-of-type(odd) {
-      background-color: var(--bg-tertiary);
-    }
-
-    .dark-theme .table > tbody > tr:hover {
-      background-color: rgba(52, 152, 219, 0.2);
-    }
-
-    .dark-theme .table > tbody > tr > td {
-      color: var(--text-primary);
-      border-color: var(--border);
-    }
-
-/* Table cell styling */
-.table > tbody > tr > td {
-  color: var(--text-primary);
-  border-color: var(--border);
-  background-color: inherit; /* Ensure cells inherit the row's background */
-}
-
-/* Improved active row highlighting for both themes */
-.table > tbody > tr.active {
-  background-color: rgba(52, 152, 219, 0.1);
-}
-
-.dark-theme .table > tbody > tr.active {
-  background-color: rgba(52, 152, 219, 0.2);
-}
-
-/* Component-specific overrides if needed */
-.edge-container .loading,
-.edge-container .error,
-.edge-container .warning {
-  color: var(--text-primary);
-}
-
-/* Add transitions for smooth theme switching */
-.edge-container, .edge-container * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Properties styling */
-.edge-properties {
-  position: relative;
-  display: inline-block;
-}
-
-.properties-card {
-  width: 220px;
-  max-height: 120px;
-  overflow-y: auto;
-  background-color: var(--bg-secondary);
+/* Enhanced edge card styling */
+.edge-card {
+  background-color: var(--bg-tertiary);
   border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-.properties-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.property-item {
-  font-size: 0.8rem;
-  line-height: 1.2;
-  display: flex;
-  align-items: flex-start;
-  padding: 0.15rem 0;
-}
-
-.property-key {
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding-right: 0.5rem;
-  white-space: nowrap;
-}
-
-.property-value {
-  color: var(--text-primary);
-  text-overflow: ellipsis;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   overflow: hidden;
-  word-break: break-word;
+  cursor: pointer;
 }
 
-.properties-count {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 0.7rem;
-  min-width: 1.5rem;
-  height: 1.5rem;
+  .edge-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--border-hover);
+  }
+
+  .edge-card.selected-edge {
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.2);
+  }
+
+/* Edge card header styling */
+.edge-header {
+  padding: 0.75rem;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.edge-type-indicator {
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Edge actions (buttons) */
+.edge-actions {
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.edge-card:hover .edge-actions {
+  visibility: visible;
+  opacity: 1;
+}
+
+.btn-icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* Custom scrollbar for properties */
-.properties-card::-webkit-scrollbar {
-  width: 4px;
-}
-
-.properties-card::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-.properties-card::-webkit-scrollbar-thumb {
-  background-color: var(--border);
   border-radius: 4px;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border: none;
+  transition: all 0.2s ease;
 }
 
-  .properties-card::-webkit-scrollbar-thumb:hover {
-    background-color: var(--text-secondary);
+  .btn-icon:hover {
+    color: var(--danger);
+    background-color: rgba(var(--bs-danger-rgb), 0.1);
   }
+
+/* Connection details styling */
+.connection-details {
+  padding: 0.5rem 0;
+}
+
+.connection-nodes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.source-node, .target-node {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary); /* Add this line to ensure text uses theme color */
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Add transition for smooth theme switching */
+}
+
+  .source-node span, .target-node span {
+    color: var(--text-primary); /* Ensure the text content also uses the theme variable */
+  }
+
+  .source-node i, .target-node i {
+    font-size: 0.7rem;
+    color: var(--accent);
+  }
+
+.connection-arrow {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.edge-property-count {
+  display: flex;
+  justify-content: center;
+}
+
+.edge-id {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  text-align: center;
+}
+
+/* Edge footer styling */
+.edge-footer {
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Empty state styling */
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .empty-state h5 {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+/* Loading state */
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .edge-card {
+    margin-bottom: 1rem;
+  }
+
+  .edge-actions {
+    visibility: visible;
+    opacity: 1;
+  }
+}

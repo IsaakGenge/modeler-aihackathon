@@ -1,19 +1,21 @@
 // Frontend/src/app/Components/view-edges/view-edges.component.ts
 import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
 import { GraphService } from '../../Services/Graph/graph.service';
+import { TypesService } from '../../Services/Types/types.service';
 import { Subscription, forkJoin, of, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-view-edges',
   standalone: true,
-  imports: [CommonModule, ConfirmationModalComponent],
+  imports: [CommonModule, ConfirmationModalComponent, FormsModule, DatePipe],
   templateUrl: './view-edges.component.html',
   styleUrl: './view-edges.component.css'
 })
@@ -21,11 +23,15 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   @Output() edgeSelected = new EventEmitter<any>();
 
   edgeData: any[] = [];
+  filteredEdges: any[] = []; // For search/filter functionality
   nodeMap: Map<string, string> = new Map(); // Map to store node id -> node name
   loading: boolean = false;
   error: string | null = null;
   warning: string | null = null;
   isDarkMode$: Observable<boolean>;
+  selectedEdgeId: string | null = null;
+  searchTerm: string = '';
+  sortBy: string = 'sourceTarget';
 
   // Modal properties
   showDeleteModal: boolean = false;
@@ -43,6 +49,7 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     private nodeService: NodeService,
     private themeService: ThemeService,
     private graphService: GraphService,
+    private typesService: TypesService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -87,22 +94,61 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   }
 
   // Method to handle edge selection
-  selectEdge(edge: any): void {
+  selectEdge(edge: any, event?: Event): void {
     // Stop propagation to prevent delete button from triggering selection
     event?.stopPropagation();
 
-    // Add a visual indication of selection
-    const edgeRows = document.querySelectorAll('.edge-data table tbody tr');
-    edgeRows.forEach(row => row.classList.remove('selected-row'));
-
-    // Find the clicked row and add selected class
-    const edgeIndex = this.edgeData.findIndex(e => e.id === edge.id);
-    if (edgeIndex >= 0 && edgeIndex < edgeRows.length) {
-      edgeRows[edgeIndex].classList.add('selected-row');
-    }
+    this.selectedEdgeId = edge.id;
 
     // Emit the selected edge to parent component
     this.edgeSelected.emit(edge);
+  }
+
+  // Handle search input
+  onSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchTerm = input.value.toLowerCase();
+    this.filterEdges();
+  }
+
+  // Handle sort change
+  onSortChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.sortBy = select.value;
+    this.filterEdges();
+  }
+
+  // Filter and sort edges based on search term and sort criteria
+  filterEdges(): void {
+    // Filter by search term
+    if (this.searchTerm) {
+      this.filteredEdges = this.edgeData.filter(edge =>
+        (edge.edgeType && edge.edgeType.toLowerCase().includes(this.searchTerm)) ||
+        (this.getNodeName(edge.source).toLowerCase().includes(this.searchTerm)) ||
+        (this.getNodeName(edge.target).toLowerCase().includes(this.searchTerm)));
+    } else {
+      this.filteredEdges = [...this.edgeData];
+    }
+
+    // Sort edges
+    this.filteredEdges.sort((a, b) => {
+      switch (this.sortBy) {
+        case 'sourceTarget':
+          const sourceNameA = this.getNodeName(a.source);
+          const sourceNameB = this.getNodeName(b.source);
+          const compareSource = sourceNameA.localeCompare(sourceNameB);
+          if (compareSource !== 0) return compareSource;
+          return this.getNodeName(a.target).localeCompare(this.getNodeName(b.target));
+        case 'edgeType':
+          return (a.edgeType || '').localeCompare(b.edgeType || '');
+        case 'createdAt':
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA; // Newest first
+        default:
+          return 0;
+      }
+    });
   }
 
   loadData(): void {
@@ -139,6 +185,7 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
           this.nodeMap.set(node.id, node.name || 'Unnamed Node');
         });
 
+        this.filterEdges(); // Apply initial filtering and sorting
         this.loading = false;
       },
       error: (err) => {
@@ -162,6 +209,8 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
         nodes.forEach((node: any) => {
           this.nodeMap.set(node.id, node.name || 'Unnamed Node');
         });
+        // Re-apply filters since node names may have changed
+        this.filterEdges();
       }
     });
   }
@@ -172,6 +221,15 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
 
   truncateId(id: string): string {
     return id.substring(0, 8) + '...';
+  }
+
+  getEdgeTypeColor(edgeType: string): string {
+    try {
+      const visualSetting = this.typesService.getEdgeVisualSetting(edgeType);
+      return visualSetting.lineColor || '#007bff';
+    } catch (error) {
+      return '#007bff'; // Default color if there's an error
+    }
   }
 
   // Helper method to get count of properties
@@ -192,6 +250,7 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   initiateDeleteEdge(id: string, event?: MouseEvent): void {
     // Stop event propagation to prevent row selection when clicking delete
     event?.stopPropagation();
+    event?.preventDefault();
 
     this.edgeToDelete = id;
     this.showDeleteModal = true;
@@ -207,14 +266,16 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
 
     this.edgeService.deleteEdge(this.edgeToDelete).subscribe({
       next: () => {
+        // If the deleted edge was selected, clear selection
+        if (this.selectedEdgeId === this.edgeToDelete) {
+          this.selectedEdgeId = null;
+        }
+
         this.edgeService.notifyEdgeDeleted();
         this.resetDeleteState();
-        this.loading = false;
       },
-
       error: (err: HttpErrorResponse) => {
         this.deleteInProgress = false;
-        this.loading = false;
 
         if (err.status === 404) {
           this.warning = 'Connection not found or already deleted';
