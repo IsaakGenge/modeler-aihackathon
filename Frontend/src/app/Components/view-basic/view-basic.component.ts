@@ -10,6 +10,8 @@ import { GraphPickerComponent } from '../shared/graph-picker/graph-picker.compon
 import { DetailsPanelComponent } from '../details-panel/details-panel.component';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
+import { NodeService } from '../../Services/Node/node.service';
+import { Node } from '../../Models/node.model';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
@@ -47,6 +49,7 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private graphService: GraphService,
     private themeService: ThemeService,
+    private nodeService: NodeService, // Add NodeService
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
@@ -177,19 +180,33 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onEdgeSelected(edge: any): void {
     console.log('Edge selected:', edge);
-    this.selectedElement = {
-      type: 'edge',
-      data: edge
-    };
+
+    // Get the node names to replace the GUIDs
+    this.nodeService.getNodes(this.currentGraphId).subscribe((nodes: Node[]) => {
+      // Create a map of node IDs to node names
+      const nodeMap = new Map<string, string>();
+      nodes.forEach((node: Node) => {
+        nodeMap.set(node.id?.toString() || '', node.name);
+      });
+
+      // Create a copy of the edge with additional properties for details-panel
+      const edgeWithLabels = {
+        ...edge,
+        sourceLabel: nodeMap.get(edge.source) || edge.source,
+        targetLabel: nodeMap.get(edge.target) || edge.target
+      };
+
+      this.selectedElement = {
+        type: 'edge',
+        data: edgeWithLabels
+      };
+    });
   }
 
   onGraphSelected(graph: any): void {
     if (graph) {
       this.hasSelectedGraph = true;
       this.currentGraphId = graph.id;
-
-      
-      
     }
   }
 
