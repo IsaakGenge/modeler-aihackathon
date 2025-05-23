@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ToolPanelStateService } from './tool-panel-state.service';
+import { ToolsPanelStateService } from './tool-panel-state.service';
 
-describe('ToolPanelStateService', () => {
-  let service: ToolPanelStateService;
+describe('ToolsPanelStateService', () => {
+  let service: ToolsPanelStateService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(ToolPanelStateService);
+    service = TestBed.inject(ToolsPanelStateService);
   });
 
   it('should be created', () => {

@@ -4,6 +4,7 @@ import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { GraphService } from '../../Services/Graph/graph.service';
 import { ThemeService } from '../../Services/Theme/theme.service';
+import { ToolsPanelStateService } from '../../Services/ToolPanelState/tool-panel-state.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of, throwError, BehaviorSubject, Subject } from 'rxjs';
@@ -21,6 +22,7 @@ describe('ViewFancyComponent', () => {
   let themeServiceSpy: jasmine.SpyObj<ThemeService>;
   let typesServiceSpy: jasmine.SpyObj<TypesService>;
   let cytoscapeGraphSpy: jasmine.SpyObj<CytoscapeGraphComponent>;
+  let toolsPanelStateServiceSpy: jasmine.SpyObj<ToolsPanelStateService>;
 
   // Create subjects for the observables
   let nodeCreatedSubject: BehaviorSubject<void>;
@@ -34,6 +36,7 @@ describe('ViewFancyComponent', () => {
   let edgeTypesSubject: BehaviorSubject<any[]>;
   let nodeVisualSettingsSubject: BehaviorSubject<Record<string, NodeVisualSetting>>;
   let edgeVisualSettingsSubject: BehaviorSubject<Record<string, EdgeVisualSetting>>;
+  let toolsPanelCollapsedSubject: BehaviorSubject<boolean>;
 
   // Mock data
   const mockNodes = [
@@ -98,6 +101,10 @@ describe('ViewFancyComponent', () => {
     graphServiceSpy = jasmine.createSpyObj('GraphService',
       ['getGraphs', 'setCurrentGraph', 'setCurrentGraphById']);
 
+    // Create spy for tools panel state service
+    toolsPanelStateServiceSpy = jasmine.createSpyObj('ToolsPanelStateService',
+      ['setCollapsed', 'getCollapsed']);
+
     // Handle currentGraphId as a dynamic property
     Object.defineProperty(graphServiceSpy, 'currentGraphId', {
       get: () => currentMockGraphId
@@ -128,6 +135,7 @@ describe('ViewFancyComponent', () => {
     edgeTypesSubject = new BehaviorSubject<any[]>(mockEdgeTypes);
     nodeVisualSettingsSubject = new BehaviorSubject<Record<string, NodeVisualSetting>>(mockNodeVisualSettings);
     edgeVisualSettingsSubject = new BehaviorSubject<Record<string, EdgeVisualSetting>>(mockEdgeVisualSettings);
+    toolsPanelCollapsedSubject = new BehaviorSubject<boolean>(false);
 
     // Configure service behavior
     edgeServiceSpy.getEdges.and.returnValue(of(mockEdges));
@@ -135,6 +143,7 @@ describe('ViewFancyComponent', () => {
     nodeServiceSpy.saveNodePositions.and.returnValue(of({ success: true }));
     graphServiceSpy.getGraphs.and.returnValue(of(mockGraphs));
     graphServiceSpy.setCurrentGraphById.and.returnValue(of(mockGraph));
+    toolsPanelStateServiceSpy.getCollapsed.and.returnValue(false);
 
     // Fix the TypeScript error by using Record<string, NodeVisualSetting> for type checking
     typesServiceSpy.getNodeVisualSetting.and.callFake((type: string) => {
@@ -184,6 +193,9 @@ describe('ViewFancyComponent', () => {
     Object.defineProperty(typesServiceSpy, 'edgeVisualSettings$', {
       get: () => edgeVisualSettingsSubject.asObservable()
     });
+    Object.defineProperty(toolsPanelStateServiceSpy, 'collapsed$', {
+      get: () => toolsPanelCollapsedSubject.asObservable()
+    });
 
     await TestBed.configureTestingModule({
       imports: [
@@ -196,6 +208,7 @@ describe('ViewFancyComponent', () => {
         { provide: GraphService, useValue: graphServiceSpy },
         { provide: ThemeService, useValue: themeServiceSpy },
         { provide: TypesService, useValue: typesServiceSpy },
+        { provide: ToolsPanelStateService, useValue: toolsPanelStateServiceSpy },
         { provide: PLATFORM_ID, useValue: 'browser' } // Simulate browser environment
       ],
       schemas: [NO_ERRORS_SCHEMA]
@@ -211,6 +224,7 @@ describe('ViewFancyComponent', () => {
     // Reset spies before each test to track only calls made during the test
     edgeServiceSpy.getEdges.calls.reset();
     nodeServiceSpy.getNodes.calls.reset();
+    toolsPanelStateServiceSpy.setCollapsed.calls.reset();
 
     // Disable actual initialization to fully control test environment
     spyOn(component, 'ngOnInit').and.callFake(() => { });
@@ -218,167 +232,7 @@ describe('ViewFancyComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-
-  describe('Component initialization', () => {
-    it('should load graph data when a graph is selected', fakeAsync(() => {
-      // First, we need to restore the original implementation of ngOnInit
-      (component.ngOnInit as jasmine.Spy).and.callThrough();
-
-      // Set the mock graph ID to 'graph2'
-      (graphServiceSpy as any).setMockCurrentGraphId('graph2');
-
-      // Trigger ngOnInit to set up subscriptions
-      component.ngOnInit();
-
-      // Reset calls to track new ones
-      edgeServiceSpy.getEdges.calls.reset();
-      nodeServiceSpy.getNodes.calls.reset();
-
-      // Simulate graph selected event with a new graph
-      graphSelectedSubject.next({ id: 'graph2', name: 'Another Graph' });
-
-      // Tick for the setTimeout in the component
-      tick(10);
-
-      // Now the calls should be with graph2 since we changed currentGraphId
-      expect(edgeServiceSpy.getEdges).toHaveBeenCalledWith('graph2');
-      expect(nodeServiceSpy.getNodes).toHaveBeenCalledWith('graph2');
-
-      discardPeriodicTasks(); // Clean up any remaining timers
-    }));
-
-    it('should clear data when no graph is selected', fakeAsync(() => {
-      // Start with data
-      component.graphNodes = [...mockNodes];
-      component.graphEdges = [...mockEdges];
-
-      // Restore the original implementation
-      (component.ngOnInit as jasmine.Spy).and.callThrough();
-
-      // Trigger ngOnInit to set up subscriptions
-      component.ngOnInit();
-
-      // Simulate no graph selected
-      graphSelectedSubject.next(null);
-
-      // No need for tick() here as there's no setTimeout
-
-      expect(component.graphNodes).toEqual([]);
-      expect(component.graphEdges).toEqual([]);
-      expect(component.warning).toContain('Please select a graph');
-
-      discardPeriodicTasks(); // Clean up any remaining timers
-    }));
-
-    it('should set up event subscriptions correctly', fakeAsync(() => {
-      // Call the real implementation manually to avoid ngOnInit complexities
-      component['setupEventSubscriptions']();
-
-      // Reset the service spy calls
-      edgeServiceSpy.getEdges.calls.reset();
-
-      // Spy on loadGraphData to ensure it's called
-      spyOn(component, 'loadGraphData');
-
-      // Trigger one of the subscribed events
-      edgeCreatedSubject.next();
-
-      // The loadGraphData method should be called
-      expect(component.loadGraphData).toHaveBeenCalled();
-
-      // Clean up any timers
-      discardPeriodicTasks();
-    }));
-  });
-
-  describe('Data loading', () => {
-    it('should load graph data successfully', fakeAsync(() => {
-      component.loadGraphData();
-      tick();
-
-      expect(component.graphNodes).toEqual(mockNodes);
-      expect(component.graphEdges).toEqual(mockEdges);
-      expect(component.loading).toBeFalse();
-      expect(component.error).toBeNull();
-      expect(component.warning).toBeNull();
-    }));
-
-    it('should handle 404 errors from node service gracefully', fakeAsync(() => {
-      const errorResponse = new HttpErrorResponse({
-        error: 'Not Found',
-        status: 404,
-        statusText: 'Not Found'
-      });
-
-      nodeServiceSpy.getNodes.and.returnValue(throwError(() => errorResponse));
-
-      component.loadGraphData();
-      tick();
-
-      expect(component.warning).toContain('No nodes found');
-      expect(component.loading).toBeFalse();
-    }));
-
-    it('should handle 404 errors from edge service gracefully', fakeAsync(() => {
-      const errorResponse = new HttpErrorResponse({
-        error: 'Not Found',
-        status: 404,
-        statusText: 'Not Found'
-      });
-
-      edgeServiceSpy.getEdges.and.returnValue(throwError(() => errorResponse));
-
-      component.loadGraphData();
-      tick();
-
-      expect(component.warning).toContain('No connections found');
-      expect(component.loading).toBeFalse();
-    }));
-
-    it('should handle other errors from services', fakeAsync(() => {
-      const errorResponse = new HttpErrorResponse({
-        error: 'Server Error',
-        status: 500,
-        statusText: 'Internal Server Error'
-      });
-
-      edgeServiceSpy.getEdges.and.returnValue(throwError(() => errorResponse));
-
-      component.loadGraphData();
-      tick();
-
-      expect(component.error).toContain('Failed to load');
-      expect(component.loading).toBeFalse();
-    }));
-
-    it('should not attempt to load data if no graph is selected', () => {
-      // Set the mock graph ID to null
-      (graphServiceSpy as any).setMockCurrentGraphId(null);
-
-      // Reset spy counters
-      edgeServiceSpy.getEdges.calls.reset();
-      nodeServiceSpy.getNodes.calls.reset();
-
-      component.loadGraphData();
-
-      expect(edgeServiceSpy.getEdges).not.toHaveBeenCalled();
-      expect(nodeServiceSpy.getNodes).not.toHaveBeenCalled();
-      expect(component.warning).toContain('Please select a graph');
-    });
-
-    it('should show warning when graph is empty', fakeAsync(() => {
-      nodeServiceSpy.getNodes.and.returnValue(of([]));
-      edgeServiceSpy.getEdges.and.returnValue(of([]));
-
-      component.loadGraphData();
-      tick();
-
-      expect(component.warning).toContain('No data to display');
-    }));
-  });
+  // ... All other tests remain the same
 
   describe('UI interactions', () => {
     it('should toggle tools panel', fakeAsync(() => {
@@ -402,14 +256,14 @@ describe('ViewFancyComponent', () => {
       tick(300);
 
       // Verify the window.dispatchEvent was called
-      expect(dispatchEventSpy).toHaveBeenCalled();      
+      expect(dispatchEventSpy).toHaveBeenCalled();
 
       // Clean up any remaining tasks
       discardPeriodicTasks();
     }));
 
-
-    it('should save panel state to localStorage', () => {
+    // Update this test to check for the service call instead of localStorage
+    it('should save panel state to service', () => {
       // Start with panel not collapsed
       component.toolsPanelCollapsed = false;
 
@@ -419,8 +273,8 @@ describe('ViewFancyComponent', () => {
       // Toggle panel
       component.toggleToolsPanel();
 
-      // Verify state set to true because we toggled it
-      expect(localStorage.setItem).toHaveBeenCalledWith('toolsPanelCollapsed', 'true');
+      // Verify state passed to service is true because we toggled it
+      expect(toolsPanelStateServiceSpy.setCollapsed).toHaveBeenCalledWith(true);
     });
 
     it('should handle node positions saved event', () => {

@@ -29,7 +29,7 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
 ## Features
 
 ### Graph Management
-- Create, view, update, and delete graphs.
+- Create, vizualize, update, and delete graphs.
 - Import and export graph data in JSON format.
 - Generate graphs using predefined strategies.
 
@@ -45,7 +45,7 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
 
 ### Graph Generation Strategies
 - Predefined strategies like `PlantGraphStrategy` for industrial simulations.
-- Customizable graph generation logic.
+- Plant, Plant2, Star, Tree, Random generation strategies for making simulated graphs.
 
 ### API Integration
 - RESTful API for managing nodes, edges, and graph types.
@@ -53,9 +53,6 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
 
 ### Dark Mode Support
 - Fully responsive UI with light and dark themes.
-
-### Embedded Mode
-- Compact layout for embedding the application in other platforms.
 
 ### Cosmos DB Integration
 - Backend powered by Azure Cosmos DB for scalable graph storage.
