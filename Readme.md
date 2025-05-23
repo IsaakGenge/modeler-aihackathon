@@ -18,6 +18,7 @@ ModelerAPI is a graph database modeling application built with .NET 9, using Azu
   - [Configuring Cosmos DB Emulator for Gremlin API](#configuring-cosmos-db-emulator-for-gremlin-api)
   - [Configuration](#configuration)
   - [Running the Application](#running-the-application)
+  - [Running the unit tests](#running-the-unit-tests)
 - [API Reference](#api-reference)
 - [Swagger Documentation](#swagger-documentation)
 - [Development](#development)
@@ -149,6 +150,18 @@ The application uses the standard .NET configuration system with the Options pat
 2. Navigate to the project directory
 3. Ensure the Cosmos DB Emulator is running (check the notification icon in your system tray)
 4. Run the application using .NET Aspire:  dotnet run --project Backend/ModelerAPI.AppHost
+
+### Running the Unit Tests
+
+#### Frontend 
+1. Navigate to the `Frontend` directory
+2. Install dependencies:  npm install
+3. Run the tests:  ng test
+
+### Backend
+1. Navigate to the `Backend/ModdlerAPI.Tests` directory
+2. Run the tests:  dotnet test
+
 
 ## API Reference
 
