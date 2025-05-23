@@ -102,15 +102,23 @@ The application consists of:
    - The emulator runs by default on port 8081
    - Right-click the icon and select "Open Data Explorer" to launch the emulator web interface
 
-3. Create a database and container for your graph data:
+3. Create a database and container for your gremlin data:
    - In the Data Explorer, click "New Database"
    - Create a database named `db1`
    - Within that database, create a container named `coll1`
    - When creating the container:
      - Set the partition key to `/pkey`    
      - Click "OK" to create the container
+     
+4. Create a database and container for your graph metadata:
+   - In the Data Explorer, click "New Database"
+   - Create a database named model
+   - Within that database, create a container named graph
+   - When creating the container:
+   - Set the partition key to /pkey
+   - Click "OK" to create the container 
 
-4. Note the Gremlin endpoint details from the emulator:
+5. Note the Gremlin endpoint details from the emulator:
    - Gremlin Endpoint: `localhost:8081`
    - Gremlin Port: 65400 (this is the default Gremlin port in the emulator)
    - Default Master Key: `C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==`
