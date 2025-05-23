@@ -1,4 +1,3 @@
-<!-- Frontend/src/app/Components/create-edge/create-edge.component.html -->
 <div class="component-container">
   <form [formGroup]="edgeForm" (ngSubmit)="onSubmit()">
     <!-- Display success message -->
@@ -22,8 +21,7 @@
               formControlName="source"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['source'].errors }">
-        <option value="">Select source node</option>
-        <option *ngFor="let node of nodes | sortByName" [value]="node.id">
+        <option *ngFor="let node of nodes" [value]="node.id">
           {{ node.name }}
         </option>
       </select>
@@ -38,8 +36,7 @@
               formControlName="target"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['target'].errors }">
-        <option value="">Select target node</option>
-        <option *ngFor="let node of nodes | sortByName" [value]="node.id">
+        <option *ngFor="let node of nodes" [value]="node.id">
           {{ node.name }}
         </option>
       </select>
@@ -65,7 +62,8 @@
 
     <div class="form-actions d-flex gap-2 mt-4">
       <button type="submit"
-              class="btn btn-primary"
+              class="btn"
+              style="background-color: var(--accent); color: var(--text-highlighted);"
               [disabled]="loading || nodes.length < 2">
         Create Connection
       </button>

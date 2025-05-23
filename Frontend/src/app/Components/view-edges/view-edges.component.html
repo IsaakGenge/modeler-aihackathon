@@ -49,12 +49,7 @@
               <div class="edge-type-indicator" [style.background-color]="getEdgeTypeColor(edge.edgeType)"></div>
               <h6 class="card-title mb-0 text-truncate flex-grow-1" [title]="edge.edgeType || 'Default'">
                 {{ edge.edgeType || 'Default Connection' }}
-              </h6>
-              <div class="edge-actions">
-                <button class="btn btn-sm btn-icon" (click)="initiateDeleteEdge(edge.id, $event)" title="Delete connection">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
+              </h6>              
             </div>
           </div>
           <div class="card-body p-2">

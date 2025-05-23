@@ -24,10 +24,10 @@
         <!-- Theme toggle button -->
         <button *ngIf="isBrowser"
                 [ngClass]="(isDarkMode$ | async) ? 'btn-outline-light' : 'btn-outline-dark'"
-                class="btn rounded-circle p-1 mb-3 theme-toggle"
-                style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;"
+                class="btn theme-toggle"
                 (click)="toggleTheme()">
           <i class="bi" [ngClass]="(isDarkMode$ | async) ? 'bi-sun' : 'bi-moon'"></i>
+          <span>{{ (isDarkMode$ | async) ? 'Light Mode' : 'Dark Mode' }}</span>
         </button>
 
         <!-- Navigation items -->

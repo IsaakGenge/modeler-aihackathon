@@ -68,7 +68,6 @@ $light-alert-info-border: #b6effb;
 
 // CSS Custom Properties (Variables)
 :root {
-  // Default light theme variables
   --bg-primary: #{$light-bg-primary};
   --bg-secondary: #{$light-bg-secondary};
   --bg-tertiary: #{$light-bg-tertiary};
@@ -78,13 +77,16 @@ $light-alert-info-border: #b6effb;
   --text-secondary: #{$light-text-secondary};
   --text-highlighted: #{$light-text-highlighted};
   --primary-accent: #{$light-primary-accent};
- 
   --primary-accent-darker: #{$light-primary-accent-darker};
   --secondary-accent: #{$light-secondary-accent};
   --success-color: #{$light-success-color};
   --warning-color: #{$light-warning-color};
   --danger-color: #{$light-danger-color};
   --danger-color-darker: #{$light-danger-color-darker};
+  // Green-themed variables
+  --accent: #27ae60; /* Vibrant green */
+  --accent-dark: #1e8c4e; /* Slightly darker green for the border */
+  --accent-light: #52be80; /* Optional lighter shade for hover effects */
   // Alert variables
   --alert-bg: #{$light-alert-bg};
   --alert-border: #{$light-alert-border};
@@ -102,7 +104,7 @@ $light-alert-info-border: #b6effb;
   --alert-info-border: #{$light-alert-info-border};
 }
 
-// Dark theme class (for body element)
+// Add green-themed variables to the dark theme
 .dark-theme {
   --bg-primary: #{$dark-bg-primary};
   --bg-secondary: #{$dark-bg-secondary};
@@ -119,6 +121,10 @@ $light-alert-info-border: #b6effb;
   --warning-color: #{$dark-warning-color};
   --danger-color: #{$dark-danger-color};
   --danger-color-darker: #{$dark-danger-color-darker};
+  // Green-themed variables
+  --accent: #27ae60; /* Vibrant green */
+  --accent-dark: #1e8c4e; /* Slightly darker green for the border */
+  --accent-light: #52be80; /* Optional lighter shade for hover effects */
   // Alert variables
   --alert-bg: #{$dark-alert-bg};
   --alert-border: #{$dark-alert-border};
@@ -134,50 +140,24 @@ $light-alert-info-border: #b6effb;
   --alert-info-bg: #{$dark-alert-info-bg};
   --alert-info-text: #{$dark-alert-info-text};
   --alert-info-border: #{$dark-alert-info-border};
-  // Alert classes
-  .alert {
-    background-color: var(--alert-bg);
-    border-color: var(--alert-border);
-    color: var(--text-primary);
 
-    &.alert-warning {
-      background-color: var(--alert-warning-bg);
-      border-color: var(--alert-warning-border);
-      color: var(--alert-warning-text);
-    }
-
-    &.alert-danger {
-      background-color: var(--alert-danger-bg);
-      border-color: var(--alert-danger-border);
-      color: var(--alert-danger-text);
-    }
-
-    &.alert-success {
-      background-color: var(--alert-success-bg);
-      border-color: var(--alert-success-border);
-      color: var(--alert-success-text);
-    }
-
-    &.alert-info {
-      background-color: var(--alert-info-bg);
-      border-color: var(--alert-info-border);
-      color: var(--alert-info-text);
-    }
-  }
   // Scrollbar styling
-  &::-webkit-scrollbar {
-    width: 10px;
-  }
+&::-webkit-scrollbar {
+  width: 10px;
+}
 
-  &::-webkit-scrollbar-track {
-    background: var(--bg-tertiary);
-  }
+&::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+}
 
-  &::-webkit-scrollbar-thumb {
-    background: #555;
+&::-webkit-scrollbar-thumb {
+  background: #555;
 
-    &:hover {
-      background: #666;
-    }
+  &:hover {
+    background: #666;
   }
 }
+
+
+}
+
