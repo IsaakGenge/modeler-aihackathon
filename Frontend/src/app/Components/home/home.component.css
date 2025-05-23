@@ -1,0 +1,146 @@
+/* Frontend/src/app/Components/home/home.component.css */
+.home-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.welcome-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+  .welcome-section h1 {
+    margin-bottom: 1rem;
+    color: var(--accent);
+  }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.feature-card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+}
+
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .feature-card h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: var(--accent);
+  }
+
+    .feature-card h3 i {
+      margin-right: 0.5rem;
+      font-size: 1.2em;
+    }
+
+  .feature-card p {
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+.getting-started {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+  .getting-started h2 {
+    margin-top: 0;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+  }
+
+.step {
+  margin-bottom: 1.5rem;
+  padding-left: 1rem;
+  border-left: 3px solid var(--accent);
+}
+
+  .step h3 {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+    .step h3 .step-number {
+      background-color: var(--accent);
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.75rem;
+      font-size: 0.9rem;
+    }
+
+  .step p {
+    margin-bottom: 0.5rem;
+  }
+
+.step-actions {
+  margin-top: 0.75rem;
+}
+
+  .step-actions button {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+.action-btn {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+  .action-btn:hover {
+    background-color: var(--accent-hover);
+  }
+
+.code-block {
+  background-color: var(--code-bg);
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: monospace;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+  .link-btn i {
+    margin-left: 0.5rem;
+  }
+
+  .link-btn:hover {
+    text-decoration: underline;
+  }

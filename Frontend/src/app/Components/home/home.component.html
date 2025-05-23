@@ -1,0 +1,113 @@
+<!-- Frontend/src/app/Components/home/home.component.html -->
+<div class="home-container">
+  <div class="welcome-section">
+    <h1>Graph Modeling Application</h1>
+    <p>Easily create, visualize, and manage graph-based data models with our intuitive interface</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <h3><i class="bi bi-diagram-3"></i>Graph Manager</h3>
+      <p>Create and manage multiple graph models for your various projects and use cases.</p>
+      <p>Switch between different graphs to organize your node and connection data.</p>
+      <button class="action-btn" (click)="navigateTo('/graph-manager')">Open Graph Manager</button>
+    </div>
+
+    <div class="feature-card">
+      <h3><i class="bi bi-table"></i>Basic View</h3>
+      <p>View your graph data in a table-based format for quick analysis and editing.</p>
+      <p>Create and manage nodes and connections in a structured layout.</p>
+      <button class="action-btn" (click)="navigateTo('/view-basic')">Open Basic View</button>
+    </div>
+
+    <div class="feature-card">
+      <h3><i class="bi bi-graph-up"></i>Interactive Visualization</h3>
+      <p>Interactive graph visualization with drag-and-drop functionality.</p>
+      <p>Explore complex relationships visually and interact with your graph model.</p>
+      <button class="action-btn" (click)="navigateTo('/view-fancy')">Open Interactive View</button>
+    </div>
+
+    <div class="feature-card">
+      <h3><i class="bi bi-circle"></i>Node Management</h3>
+      <p>Create, view, and manage nodes (vertices) in your graph model.</p>
+      <p>Nodes represent entities in your data model, each with customizable properties and types.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3><i class="bi bi-link-45deg"></i>Connection Management</h3>
+      <p>Define relationships between nodes with typed connections (edges).</p>
+      <p>Connections can have their own properties to describe relationships in detail.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3><i class="bi bi-database"></i>Cosmos DB Integration</h3>
+      <p>Powered by Azure Cosmos DB for scalable graph storage.</p>
+      <p>All your graph data is securely stored and easily retrievable.</p>
+    </div>
+  </div>
+
+  <div class="getting-started">
+    <h2>Getting Started</h2>
+
+    <div class="step">
+      <h3><span class="step-number">1</span>Create a Graph</h3>
+      <p>Start by creating a graph to organize your nodes and connections.</p>
+      <ol>
+        <li>Navigate to Graph Manager</li>
+        <li>Click on "Create New Graph"</li>
+        <li>Enter a unique name for your graph</li>
+        <li>Click "Create Graph" to save</li>
+      </ol>
+      <div class="step-actions">
+        <button class="action-btn" (click)="navigateTo('/graph-manager')">Go to Graph Manager</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-number">2</span>Add Nodes to Your Graph</h3>
+      <p>Once you have a graph, you can start adding nodes (entities) to it.</p>
+      <ol>
+        <li>Navigate to Basic View or Interactive View</li>
+        <li>Select a graph from the dropdown at the top</li>
+        <li>Open the Tools Panel on the right (if collapsed)</li>
+        <li>Select the "Nodes" tab</li>
+        <li>Enter a name for your node</li>
+        <li>Select a node type from the dropdown</li>
+        <li>Click "Create Node" to save</li>
+      </ol>
+      <div class="step-actions">
+        <button class="action-btn" (click)="navigateTo('/view-basic')">Go to Basic View</button>
+        <button class="action-btn" (click)="navigateTo('/view-fancy')">Go to Interactive View</button>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-number">3</span>Create Connections Between Nodes</h3>
+      <p>Connect your nodes to create relationships in your graph.</p>
+      <ol>
+        <li>Stay in either Basic View or Interactive View</li>
+        <li>Open the Tools Panel if collapsed</li>
+        <li>Select the "Connections" tab</li>
+        <li>Select a source node from the dropdown</li>
+        <li>Select a target node from the dropdown</li>
+        <li>Choose a connection type</li>
+        <li>Click "Create Connection" to save</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3><span class="step-number">4</span>Visualize Your Graph</h3>
+      <p>View and interact with your complete graph model.</p>
+      <ol>
+        <li>Navigate to the Interactive View for visual exploration</li>
+        <li>Drag nodes to arrange your graph</li>
+        <li>Click on nodes or edges to view their details</li>
+        <li>Use the layout controls to arrange your graph automatically</li>
+        <li>Switch to Basic View for tabular data representation</li>
+      </ol>
+      <div class="step-actions">
+        <button class="action-btn" (click)="navigateTo('/view-fancy')">Open Interactive View</button>
+      </div>
+    </div>
+  </div>
+</div>
