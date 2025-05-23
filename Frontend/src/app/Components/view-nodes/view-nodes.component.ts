@@ -87,8 +87,14 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
 
     this.selectedNodeId = node.id;
 
+    // Create a copy of the node with label property to satisfy details-panel component
+    const nodeWithLabel = {
+      ...node,
+      label: node.name // Add label property using the name value
+    };
+
     // Emit the selected node to parent component
-    this.nodeSelected.emit(node);
+    this.nodeSelected.emit(nodeWithLabel);
   }
 
   // Handle search input

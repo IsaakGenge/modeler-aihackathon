@@ -162,9 +162,16 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onNodeSelected(node: any): void {
     console.log('Node selected:', node);
+
+    // Create a copy of the node with label property to satisfy details-panel component
+    const nodeWithLabel = {
+      ...node,
+      label: node.name // Add label property using the name value
+    };
+
     this.selectedElement = {
       type: 'node',
-      data: node
+      data: nodeWithLabel
     };
   }
 
@@ -175,6 +182,8 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
       data: edge
     };
   }
+
+
 
   closeDetailsPanel(): void {
     this.selectedElement = null;
