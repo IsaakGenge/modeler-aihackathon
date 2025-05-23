@@ -157,7 +157,10 @@ The application uses the standard .NET configuration system with the Options pat
 1. Clone this repository
 2. Navigate to the project directory
 3. Ensure the Cosmos DB Emulator is running (check the notification icon in your system tray)
-4. Run the application using .NET Aspire:  dotnet run --project Backend/ModelerAPI.AppHost
+4. Open a terminal and navigate to the `Frontend` directory
+5. Install dependencies:  npm install
+6. Open a terminal and navigate to the `Backend` directory
+7. Run the application using .NET Aspire:  dotnet run --project Backend/ModelerAPI.AppHost
 
 ### Running the Unit Tests
 
