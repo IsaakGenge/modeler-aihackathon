@@ -1,4 +1,6 @@
 /* Frontend/src/app/Components/details-panel/details-panel.component.css */
+
+/* ---------- DETAILS PANEL CONTAINER ---------- */
 .details-panel {
   position: absolute;
   top: 15px;
@@ -13,14 +15,24 @@
   transition: transform 0.3s ease-in-out;
   z-index: 100;
   color: var(--text-primary);
+  animation: slideIn 0.3s ease-in-out;
 }
 
   .details-panel.active {
     transform: translateX(0);
   }
 
-/* The dark-theme specific overrides can be removed since we'll use CSS variables */
+@keyframes slideIn {
+  from {
+    transform: translateX(350px);
+  }
 
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ---------- HEADER SECTION ---------- */
 .details-header {
   display: flex;
   justify-content: space-between;
@@ -35,7 +47,14 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
+    overflow: visible;
   }
+
+.details-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .close-button {
   background: none;
@@ -45,92 +64,190 @@
   color: var(--text-primary);
 }
 
+/* ---------- CONTENT AREA ---------- */
 .details-content {
   padding: 15px;
   max-height: 400px;
   overflow-y: auto;
 }
 
-.detail-item {
-  display: flex;
-  margin-bottom: 12px;
-  font-size: 14px;
-  flex-wrap: wrap; /* Allow wrapping for long content */
-}
+  .details-content::-webkit-scrollbar {
+    width: 8px;
+  }
 
-.detail-label {
-  font-weight: 600;
-  min-width: 40%;
-  max-width: 100%; /* Allow full width when wrapping */
-  color: var(--text-secondary);
-  padding-right: 8px; /* Add some spacing between label and value */
-}
+  .details-content::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 4px;
+  }
 
-.detail-value {
-  flex: 1;
-  min-width: 60%;
-  word-break: break-word; /* This already exists, but is important */
-  color: var(--text-primary);
-}
+    .details-content::-webkit-scrollbar-thumb:hover {
+      background-color: var(--primary);
+    }
 
+/* ---------- LOADING & ALERTS ---------- */
 .loading-spinner {
   display: flex;
   justify-content: center;
   padding: 20px 0;
 }
 
-.details-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.delete-button {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  font-size: 0.8rem;
-}
-
-  .delete-button .bi {
-    font-size: 0.9rem;
-  }
-
-.json-value pre {
-  margin: 0;
-  padding: 8px;
-  background-color: var(--bg-tertiary);
+.alert {
+  padding: 8px 12px;
   border-radius: 4px;
-  overflow-x: auto;
-  max-height: 200px;
-  font-size: 12px;
-  font-family: monospace;
-  border: 1px solid var(--border);
+  font-size: 14px;
 }
 
-/* Add to Frontend/src/app/Components/details-panel/details-panel.component.css */
-
-/* Edit mode styles */
-.edit-button, .save-button, .cancel-button {
+/* ---------- DETAIL ITEMS (VIEW MODE) ---------- */
+.detail-item {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  font-size: 0.8rem;
-}
-
-  .edit-button .bi, .save-button .bi, .cancel-button .bi {
-    font-size: 0.9rem;
-  }
-
-.editable-property {
-  padding: 8px;
-  border-radius: 4px;
-  background-color: var(--bg-tertiary);
   margin-bottom: 10px;
+  font-size: 14px;
+  position: relative;
+  border-bottom: 1px dotted var(--border);
+  padding-bottom: 6px;
 }
 
+.detail-label {
+  font-weight: 600;
+  width: 40%;
+  color: var(--text-secondary);
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  flex: 1;
+  color: var(--text-primary);
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  transition: all 0.2s ease-in-out;
+}
+
+  .detail-value:hover {
+    white-space: normal;
+    word-break: break-word;
+    background-color: var(--bg-highlight);
+    border-radius: 3px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    z-index: 1;
+  }
+
+  /* Add a slight indicator that the value can be expanded */
+  .detail-value::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, transparent, var(--bg-secondary));
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  .detail-value:hover::after {
+    display: none;
+  }
+
+/* JSON value display with improved styling */
+.json-value {
+  max-width: 100%;
+  white-space: normal;
+}
+
+  .json-value pre {
+    margin: 0;
+    padding: 8px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    overflow-x: auto;
+    max-height: 200px;
+    border: 1px solid var(--border);
+    white-space: pre-wrap;
+    transition: max-height 0.3s ease-in-out;
+  }
+
+    .json-value pre:hover {
+      max-height: 400px;
+      background-color: var(--bg-highlight);
+    }
+
+/* Collapsible section divider for better organization */
+.property-section {
+  position: relative;
+  margin-top: 15px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.property-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- BUTTONS ---------- */
+.btn {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+  .btn:hover {
+    background-color: var(--primary);
+    color: var(--text-light);
+  }
+
+.edit-button, .save-button, .cancel-button, .delete-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+}
+
+  .edit-button .bi, .save-button .bi, .cancel-button .bi, .delete-button .bi {
+    font-size: 0.9rem;
+  }
+
+/* ---------- COLLAPSIBLE SECTIONS ---------- */
+.collapsible {
+  max-height: 200px;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+  .collapsible.expanded {
+    max-height: none;
+  }
+
+.collapsible-toggle {
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 14px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* ---------- TOOLTIPS ---------- */
+::ng-deep .tooltip {
+  z-index: 1100 !important;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* ---------- EDIT MODE STYLES ---------- */
+/* Section headers */
 .properties-divider {
   display: flex;
   justify-content: space-between;
@@ -145,60 +262,164 @@
     font-size: 16px;
   }
 
-.add-property-form {
-  background-color: var(--bg-tertiary);
-  padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
-}
-
 .fixed-properties {
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
 }
 
-/* Make buttons in edit mode appear side by side */
-.col-auto {
-  display: flex;
-  gap: 5px;
-}
-
-/* Alert style for error messages */
-.alert {
-  padding: 8px 12px;
+/* Form controls */
+.form-control {
+  padding: 8px;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 14px;
-}
-::ng-deep .tooltip {
-  z-index: 1100 !important; /* Higher than the details panel z-index */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-.tooltip-container {
-  position: relative;
-  display: inline-block;
+  .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 4px var(--primary);
+    outline: none;
+  }
+
+  .form-control.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 4px var(--danger);
+  }
+
+.invalid-feedback {
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 4px;
 }
 
-/* Make sure the tooltip host element doesn't clip its content */
-.details-header h4 {
+/* Main detail item structure in edit mode */
+.edit-mode .detail-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.7rem;
+}
+
+.edit-mode .detail-label {
+  flex: 0 0 30%;
+  font-weight: bold;
+  margin-right: 1rem;
+}
+
+.edit-mode .detail-value {
+  flex: 1;
+  min-width: 200px;
+}
+
+.edit-mode input.form-control,
+.edit-mode select.form-select {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Editable properties */
+.editable-property {
+  padding: 6px;
+  border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  margin-bottom: 6px;
+}
+
+.edit-mode .editable-property {
+  background-color: var(--bg-highlight);
+  border: 1px dashed var(--border);
+}
+
+/* Row layout for property editing - Fixed to prevent wrapping */
+.editable-property .row,
+.add-property-form .row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  overflow: visible; /* Ensure tooltip isn't clipped */
-}
-@media (max-width: 350px) {
-  .detail-item {
-    flex-direction: column;
-  }
-
-  .detail-label {
-    width: 100%;
-    margin-bottom: 4px;
-  }
-
-  .detail-value {
-    width: 100%;
-  }
+  flex-wrap: nowrap; /* Prevent wrapping */
+  width: 100%;
 }
 
+/* Column sizing for better space utilization */
+.editable-property .col,
+.add-property-form .col {
+  flex: 1 1 0; /* Equal width distribution, grow and shrink proportionally */
+  min-width: 0; /* Allow shrinking below content size */
+  padding: 0 3px;
+}
+
+/* Ensure button column doesn't grow but stays visible */
+.editable-property .col-auto,
+.add-property-form .col-auto {
+  flex: 0 0 auto;
+  padding-left: 0;
+  display: flex;
+  gap: 3px; /* Reduced gap between buttons */
+  white-space: nowrap;
+}
+
+  /* Optimize button size in property rows */
+  .editable-property .col-auto .btn,
+  .add-property-form .col-auto .btn {
+    padding: 3px 6px; /* Slightly smaller padding */
+    min-width: 30px; /* Minimum width to ensure visibility */
+  }
+
+/* Form controls within editable properties */
+.editable-property .form-control,
+.add-property-form .form-control {
+  width: 100%;
+  max-width: none;
+  min-width: 0; /* Allow input to shrink if needed */
+  font-size: 0.9rem; /* Slightly smaller font for better fit */
+}
+
+/* Add new property form */
+.add-property-form {
+  background-color: var(--bg-tertiary);
+  padding: 6px;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+  /* Ensure consistent input field height */
+  .editable-property input,
+  .add-property-form input,
+  .editable-property button,
+  .add-property-form button {
+    height: 32px; /* Consistent height for all elements */
+  }
+
+  /* Make button icons slightly smaller */
+  .editable-property .bi,
+  .add-property-form .bi {
+    font-size: 0.85rem;
+  }
+
+/* ---------- RESPONSIVE STYLES ---------- */
+@media (max-width: 768px) {
+  .details-panel {
+    width: 100%;
+    right: 0;
+    top: 0;
+    height: 100%;
+    border-radius: 0;
+    transform: translateX(100%);
+  }
+
+    .details-panel.active {
+      transform: translateX(0);
+    }
+
+  .details-header {
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .details-content {
+    padding: 15px;
+    max-height: calc(100% - 60px);
+  }
+}

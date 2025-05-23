@@ -115,7 +115,7 @@ describe('GraphGenerateComponent', () => {
       expect(nodeCountControl?.errors?.['min']).toBeDefined();  // Changed from toBeTrue()
 
       // Above maximum
-      nodeCountControl?.setValue(101);
+      nodeCountControl?.setValue(1001);
       expect(nodeCountControl?.valid).toBeFalse();
       expect(nodeCountControl?.errors?.['max']).toBeDefined();  // Changed from toBeTrue()
 

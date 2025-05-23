@@ -53,6 +53,7 @@
       <!-- VIEW MODE: Normal display of details -->
       <div *ngIf="!isEditMode">
         <div *ngIf="selectedElement?.type === 'node'">
+          <!-- Primary properties -->
           <div class="detail-item">
             <div class="detail-label">Name:</div>
             <div class="detail-value">{{ selectedElement?.data?.label }}</div>
@@ -62,20 +63,23 @@
             <div class="detail-value">{{ selectedElement?.data?.nodeType }}</div>
           </div>
 
-          <!-- Additional node properties will be displayed here dynamically -->
-          <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
-            <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
-            <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
-              <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
-                <pre>{{ prop.value }}</pre>
-              </ng-container>
-              <ng-template #simpleValue>{{ prop.value }}</ng-template>
+          <!-- Additional properties section with a title -->
+          <div class="property-section" *ngIf="getAdditionalProperties().length > 0">
+            <div class="property-section-title">Properties</div>
+            <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
+              <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
+              <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
+                <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
+                  <pre>{{ prop.value }}</pre>
+                </ng-container>
+                <ng-template #simpleValue>{{ prop.value }}</ng-template>
+              </div>
             </div>
           </div>
-
         </div>
 
         <div *ngIf="selectedElement?.type === 'edge'">
+          <!-- Primary properties -->
           <div class="detail-item">
             <div class="detail-label">Type:</div>
             <div class="detail-value">{{ selectedElement?.data?.edgeType || 'Default' }}</div>
@@ -89,14 +93,17 @@
             <div class="detail-value">{{ selectedElement?.data?.targetLabel || selectedElement?.data?.target }}</div>
           </div>
 
-          <!-- Additional edge properties will be displayed here dynamically -->
-          <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
-            <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
-            <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
-              <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
-                <pre>{{ prop.value }}</pre>
-              </ng-container>
-              <ng-template #simpleValue>{{ prop.value }}</ng-template>
+          <!-- Additional properties section with a title -->
+          <div class="property-section" *ngIf="getAdditionalProperties().length > 0">
+            <div class="property-section-title">Properties</div>
+            <div *ngFor="let prop of getAdditionalProperties()" class="detail-item">
+              <div class="detail-label">{{ formatPropertyName(prop.key) }}:</div>
+              <div class="detail-value" [ngClass]="{'json-value': isJsonString(prop.value)}">
+                <ng-container *ngIf="isJsonString(prop.value); else simpleValue">
+                  <pre>{{ prop.value }}</pre>
+                </ng-container>
+                <ng-template #simpleValue>{{ prop.value }}</ng-template>
+              </div>
             </div>
           </div>
         </div>
