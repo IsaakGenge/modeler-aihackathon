@@ -1,4 +1,4 @@
-<div class="container-fluid">  
+<div class="container-fluid">
   <!-- Updated Graph Picker at the top to match view-fancy -->
   <div class="graph-header mb-4">
     <div class="graph-picker-row">
@@ -41,31 +41,23 @@
   </div>
 
   <!-- Tools panel (collapsible sidebar) that includes creation tools -->
-  <div class="tools-panel-container" [class.collapsed]="toolsPanelCollapsed" *ngIf="hasSelectedGraph">
-    <button class="tools-panel-toggle" (click)="toggleToolsPanel()">
-      <i class="bi" [ngClass]="toolsPanelCollapsed ? 'bi-chevron-left' : 'bi-chevron-right'"></i>
-    </button>
-
-    <div class="tools-panel">
-      <!-- Tab navigation like in view-fancy -->
-      <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" (activeIdChange)="onTabChange($event)" class="nav-tabs">
-        <li [ngbNavItem]="1">
-          <a ngbNavLink>Nodes</a>
-          <ng-template ngbNavContent>
-            <app-create-node></app-create-node>
-          </ng-template>
-        </li>
-        <li [ngbNavItem]="2">
-          <a ngbNavLink>Connections</a>
-          <ng-template ngbNavContent>
-            <app-create-edge></app-create-edge>
-          </ng-template>
-        </li>
-      </ul>
-
-      <div [ngbNavOutlet]="nav" class="tab-content"></div>
+  <app-tools-panel [(collapsed)]="toolsPanelCollapsed"
+                   [position]="'right'"
+                   [(activeTab)]="activeTab"
+                   (collapsedChange)="onToolsPanelCollapsedChange($event)"
+                   [tabs]="[
+               { id: 1, title: 'Nodes' },
+               { id: 2, title: 'Connections' }
+             ]">
+    <div tabId="1">
+      <app-create-node></app-create-node>
     </div>
-  </div>
+    <div tabId="2">
+      <app-create-edge></app-create-edge>
+    </div>
+  </app-tools-panel>
+
+
   <!-- Add this right before the details-panel component -->
   <div class="details-panel-backdrop"
        [class.active]="selectedElement"

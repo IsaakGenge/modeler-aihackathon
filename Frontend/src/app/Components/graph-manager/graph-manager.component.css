@@ -178,37 +178,12 @@ table tbody tr.active {
 }
 
 /* Tools Panel styles */
-:host ::ng-deep .tools-panel-container {
-  top: 150px;
-  transform: translateY(0);
-  max-width: 300px;
-  z-index: 90;
-  overflow: visible;
-}
 
-  :host ::ng-deep .tools-panel-container.position-right.collapsed {
-    transform: translateX(100%);
-    width: 0;
-    overflow: visible;
-  }
 
-  :host ::ng-deep .tools-panel-container .tools-panel {
-    max-height: calc(100vh - 300px);
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
 
-  :host ::ng-deep .tools-panel-container.collapsed .tools-panel {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    overflow: hidden;
-  }
 
-  :host ::ng-deep .tools-panel-container.collapsed {
-    width: 0;
-    overflow: visible;
-  }
+
+
 
 /* Utility styles */
 .row.g-3 {
@@ -226,16 +201,3 @@ table tbody tr.active {
 .graph-manager * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
-
-/* Tools Panel styles */
-.tools-panel-container {
-  position: fixed;
-  top: 50%; /* Center vertically */
-  transform: translateY(-50%);
-  right: 0; /* Anchor to the right */
-  transition: all 0.3s ease;
-}
-
-  .tools-panel-container.collapsed {
-    right: -300px; /* Adjust based on panel width */
-  }

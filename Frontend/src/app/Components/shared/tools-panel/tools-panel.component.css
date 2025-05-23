@@ -1,63 +1,52 @@
 /***************************************
  * TOOLS PANEL STYLES
  ***************************************/
+:host {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 300px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+:host(.collapsed) {
+  transform: translate(100%, -50%); /* Changed: Remove the calc and 32px offset */
+}
+
 /* Tools panel container */
 .tools-panel-container {
-  position: absolute;
+  position: relative;
   width: 300px;
   height: auto;
-  max-height: max-content;
+  max-height: calc(100vh - 100px);
   transition: transform 0.3s ease;
-  z-index: 100;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   overflow: visible;
 }
 
-/* Position variations */
+/* Position variations - only support right position consistently */
 .position-right {
-  top: 40%;
   right: 0;
-  transform: translateY(-50%);
+  transform: translateX(0);
 }
 
-.position-left {
-  top: 40%;
-  left: 0;
-  transform: translateY(-50%);
-}
-
-.position-bottom {
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  max-height: 60%;
-}
-
-/* Collapsed states */
-.position-right.collapsed {
-  transform: translateX(100%) translateY(-50%);
-  box-shadow: none;
-}
-
-.position-left.collapsed {
-  transform: translateX(-100%) translateY(-50%);
-  box-shadow: none;
-}
-
-.position-bottom.collapsed {
-  transform: translateY(100%);
-  box-shadow: none;
-}
+  .position-right.collapsed {
+    transform: translateX(100%); /* Changed: Remove the calc and 32px offset */
+    box-shadow: none;
+  }
 
 /* Tools panel toggle button */
 .tools-panel-toggle {
   position: absolute;
   width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  height: 100px;
+  border-radius: 8px 0 0 8px;
+  background-color: var(--accent); /* Changed: Use the green accent color */
+  color: white; /* Changed: Better contrast with green background */
+  border: 1px solid var(--accent-dark); /* Changed: Use darker accent for border */
+  border-right: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,45 +57,25 @@
   pointer-events: auto;
   visibility: visible;
   font-size: 1rem;
-}
-
-.position-right .tools-panel-toggle {
-  left: -28px;
+  left: -32px;
   top: 50%;
   transform: translateY(-50%);
-  border-radius: 8px 0 0 8px;
-  border-right: none;
 }
 
-.position-left .tools-panel-toggle {
-  right: -28px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-radius: 0 8px 8px 0;
-  border-left: none;
-}
-
-.position-bottom .tools-panel-toggle {
-  left: auto;
-  right: 10px;
-  top: -15px;
-  border-radius: 8px 8px 0 0;
-  border-bottom: none;
-}
-
-.tools-panel-toggle:hover {
-  background-color: var(--bg-elevated);
-  color: var(--text-highlighted);
-}
+  .tools-panel-toggle:hover {
+    background-color: var(--accent-light); /* Changed: Use lighter accent for hover */
+    color: white;
+  }
 
 /* Tools panel content */
 .tools-panel {
-  height: auto;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background-color: var(--bg-secondary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px 0 0 8px;
   overflow: hidden;
-  transition: opacity 0.2s ease;
+  height: auto;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 
 .tools-panel-container.collapsed .tools-panel {
@@ -162,34 +131,41 @@
  * RESPONSIVE STYLES
  ***************************************/
 @media (max-width: 991.98px) {
-  .tools-panel-container {
-    position: fixed;
+  :host {
     top: auto;
     bottom: 0;
     right: 0;
+    left: 0;
     width: 100%;
-    height: auto;
-    max-height: 60%;
     transform: translateY(0);
   }
 
-    .tools-panel-container.collapsed {
-      transform: translateY(100%);
-    }
-
-  .tools-panel-toggle {
-    left: auto;
-    right: 10px;
-    top: -15px;
-    transform: rotate(90deg);
+  :host(.collapsed) {
+    transform: translateY(calc(100% - 32px));
   }
 
-  .tools-panel-container.collapsed .tools-panel-toggle {
-    transform: rotate(180deg);
+  .tools-panel-container {
+    width: 100%;
+    max-height: 60vh;
+  }
+
+  .position-right.collapsed {
+    transform: translateY(calc(100% - 32px));
+  }
+
+  .tools-panel-toggle {
+    width: 100px;
+    height: 32px;
+    border-radius: 8px 8px 0 0;
+    left: 50%;
+    top: -32px;
+    transform: translateX(-50%);
+    border: 1px solid var(--border);
+    border-bottom: none;
   }
 
   .tools-panel {
-    height: 100%;
-    border-radius: 4px 4px 0 0;
+    border-radius: 8px 8px 0 0;
+    max-height: 60vh;
   }
 }

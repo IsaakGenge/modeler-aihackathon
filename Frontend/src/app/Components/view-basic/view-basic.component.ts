@@ -14,6 +14,8 @@ import { ThemeService } from '../../Services/Theme/theme.service';
 import { NodeService } from '../../Services/Node/node.service';
 import { Node } from '../../Models/node.model';
 import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
+import { ToolsPanelComponent } from '../shared/tools-panel/tools-panel.component';
+import { ToolsPanelStateService } from '../../Services/ToolPanelState/tool-panel-state.service';
 
 @Component({
   selector: 'app-view-basic',
@@ -27,7 +29,8 @@ import { NgbNavModule } from '@ng-bootstrap/ng-bootstrap';
     ViewEdgesComponent,
     GraphPickerComponent,
     DetailsPanelComponent,
-    NgbNavModule
+    NgbNavModule,
+    ToolsPanelComponent
   ],
   templateUrl: './view-basic.component.html',
   styleUrl: './view-basic.component.css'
@@ -37,12 +40,12 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('viewEdges') viewEdgesComponent!: ViewEdgesComponent;
 
   hasSelectedGraph: boolean = false;
-  toolsPanelCollapsed: boolean = true; // Collapsed by default
+  toolsPanelCollapsed = false;
   viewNodesPanelCollapsed: boolean = false; // Expanded by default
   viewEdgesPanelCollapsed: boolean = false; // Expanded by default
   isDarkMode$: Observable<boolean>;
-  currentGraphId: string = ''; // Changed from string | null to just string
-  selectedElement: any = null; // For details panel
+  currentGraphId: string = '';
+  selectedElement: any = null;
   activeTab = 1; // Default active tab (1 for node panel, 2 for edge panel)
 
   private subscription: Subscription = new Subscription();
@@ -54,17 +57,20 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
     @Inject(PLATFORM_ID) private platformId: Object,
     private renderer: Renderer2,
     @Inject(DOCUMENT) private document: Document,
-    private router: Router
+    private router: Router,
+    private toolsPanelStateService: ToolsPanelStateService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
+
+
 
   ngOnInit(): void {
     // Subscribe to the current graph to show/hide components
     this.subscription.add(
       this.graphService.currentGraph$.subscribe(graph => {
         this.hasSelectedGraph = !!graph;
-        this.currentGraphId = graph ? graph.id : ''; // Set to empty string instead of null
+        this.currentGraphId = graph ? graph.id : '';
       })
     );
 
@@ -72,53 +78,41 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
       this.router.events.pipe(
         filter(event => event instanceof NavigationStart)
       ).subscribe(() => {
-        // If navigating away, ensure we clean up modal-open class
         if (this.selectedElement) {
           this.cleanUpModalState();
         }
       })
     );
 
-    // Load saved collapse states if in browser environment
-    if (isPlatformBrowser(this.platformId)) {
-      const savedToolsPanelState = localStorage.getItem('toolsPanelCollapsed');
-      const savedViewNodesPanelState = localStorage.getItem('viewNodesPanelCollapsed');
-      const savedViewEdgesPanelState = localStorage.getItem('viewEdgesPanelCollapsed');
-      const savedActiveTabState = localStorage.getItem('activeTab');
 
-      // Only update if saved state exists, otherwise use the default
-      if (savedToolsPanelState !== null) {
-        this.toolsPanelCollapsed = savedToolsPanelState === 'true';
-      }
-      if (savedViewNodesPanelState !== null) {
-        this.viewNodesPanelCollapsed = savedViewNodesPanelState === 'true';
-      }
-      if (savedViewEdgesPanelState !== null) {
-        this.viewEdgesPanelCollapsed = savedViewEdgesPanelState === 'true';
-      }
-      if (savedActiveTabState !== null) {
-        this.activeTab = parseInt(savedActiveTabState, 10);
-      }
-    }
+    // Load saved collapse states if in browser environment
+    this.toolsPanelStateService.collapsed$.subscribe(collapsed => {
+      this.toolsPanelCollapsed = collapsed;
+    });
   }
 
   ngAfterViewInit(): void {
-    // Set up click handlers for nodes and edges after view is initialized
     this.setupClickHandlers();
   }
 
   ngOnDestroy(): void {
-    // Clean up subscriptions
     this.subscription.unsubscribe();
-
-    // Ensure we remove the modal-open class when the component is destroyed
     if (isPlatformBrowser(this.platformId)) {
       this.cleanUpModalState();
     }
   }
 
+  onTabChange(activeTabId: number): void {
+    this.activeTab = activeTabId;
+    
+  }
+
+  onToolsPanelToggle(collapsed: boolean): void {
+    this.toolsPanelCollapsed = collapsed;
+    this.toolsPanelStateService.setCollapsed(collapsed);
+  }
+
   private setupClickHandlers(): void {
-    // Add click handlers to node elements
     setTimeout(() => {
       if (this.viewNodesComponent) {
         const nodeElements = document.querySelectorAll('.node-card');
@@ -132,7 +126,6 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
         });
       }
 
-      // Add click handlers to edge rows
       if (this.viewEdgesComponent) {
         const edgeRows = document.querySelectorAll('.edge-data table tbody tr');
         edgeRows.forEach((element, index) => {
@@ -144,22 +137,26 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
           element.classList.add('clickable-row');
         });
       }
-    }, 500); // Small delay to ensure DOM is ready
+    }, 500);
   }
 
   toggleToolsPanel(): void {
     this.toolsPanelCollapsed = !this.toolsPanelCollapsed;
-    this.saveCollapseState('toolsPanelCollapsed', this.toolsPanelCollapsed);
+    this.toolsPanelStateService.setCollapsed(this.toolsPanelCollapsed);
 
-    // Trigger window resize after animation completes to help other components adjust
+    // Keep the existing resize handling
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 300);
   }
 
+  onToolsPanelCollapsedChange(collapsed: boolean): void {
+    this.toolsPanelCollapsed = collapsed;
+    this.toolsPanelStateService.setCollapsed(collapsed);
+  }
+
   toggleViewNodesPanel(): void {
-    this.viewNodesPanelCollapsed = !this.viewNodesPanelCollapsed;
-    this.saveCollapseState('viewNodesPanelCollapsed', this.viewNodesPanelCollapsed);
+    this.viewNodesPanelCollapsed = !this.viewNodesPanelCollapsed;    
 
     // Re-setup click handlers when panel is expanded
     if (!this.viewNodesPanelCollapsed) {
@@ -168,19 +165,12 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   toggleViewEdgesPanel(): void {
-    this.viewEdgesPanelCollapsed = !this.viewEdgesPanelCollapsed;
-    this.saveCollapseState('viewEdgesPanelCollapsed', this.viewEdgesPanelCollapsed);
+    this.viewEdgesPanelCollapsed = !this.viewEdgesPanelCollapsed;    
 
     // Re-setup click handlers when panel is expanded
     if (!this.viewEdgesPanelCollapsed) {
       setTimeout(() => this.setupClickHandlers(), 500);
     }
-  }
-
-  // Save the active tab state
-  onTabChange(activeTabId: number): void {
-    this.activeTab = activeTabId;
-    this.saveCollapseState('activeTab', activeTabId.toString());
   }
 
   onNodeSelected(node: any): void {
@@ -292,11 +282,5 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   closeDetailsPanel(): void {
     this.selectedElement = null;
     this.cleanUpModalState();
-  }
-
-  private saveCollapseState(key: string, value: string | boolean): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(key, value.toString());
-    }
-  }
+  }  
 }

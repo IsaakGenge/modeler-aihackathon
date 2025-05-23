@@ -48,16 +48,14 @@
     <app-tools-panel [(collapsed)]="toolsPanelCollapsed"
                      [position]="'right'"
                      [(activeTab)]="activeTab"
+                     (collapsedChange)="onToolsPanelCollapsedChange($event)"
                      [tabs]="[
-                   { id: 1, title: 'Nodes' },
-                   { id: 2, title: 'Edges' }
-                 ]">
-      <!-- Node Creation Tab -->
+               { id: 1, title: 'Nodes' },
+               { id: 2, title: 'Connections' }
+             ]">
       <div tabId="1">
         <app-create-node></app-create-node>
       </div>
-
-      <!-- Edge Creation Tab -->
       <div tabId="2">
         <app-create-edge></app-create-edge>
       </div>

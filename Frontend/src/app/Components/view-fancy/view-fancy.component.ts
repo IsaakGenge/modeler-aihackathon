@@ -17,6 +17,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { CytoscapeGraphComponent } from '../cytoscape-graph/cytoscape-graph.component';
 import { ToolsPanelComponent } from '../shared/tools-panel/tools-panel.component';
+import { ToolsPanelStateService } from '../../Services/ToolPanelState/tool-panel-state.service';
 
 @Component({
   selector: 'app-view-fancy',
@@ -44,7 +45,7 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   activeTab = 1; // Default active tab (1 for node panel, 2 for edge panel, 3 for graph panel)
   isDarkMode$: Observable<boolean>;
   hasSelectedGraph: boolean = false;
-  toolsPanelCollapsed: boolean = false;
+  toolsPanelCollapsed = false;
 
   // Data for the graph
   graphNodes: any[] = [];
@@ -60,17 +61,16 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
     private edgeService: EdgeService,
     private nodeService: NodeService,
     public  graphService: GraphService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private toolsPanelStateService: ToolsPanelStateService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
 
   ngOnInit(): void {
-    // Load saved tools panel state
-    if (typeof localStorage !== 'undefined') {
-      const savedState = localStorage.getItem('toolsPanelCollapsed');
-      this.toolsPanelCollapsed = savedState === 'true';
-    }
+    this.toolsPanelStateService.collapsed$.subscribe(collapsed => {
+      this.toolsPanelCollapsed = collapsed;
+    });
 
     this.graphService.currentGraph$
       .pipe(takeUntil(this.destroy$))
@@ -99,24 +99,22 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
     // You can add logic here to show a success message or refresh data if needed
   }
 
+  onToolsPanelCollapsedChange(collapsed: boolean): void {
+    this.toolsPanelCollapsed = collapsed;
+    this.toolsPanelStateService.setCollapsed(collapsed);
+  }
+
   toggleToolsPanel(): void {
     this.toolsPanelCollapsed = !this.toolsPanelCollapsed;
+    this.toolsPanelStateService.setCollapsed(this.toolsPanelCollapsed);
 
-    // Trigger a resize event after the panel is toggled
-    // This ensures the cytoscape graph redraws correctly
+    // Keep the existing resize handling
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
-
-      // Fit the graph to view after resize
       if (this.cytoscapeGraph) {
         this.cytoscapeGraph.fitGraph();
       }
     }, 300);
-
-    // Optionally, save the state to localStorage if you want it to persist
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('toolsPanelCollapsed', this.toolsPanelCollapsed.toString());
-    }
   }
 
   // Separate method to set up event subscriptions for better organization

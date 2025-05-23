@@ -8,10 +8,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Graph, CreateGraphDto } from '../../Models/graph.model';
 import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirmation-modal.component';
 import { Router } from '@angular/router';
-import { SortListPipe } from '../../Pipes/sort-list.pipe';
 import { FileUploadModalComponent } from '../shared/file-upload-modal/file-upload-modal.component';
 import { GraphGenerateComponent } from '../graph-generate/graph-generate.component';
 import { ToolsPanelComponent } from '../shared/tools-panel/tools-panel.component';
+import { ToolsPanelStateService } from '../../Services/ToolPanelState/tool-panel-state.service';
 import { CreateGraphComponent } from '../shared/create-graph/create-graph.component';
 
 @Component({
@@ -32,6 +32,10 @@ import { CreateGraphComponent } from '../shared/create-graph/create-graph.compon
 export class GraphManagerComponent implements OnInit, OnDestroy {
   @Input() embedded: boolean = false;
 
+  // Add properties for tools panel
+  toolsPanelCollapsed = false;
+  activeTab: number = 1;
+
   graphForm!: FormGroup;
   graphs: Graph[] = [];
   submitted = false;
@@ -42,7 +46,7 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
   isDarkMode$: Observable<boolean>;
 
   // Collapsible section state
-  isCreateSectionOpen: boolean = true;
+  isCreateSectionOpen: boolean = false;
 
   // Delete confirmation modal properties
   showDeleteModal = false;
@@ -66,7 +70,8 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
     private formBuilder: FormBuilder,
     private graphService: GraphService,
     private themeService: ThemeService,
-    private router: Router
+    private router: Router,
+    private toolsPanelStateService: ToolsPanelStateService
   ) {
     this.isDarkMode$ = this.themeService.isDarkMode$;
   }
@@ -76,6 +81,18 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
       name: ['', [Validators.required]]
     });
     this.loadGraphs();
+
+    // Initialize tools panel state from service or localStorage
+    this.toolsPanelStateService.collapsed$.subscribe(collapsed => {
+      this.toolsPanelCollapsed = collapsed;
+    });
+
+    if (typeof localStorage !== 'undefined') {
+      const savedActiveTab = localStorage.getItem('activeTab');
+      if (savedActiveTab !== null) {
+        this.activeTab = parseInt(savedActiveTab, 10);
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -83,6 +100,20 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
     if (this.messageTimeoutId) {
       clearTimeout(this.messageTimeoutId);
       this.messageTimeoutId = null;
+    }
+  }
+
+  // Handle tools panel collapsed state change
+  onToolsPanelCollapsedChange(collapsed: boolean): void {
+    this.toolsPanelCollapsed = collapsed;
+    this.toolsPanelStateService.setCollapsed(collapsed);
+  }
+
+  // Handle tools panel active tab change
+  onActiveTabChange(tabId: number): void {
+    this.activeTab = tabId;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('activeTab', tabId.toString());
     }
   }
 
