@@ -1,17 +1,15 @@
 <div class="container-fluid">
-  <!-- Add Graph Picker at the top -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="graph-picker-row">
-        <app-graph-picker></app-graph-picker>
-      </div>
+  <!-- Updated Graph Picker at the top to match view-fancy -->
+  <div class="graph-header mb-4">
+    <div class="graph-picker-row">
+      <app-graph-picker (graphSelected)="onGraphSelected($event)"></app-graph-picker>
+    </div>
 
-      <!-- Warning when no graph is selected -->
-      <div *ngIf="!hasSelectedGraph" class="alert alert-warning mt-3">
-        Please select or create a graph to start modeling.
-        <div class="mt-2">
-          <button class="btn btn-primary btn-sm" routerLink="/graph-manager">Go To Graph Manager</button>
-        </div>
+    <!-- Warning when no graph is selected -->
+    <div *ngIf="!hasSelectedGraph" class="alert alert-warning mt-3">
+      Please select or create a graph to start modeling.
+      <div class="mt-2">
+        <button class="btn btn-primary btn-sm" routerLink="/graph-manager">Go To Graph Manager</button>
       </div>
     </div>
   </div>

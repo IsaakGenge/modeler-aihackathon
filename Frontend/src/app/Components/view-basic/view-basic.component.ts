@@ -183,6 +183,16 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
     };
   }
 
+  onGraphSelected(graph: any): void {
+    if (graph) {
+      this.hasSelectedGraph = true;
+      this.currentGraphId = graph.id;
+
+      
+      
+    }
+  }
+
   onBackdropClick(): void {
     this.closeDetailsPanel();
   }
