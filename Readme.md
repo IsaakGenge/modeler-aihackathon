@@ -160,7 +160,7 @@ The application uses the standard .NET configuration system with the Options pat
 4. Open a terminal and navigate to the `Frontend` directory
 5. Install dependencies:  npm install
 6. Open a terminal and navigate to the `Backend` directory
-7. Run the application using .NET Aspire:  dotnet run --project Backend/ModelerAPI.AppHost
+7. Run the application using .NET Aspire:  dotnet run --project ModelerAPI.AppHost
 
 ### Running the Unit Tests
 
