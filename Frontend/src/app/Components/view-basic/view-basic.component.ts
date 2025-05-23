@@ -231,10 +231,8 @@ export class ViewBasicComponent implements OnInit, OnDestroy, AfterViewInit {
   // Add the onGraphSelected method implementation here
   onGraphSelected(graph: any): void {
     if (graph) {
-      this.hasSelectedGraph = true;
-      this.currentGraphId = graph.id;
-      // Update the current graph in the service if needed
-      this.graphService.setCurrentGraph(graph);
+      console.log('Graph selected:', graph); // Debugging log
+      this.graphService.setCurrentGraph(graph); // Update the current graph in the service
     }
   }
 

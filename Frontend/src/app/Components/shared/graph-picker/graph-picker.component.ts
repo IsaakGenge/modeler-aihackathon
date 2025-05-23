@@ -122,6 +122,9 @@ export class GraphPickerComponent implements OnInit, OnDestroy {
           // Emit the graph selected event with the ID
           this.graphSelected.emit(this.selectedGraphId);
 
+          // Update the current graph in the service
+          this.graphService.setCurrentGraph(graph);
+
           // Auto-collapse when a graph is selected and not already collapsed
           if (!this.isCollapsed) {
             this.toggleCollapse();
