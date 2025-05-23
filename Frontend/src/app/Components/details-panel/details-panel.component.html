@@ -1,6 +1,7 @@
 <!-- Frontend/src/app/Components/details-panel/details-panel.component.html -->
 <div class="details-panel" *ngIf="selectedElement"
-     [class.active]="selectedElement">
+     [class.active]="selectedElement"
+     [class.edit-active]="isEditMode">
   <div class="details-header">
     <h4 [ngbTooltip]="'ID: ' + selectedElement?.data?.id"
         placement="top"
@@ -10,24 +11,24 @@
     </h4>
     <div class="details-actions">
       <!-- Edit button - show when not in edit mode -->
-      <button *ngIf="!isEditMode" class="edit-button btn btn-primary btn-sm" (click)="toggleEditMode()">
+      <button *ngIf="!isEditMode" class="edit-button btn btn-primary btn-sm" (click)="toggleEditMode($event)">
         <i class="bi bi-pencil"></i> Edit
       </button>
 
       <!-- Delete button - show when not in edit mode -->
-      <button *ngIf="!isEditMode" class="delete-button btn btn-danger btn-sm" (click)="deleteElement()">
+      <button *ngIf="!isEditMode" class="delete-button btn btn-danger btn-sm" (click)="deleteElement($event)">
         <i class="bi bi-trash"></i> Delete
       </button>
 
       <!-- Save button - show when in edit mode -->
       <button *ngIf="isEditMode" class="save-button btn btn-success btn-sm"
-              (click)="saveChanges()" [disabled]="isUpdating">
+              (click)="saveChanges($event)" [disabled]="isUpdating">
         <i class="bi bi-check"></i> {{ isUpdating ? 'Saving...' : 'Save' }}
       </button>
 
       <!-- Cancel button - show when in edit mode -->
       <button *ngIf="isEditMode" class="cancel-button btn btn-secondary btn-sm"
-              (click)="cancelEdit()" [disabled]="isUpdating">
+              (click)="cancelEdit($event)" [disabled]="isUpdating">
         <i class="bi bi-x"></i> Cancel
       </button>
 
@@ -152,7 +153,7 @@
         <div class="properties-divider">
           <h5 class="mt-3 mb-2">Custom Properties</h5>
           <button type="button" class="btn btn-sm btn-outline-primary"
-                  (click)="addNewPropertyField()" *ngIf="!isAddingProperty">
+                  (click)="addNewPropertyField($event)" *ngIf="!isAddingProperty">
             <i class="bi bi-plus"></i> Add Property
           </button>
         </div>
@@ -167,7 +168,7 @@
               <input type="text" class="form-control" [(ngModel)]="prop.value" placeholder="Value">
             </div>
             <div class="col-auto">
-              <button type="button" class="btn btn-outline-danger" (click)="removeProperty(i)">
+              <button type="button" class="btn btn-outline-danger" (click)="removeProperty(i, $event)">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -184,10 +185,10 @@
               <input type="text" class="form-control" [(ngModel)]="newProperty.value" placeholder="Value">
             </div>
             <div class="col-auto">
-              <button type="button" class="btn btn-outline-success" (click)="confirmAddProperty()">
+              <button type="button" class="btn btn-outline-success" (click)="confirmAddProperty($event)">
                 <i class="bi bi-check"></i>
               </button>
-              <button type="button" class="btn btn-outline-secondary" (click)="cancelAddProperty()">
+              <button type="button" class="btn btn-outline-secondary" (click)="cancelAddProperty($event)">
                 <i class="bi bi-x"></i>
               </button>
             </div>

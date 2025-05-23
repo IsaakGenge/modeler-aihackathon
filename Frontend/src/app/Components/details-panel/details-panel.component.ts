@@ -12,7 +12,7 @@ import { Node } from '../../Models/node.model';
 import { Edge } from '../../Models/edge.model';
 import { SortListPipe } from '../../Pipes/sort-list.pipe'
 import { NgbTooltipModule } from '@ng-bootstrap/ng-bootstrap'
- 
+
 @Component({
   selector: 'app-details-panel',
   standalone: true,
@@ -24,6 +24,7 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   @Input() selectedElement: any = null;
   @Input() graphId: string = '';
   @Input() isDarkMode$!: Observable<boolean>;
+  @Input() isEmbedded: boolean = false; // New property to detect embedded mode
   @Output() closePanel = new EventEmitter<void>();
 
   public isLoadingDetails: boolean = false;
@@ -78,6 +79,24 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
 
     this.typesService.loadNodeTypes();
     this.typesService.loadEdgeTypes();
+
+    // Add a small delay when in embedded mode before initializing any dropdowns
+    if (this.isEmbedded) {
+      setTimeout(() => {
+        this.initializeDropdowns();
+      }, 100);
+    }
+  }
+
+  // Add this method to initialize dropdowns properly
+  private initializeDropdowns(): void {
+    // Force recalculation of dropdown positions
+    const dropdowns = document.querySelectorAll('.form-select, .dropdown-toggle');
+    dropdowns.forEach(dropdown => {
+      // Trigger a focus and blur event to recalculate positions
+      dropdown.dispatchEvent(new Event('focus', { bubbles: true }));
+      dropdown.dispatchEvent(new Event('blur', { bubbles: true }));
+    });
   }
 
   ngOnDestroy(): void {
@@ -201,13 +220,23 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   // Opens the delete confirmation modal
-  public deleteElement(): void {
+  public deleteElement(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     this.showDeleteModal = true;
     this.deleteError = null;
   }
 
   // Handles the confirmation of deletion
-  public handleConfirmDelete(): void {
+  public handleConfirmDelete(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     if (!this.selectedElement) return;
 
     const elementType = this.selectedElement.type;
@@ -251,7 +280,12 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   // Handles the cancellation of deletion
-  public handleCancelDelete(): void {
+  public handleCancelDelete(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     this.resetDeleteState();
   }
 
@@ -322,17 +356,7 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
 
   // NEW METHODS FOR EDIT FUNCTIONALITY
 
-  // Toggle edit mode
-  public toggleEditMode(): void {
-    this.isEditMode = !this.isEditMode;
-    if (this.isEditMode) {
-      this.preparePropertiesForEdit();
-    } else {
-      // Reset any unsaved changes
-      this.updateError = null;
-    }
-  }
-
+  
   // Prepare properties for editing
   private preparePropertiesForEdit(): void {
     this.editableProperties = [];
@@ -390,13 +414,23 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   // Add a new property field
-  public addNewPropertyField(): void {
+  public addNewPropertyField(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     this.isAddingProperty = true;
     this.newProperty = { key: '', value: '' };
   }
 
   // Confirm adding a new property
-  public confirmAddProperty(): void {
+  public confirmAddProperty(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     if (!this.newProperty.key.trim()) {
       this.updateError = 'Property name cannot be empty';
       return;
@@ -420,19 +454,34 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   // Cancel adding a new property
-  public cancelAddProperty(): void {
+  public cancelAddProperty(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     this.isAddingProperty = false;
     this.newProperty = { key: '', value: '' };
     this.updateError = null;
   }
 
   // Remove a property
-  public removeProperty(index: number): void {
+  public removeProperty(index: number, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     this.editableProperties.splice(index, 1);
   }
 
   // Save all changes
-  public saveChanges(): void {
+  public saveChanges(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     if (!this.fullElementData || !this.selectedElement) return;
 
     this.isUpdating = true;
@@ -565,8 +614,92 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   // Cancel editing
-  public cancelEdit(): void {
+  public cancelEdit(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
     this.isEditMode = false;
     this.updateError = null;
   }
+  private ensureEventPropagation(event?: Event): void {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Focus on the clicked element to ensure proper event handling
+    const target = event.target as HTMLElement;
+    if (target) {
+      setTimeout(() => {
+        target.focus();
+      }, 0);
+    }
+  }
 }
+
+// Then modify these methods to use it:
+
+// Toggle edit mode
+  public toggleEditMode(event?: Event): void {
+    this.ensureEventPropagation(event);
+
+    // Force a more immediate UI update
+    setTimeout(() => {
+      this.isEditMode = !this.isEditMode;
+
+      // Add this line to force DOM reflow before toggling edit mode
+      if (this.isEmbedded) {
+        // Force layout computation to prevent position change
+        const panel = document.querySelector('.details-panel') as HTMLElement;
+        if (panel) {
+          // Save current position
+          const rect = panel.getBoundingClientRect();
+          const top = panel.style.top;
+          const right = panel.style.right;
+
+          // Apply edit mode class
+          if (this.isEditMode) {
+            panel.classList.add('edit-active');
+
+            // Force position back to saved coordinates if needed
+            setTimeout(() => {
+              panel.style.position = 'absolute';
+
+              // Only apply saved positions if they exist
+              if (top) panel.style.top = top;
+              if (right) panel.style.right = right;
+
+              // Prevent any transforms
+              panel.style.transform = 'none';
+            }, 0);
+          } else {
+            panel.classList.remove('edit-active');
+          }
+        }
+      } else {
+        // Normal toggle for non-embedded mode
+        if (this.isEditMode) {
+          document.querySelector('.details-panel')?.classList.add('edit-active');
+        } else {
+          document.querySelector('.details-panel')?.classList.remove('edit-active');
+        }
+      }
+
+      if (this.isEditMode) {
+        this.preparePropertiesForEdit();
+
+        // Add delay for embedded mode to ensure dropdowns work properly
+        if (this.isEmbedded) {
+          setTimeout(() => {
+            this.initializeDropdowns();
+          }, 100);
+        }
+      } else {
+        // Reset any unsaved changes
+        this.updateError = null;
+      }
+    }, 0);
+  }
+}
+

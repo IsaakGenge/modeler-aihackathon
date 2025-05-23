@@ -20,6 +20,7 @@
 
   .details-panel.active {
     transform: translateX(0);
+    z-index: 1100; /* Higher than tools panel */
   }
 
 @keyframes slideIn {
@@ -422,4 +423,329 @@
     padding: 15px;
     max-height: calc(100% - 60px);
   }
+}
+
+/* ---------- EMBEDDED STYLES - FOR TOOLS PANEL ---------- */
+/* Styles for when details-panel is embedded inside tools-panel */
+:host-context(.tools-panel) .details-panel {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  transform: none !important;
+  animation: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  max-height: none;
+}
+
+:host-context(.tools-panel) .details-content {
+  max-height: none;
+}
+
+/* Fix for dropdown elements */
+.dropdown-menu {
+  position: absolute !important;
+  z-index: 1500 !important;
+}
+
+/* Fix for form select elements */
+.form-select {
+  z-index: 1;
+  position: relative;
+}
+
+/* Add this to improve click target areas */
+.editable-property .row .col,
+.add-property-form .row .col,
+.editable-property .btn,
+.add-property-form .btn {
+  padding: 6px !important;
+  min-height: 38px;
+}
+
+/* ---------- VIEW-FANCY SPECIFIC STYLES ---------- */
+/* ---------- VIEW-FANCY SPECIFIC STYLES ---------- */
+/* Update these view-fancy specific styles with more robust handling */
+:host-context(.view-fancy-container) .details-panel {
+  /* Ensure panel always has a high z-index when active in view-fancy */
+  z-index: 900;
+}
+
+  :host-context(.view-fancy-container) .details-panel.active {
+    z-index: 1200; /* Higher than tools panel in view-fancy */
+  }
+
+    /* When both panels are visible, ensure details panel doesn't block tools panel interactions */
+    :host-context(.view-fancy-container) .details-panel.active:not(:hover) {
+      pointer-events: none;
+    }
+
+    :host-context(.view-fancy-container) .details-panel.active:hover {
+      pointer-events: auto;
+    }
+
+  /* Fix for the details panel not to overlap the tools panel toggle button */
+  :host-context(.view-fancy-container) .details-panel.active {
+    /* Adjust position to avoid overlapping the tools panel toggle */
+    right: 50px; /* This gives space for the tools panel toggle button */
+  }
+
+    /* Fix for edit mode - ensure panel stays visible and interactive when editing */
+    :host-context(.view-fancy-container) .details-panel.active .edit-mode {
+      z-index: 1300; /* Extra high z-index for edit mode */
+      position: relative;
+    }
+
+    :host-context(.view-fancy-container) .details-panel.active .edit-mode {
+      position: relative;
+      z-index: 1300; /* Higher z-index in edit mode */
+      pointer-events: all !important; /* Always enable pointer events in edit mode */
+    }
+
+      /* Fix 2: Ensure all form controls and buttons are clickable in edit mode */
+      :host-context(.view-fancy-container) .details-panel.active .edit-mode button,
+      :host-context(.view-fancy-container) .details-panel.active .edit-mode input,
+      :host-context(.view-fancy-container) .details-panel.active .edit-mode select,
+      :host-context(.view-fancy-container) .details-panel.active .edit-mode .form-control {
+        pointer-events: all !important;
+        position: relative;
+        z-index: 1301; /* Even higher z-index for interactive elements */
+      }
+
+    /* Fix 3: Improve visibility of panel in edit mode */
+    :host-context(.view-fancy-container) .details-panel.active.edit-active {
+      box-shadow: 0 0 15px rgba(33, 150, 243, 0.5); /* Blue glow when in edit mode */
+      border: 1px solid #2196F3; /* Blue border */
+    }
+
+  /* Fix 4: Make sure panel doesn't block tools panel toggle but is fully visible */
+  :host-context(.view-fancy-container) .details-panel.active {
+    right: 40px; /* Give space for tools panel toggle */
+    max-width: calc(100% - 50px); /* Ensure it doesn't overlap */
+  }
+
+    /* Fix 5: Override pointer-events behavior for active elements */
+    :host-context(.view-fancy-container) .details-panel.active:not(:hover) {
+      pointer-events: none;
+    }
+
+    :host-context(.view-fancy-container) .details-panel.active:hover,
+    :host-context(.view-fancy-container) .details-panel.active:focus-within,
+    :host-context(.view-fancy-container) .details-panel.active.edit-active {
+      pointer-events: auto !important;
+    }
+
+      /* Fix 6: Add style for when panel is in edit mode specifically */
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .details-content {
+        background-color: var(--bg-elevated, #f8f9fa);
+      }
+
+    /* ---------- SPECIFIC FIXES FOR EMBEDDED MODE IN VIEW-FANCY ---------- */
+
+    /* Fix 1: Ensure details panel remains visible and interactive in edit mode */
+    :host-context(.view-fancy-container) .details-panel.active.edit-active {
+      position: relative;
+      z-index: 1500 !important; /* Extra high z-index in edit mode */
+      pointer-events: all !important; /* Always enable pointer events in edit mode */
+      box-shadow: 0 0 20px rgba(33, 150, 243, 0.4); /* Blue glow when in edit mode */
+      border: 1px solid #2196F3; /* Blue border */
+      max-width: calc(100% - 50px); /* Ensure it doesn't overlap */
+      right: 40px; /* Give space for tools panel toggle */
+    }
+
+      /* Fix 2: Ensure the panel doesn't restrict or block click events in edit mode */
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .details-content,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .edit-mode,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .fixed-properties,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .properties-divider,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .editable-property,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .add-property-form {
+        position: relative;
+        z-index: 1501;
+        pointer-events: auto !important;
+      }
+
+      /* Fix 3: Ensure all form controls and buttons are clickable in edit mode */
+      :host-context(.view-fancy-container) .details-panel.active.edit-active button,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active input,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active select,
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .form-control {
+        position: relative;
+        z-index: 1502; /* Even higher z-index for interactive elements */
+        pointer-events: auto !important;
+      }
+
+      /* Fix 4: Improve styling for edit mode to make it more visually distinct */
+      :host-context(.view-fancy-container) .details-panel.active.edit-active .edit-mode {
+        background-color: var(--bg-elevated, #f5f5f5);
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid rgba(33, 150, 243, 0.2);
+      }
+
+        /* Fix 5: Better styling for buttons in edit mode to improve visibility */
+        :host-context(.view-fancy-container) .details-panel.active.edit-active .edit-mode button {
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+    /* Fix 6: Override any hover-based pointer-events behavior for edit mode */
+    :host-context(.view-fancy-container) .details-panel.active:not(:hover):not(.edit-active) {
+      pointer-events: none;
+    }
+
+    :host-context(.view-fancy-container) .details-panel.active.edit-active,
+    :host-context(.view-fancy-container) .details-panel.active:hover {
+      pointer-events: auto !important;
+    }
+
+/* ---------- GLOBAL FIXES FOR ALL MODES ---------- */
+/* Improve tooltip z-index across all contexts */
+::ng-deep .tooltip {
+  z-index: 2000 !important; /* Ensure tooltips are always on top */
+  pointer-events: none !important;
+}
+
+/* Make tooltips actually appear */
+.details-panel h4 {
+  z-index: auto !important;
+  position: relative !important;
+}
+
+/* Ensure buttons are always interactive */
+.details-panel .details-actions button {
+  position: relative !important;
+  z-index: 1510 !important;
+}
+
+/* ---------- SPECIFIC FIXES FOR VIEW-FANCY CONTAINER ---------- */
+/* Fix 1: Make the header always interactive in view-fancy */
+:host-context(.view-fancy-container) .details-panel .details-header {
+  position: relative;
+  z-index: 1510 !important;
+  pointer-events: auto !important;
+}
+
+/* Fix 2: Ensure all buttons are clickable */
+:host-context(.view-fancy-container) .details-panel .details-actions {
+  position: relative;
+  z-index: 1520 !important;
+  pointer-events: auto !important;
+}
+
+  :host-context(.view-fancy-container) .details-panel .details-actions button {
+    position: relative;
+    z-index: 1530 !important;
+    pointer-events: auto !important;
+  }
+
+/* Fix 3: Fix for the tooltip on the header */
+:host-context(.view-fancy-container) .details-panel .details-header h4 {
+  position: relative !important;
+  z-index: 1510 !important;
+}
+
+/* Fix 4: Fix for edit mode to ensure it's fully interactive */
+:host-context(.view-fancy-container) .details-panel.edit-active {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1600 !important;
+}
+
+/* Fix 5: Override any pointer-events settings that might interfere */
+:host-context(.view-fancy-container) .details-panel.active {
+  pointer-events: auto !important;
+}
+
+  /* Fix hover interactions */
+  :host-context(.view-fancy-container) .details-panel.active:not(:hover) {
+    pointer-events: auto !important; /* Always keep interaction enabled */
+  }
+
+/* ---------- TOOLTIP SPECIFIC FIXES ---------- */
+/* Fix tooltip container */
+:host-context(.view-fancy-container) .tooltip-container,
+:host ::ng-deep .tooltip {
+  z-index: 2000 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure tooltip trigger element has proper z-index */
+:host-context(.view-fancy-container) [ngbTooltip] {
+  position: relative !important;
+  z-index: 1510 !important;
+  pointer-events: auto !important;
+}
+
+/* Add a specific style for the tooltip class */
+:host ::ng-deep .details-id-tooltip {
+  z-index: 2100 !important;
+  opacity: 1 !important;
+}
+
+/* Fix for the tooltip specifically in the embedded mode */
+:host ::ng-deep .tooltip.show {
+  z-index: 2100 !important;
+  opacity: 1 !important;
+}
+
+/* Add this to the end of Frontend/src/app/Components/details-panel/details-panel.component.css */
+
+/* ==========================================================================
+   CYTOSCAPE-GRAPH SPECIFIC FIXES - PREVENTS PANEL FROM MOVING WHEN EDITING
+   ========================================================================== */
+
+/* Base styles for details panel inside cytoscape-graph component */
+:host-context(.cytoscape-graph-component) .details-panel {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  left: auto; /* Prevent left positioning */
+  transform: none !important; /* Prevent transform animations */
+  width: 300px;
+  z-index: 1500;
+}
+
+  /* Ensure the panel doesn't move when active */
+  :host-context(.cytoscape-graph-component) .details-panel.active {
+    right: 15px !important; /* Force right position */
+    left: auto !important; /* Never allow left positioning */
+    transform: none !important; /* Prevent any transform */
+    animation: none !important; /* Disable animations */
+    top: 15px !important; /* Force top position */
+  }
+
+    /* Critical: prevent edit mode from changing position */
+    :host-context(.cytoscape-graph-component) .details-panel.active.edit-active {
+      right: 15px !important; /* Force right position even in edit mode */
+      left: auto !important; /* Never position from left */
+      transform: none !important; /* Prevent any transforms */
+      transition: none !important; /* Disable transitions */
+      position: absolute !important; /* Force absolute positioning */
+      top: 15px !important; /* Force top position */
+      max-width: 300px; /* Control max width */
+    }
+
+  /* Make sure the container doesn't resize */
+  :host-context(.cytoscape-graph-component) .details-panel .details-content {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+/* Fix for nested context specificity */
+:host-context(.cytoscape-graph-component):host-context(.view-fancy-container) .details-panel.active {
+  right: 40px !important; /* Keep space for tools panel toggle */
+}
+
+  /* Fix for deeply nested panels */
+  :host-context(.cytoscape-graph-component):host-context(.view-fancy-container) .details-panel.active.edit-active {
+    right: 40px !important; /* Keep space for tools panel toggle */
+  }
+
+/* Override any conflicting styles */
+:host-context(.graph-container) .details-panel {
+  position: absolute !important;
+  transition: none !important;
+  animation: none !important;
 }

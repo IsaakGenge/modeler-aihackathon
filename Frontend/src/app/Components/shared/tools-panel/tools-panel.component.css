@@ -123,9 +123,23 @@
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px;
   transition: background-color 0.3s ease, border-color 0.3s ease;
-  overflow-y: auto;
-  max-height: none;
+  position: relative;
+  z-index: 1; /* Establish a stacking context */
+  overflow: visible !important; /* Override the auto overflow to allow dropdowns */
 }
+
+  /* Fix for dropdowns and popovers inside the panel */
+  .tab-content .dropdown-menu,
+  .tab-content .popover,
+  .tab-content .tooltip {
+    z-index: 1060 !important; /* Higher z-index to ensure visibility */
+  }
+
+  /* Only apply scrolling to immediate children of tab-content */
+  .tab-content > * {
+    max-height: calc(60vh - 100px);
+    overflow-y: auto;
+  }
 
 /***************************************
  * RESPONSIVE STYLES
