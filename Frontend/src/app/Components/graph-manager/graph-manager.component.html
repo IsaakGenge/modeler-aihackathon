@@ -6,6 +6,16 @@
     <p>Manage, import, export, delete, and generate graphs with ease.</p>
   </div>
 
+  <!-- Action buttons for Import and Generate -->
+  <div class="d-flex justify-content-end mb-3 gap-2">
+    <button type="button" class="btn btn-success" (click)="showImportModal = true">
+      <i class="bi bi-upload me-1"></i> Import Graph
+    </button>
+    <button type="button" class="btn btn-success" (click)="showGenerateModal = true">
+      <i class="bi bi-magic me-1"></i> Generate Graph
+    </button>
+  </div>
+
   <!-- Tools Panel positioned to collapse from the right instead of bottom -->
   <!-- Tools Panel - Positioned to middle right, collapsed by default -->
   <app-tools-panel [(collapsed)]="toolsPanelCollapsed"
@@ -14,7 +24,7 @@
                    (collapsedChange)="onToolsPanelCollapsedChange($event)"
                    (activeTabChange)="onActiveTabChange($event)"
                    [tabs]="[
-                { id: 1, title: 'Create Graph' }               
+                { id: 1, title: 'Create Graph' }
               ]">
     <div tabId="1">
       <app-create-graph (graphCreated)="onGraphCreated($event)"></app-create-graph>

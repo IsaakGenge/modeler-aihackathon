@@ -21,7 +21,7 @@
               formControlName="source"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['source'].errors }">
-        <option *ngFor="let node of nodes" [value]="node.id">
+        <option *ngFor="let node of nodes | sortByName" [value]="node.id">
           {{ node.name }}
         </option>
       </select>
@@ -36,7 +36,7 @@
               formControlName="target"
               class="form-select"
               [ngClass]="{ 'is-invalid': submitted && f['target'].errors }">
-        <option *ngFor="let node of nodes" [value]="node.id">
+        <option *ngFor="let node of nodes | sortByName" [value]="node.id">
           {{ node.name }}
         </option>
       </select>
