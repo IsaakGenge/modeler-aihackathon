@@ -112,12 +112,9 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   }
 
   // Handle sort change
-  onSortChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    console.log('Previous sortBy:', this.sortBy);
-    console.log('New selected value:', select.value);
-    this.sortBy = select.value;
-    console.log('Updated sortBy:', this.sortBy);
+  onSortChange(value: string): void {
+    console.log('Edge sort changing from', this.sortBy, 'to', value);
+    this.sortBy = value;
     this.filterEdges();
   }
 
