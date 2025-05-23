@@ -1,4 +1,3 @@
-// Frontend/src/app/Components/shared/confirmation-modal/confirmation-modal.component.ts
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -10,23 +9,27 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./confirmation-modal.component.css']
 })
 export class ConfirmationModalComponent {
-  @Input() title: string = 'Confirm Action';
-  @Input() message: string = 'Are you sure you want to proceed?';
+  @Input() show: boolean = false;
+  @Input() title: string = '';
+  @Input() message: string = '';
   @Input() confirmButtonText: string = 'Confirm';
-  @Input() cancelButtonText: string = 'Cancel';
+  @Input() cancelButtonText: string = 'Cancel'; // Added property
+  @Input() warningText: string | null = null; // Added property
   @Input() isLoading: boolean = false;
   @Input() error: string | null = null;
-  @Input() show: boolean = false;
-  @Input() warningText: string = 'This action cannot be undone.';
 
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 
-  onConfirm(): void {
+  onConfirm(event: Event): void {
+    event.stopPropagation(); // Prevent event bubbling
+    console.log('Confirm button clicked'); // Debugging
     this.confirm.emit();
   }
 
-  onCancel(): void {
+  onCancel(event: Event): void {
+    console.log('onCancel triggered by:', event.target); // Debugging
+    event.stopPropagation();
     this.cancel.emit();
   }
 }

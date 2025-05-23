@@ -1,10 +1,9 @@
-<!-- Frontend/src/app/Components/shared/confirmation-modal/confirmation-modal.component.html -->
 <div *ngIf="show">
-  <div class="modal-backdrop" (click)="onCancel()"></div>
-  <div class="custom-modal delete-confirmation">
+  <div class="modal-backdrop active" (click)="onCancel($event)"></div>
+  <div class="custom-modal delete-confirmation" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h5>{{ title }}</h5>
-      <button type="button" class="close-modal-btn" (click)="onCancel()">
+      <button type="button" class="close-modal-btn" (click)="onCancel($event)">
         <i class="bi bi-x"></i>
       </button>
     </div>
@@ -20,8 +19,10 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="isLoading">{{ cancelButtonText }}</button>
-      <button type="button" class="btn btn-danger" (click)="onConfirm()" [disabled]="isLoading">
+      <button type="button" class="btn btn-secondary" (click)="onCancel($event)" [disabled]="isLoading">
+        {{ cancelButtonText }}
+      </button>
+      <button type="button" class="btn btn-danger" (click)="onConfirm($event)" [disabled]="isLoading">
         <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
         {{ confirmButtonText }}
       </button>

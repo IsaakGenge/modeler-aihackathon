@@ -226,9 +226,22 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
       event.stopPropagation();
     }
 
+    if (!this.selectedElement || !['node', 'edge'].includes(this.selectedElement.type)) {
+      console.error('Invalid element selected for deletion.');
+      return;
+    }
+
     this.showDeleteModal = true;
     this.deleteError = null;
+
+    // Add a class to block pointer events on the details-panel
+    const detailsPanel = document.querySelector('.details-panel') as HTMLElement;
+    if (detailsPanel) {
+      detailsPanel.classList.add('modal-open');
+    }
   }
+
+  
 
   // Handles the confirmation of deletion
   public handleConfirmDelete(event?: Event): void {
@@ -237,7 +250,10 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
       event.stopPropagation();
     }
 
-    if (!this.selectedElement) return;
+    if (!this.selectedElement || !['node', 'edge'].includes(this.selectedElement.type)) {
+      console.error('Invalid element selected for deletion.');
+      return;
+    }
 
     const elementType = this.selectedElement.type;
     const elementId = this.selectedElement.data.id;
@@ -250,33 +266,32 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
     this.deleteInProgress = true;
     this.deleteError = null;
 
-    if (elementType === 'node') {
-      this.nodeService.deleteNode(elementId).subscribe({
-        next: () => {
+    const deleteObservable = elementType === 'node'
+      ? this.nodeService.deleteNode(elementId)
+      : this.edgeService.deleteEdge(elementId);
+
+    deleteObservable.subscribe({
+      next: () => {
+        // Notify deletion and reset state
+        if (elementType === 'node') {
           this.nodeService.notifyNodeDeleted();
-          this.closeDetailsPanel();
-          this.resetDeleteState();
-        },
-        error: (error: HttpErrorResponse) => {
-          console.error(`Error deleting node: ${error.message}`);
-          this.deleteInProgress = false;
-          this.deleteError = 'Failed to delete node. Please try again.';
-        }
-      });
-    } else if (elementType === 'edge') {
-      this.edgeService.deleteEdge(elementId).subscribe({
-        next: () => {
+        } else {
           this.edgeService.notifyEdgeDeleted();
-          this.closeDetailsPanel();
-          this.resetDeleteState();
-        },
-        error: (error: HttpErrorResponse) => {
-          console.error(`Error deleting edge: ${error.message}`);
-          this.deleteInProgress = false;
-          this.deleteError = 'Failed to delete connection. Please try again.';
         }
-      });
-    }
+
+        this.closeDetailsPanel(); // Close the details panel
+        this.resetDeleteState(); // Reset modal state
+
+        // Reset selectedElement and modal state
+        this.selectedElement = null;
+        this.showDeleteModal = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        console.error(`Error deleting ${elementType}: ${error.message}`);
+        this.deleteInProgress = false;
+        this.deleteError = `Failed to delete ${elementType}. Please try again.`;
+      }
+    });
   }
 
   // Handles the cancellation of deletion
@@ -287,6 +302,13 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
     }
 
     this.resetDeleteState();
+    this.showDeleteModal = false;
+
+    // Remove the class to re-enable pointer events on the details-panel
+    const detailsPanel = document.querySelector('.details-panel') as HTMLElement;
+    if (detailsPanel) {
+      detailsPanel.classList.remove('modal-open');
+    }
   }
 
   // Resets the delete modal state
@@ -294,6 +316,12 @@ export class DetailsPanelComponent implements OnChanges, OnInit, OnDestroy {
     this.showDeleteModal = false;
     this.deleteInProgress = false;
     this.deleteError = null;
+
+    // Remove the modal-open class from the details-panel
+    const detailsPanel = document.querySelector('.details-panel') as HTMLElement;
+    if (detailsPanel) {
+      detailsPanel.classList.remove('modal-open');
+    }
   }
 
   private fetchElementDetails(): void {
