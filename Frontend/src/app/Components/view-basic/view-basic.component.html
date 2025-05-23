@@ -1,4 +1,4 @@
-<div class="container-fluid p-0">
+<div class="container-fluid">
   <!-- Add Graph Picker at the top -->
   <div class="card mb-4">
     <div class="card-body">
@@ -16,58 +16,63 @@
     </div>
   </div>
 
-  <!-- Combined creation panel -->
-  <div class="card mb-4" *ngIf="hasSelectedGraph">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Create Nodes & Connections</h5>
-      <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleCreationPanel()">
-        <i class="bi" [ngClass]="creationPanelCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
-      </button>
-    </div>
-    <div class="card-body" [class.d-none]="creationPanelCollapsed">
-      <div class="row g-4">
-        <!-- Create Node Component -->
-        <div class="col-md-6">
-          <div class="creator-panel">
-            <h6 class="mb-3">New Node</h6>
-            <app-create-node></app-create-node>
-          </div>
-        </div>
-
-        <!-- Create Edge Component -->
-        <div class="col-md-6">
-          <div class="creator-panel">
-            <h6 class="mb-3">New Connection</h6>
-            <app-create-edge></app-create-edge>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- View Nodes Component -->
   <div class="card mb-4" *ngIf="hasSelectedGraph">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Nodes</h5>
+    <div class="card-header">
+      <h5>Nodes</h5>
       <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleViewNodesPanel()">
         <i class="bi" [ngClass]="viewNodesPanelCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
       </button>
     </div>
     <div class="card-body" [class.d-none]="viewNodesPanelCollapsed">
-      <app-view-nodes></app-view-nodes>
+      <app-view-nodes #viewNodes (nodeSelected)="onNodeSelected($event)"></app-view-nodes>
     </div>
   </div>
 
   <!-- View Edges Component -->
   <div class="card mb-4" *ngIf="hasSelectedGraph">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Connections</h5>
+    <div class="card-header">
+      <h5>Connections</h5>
       <button class="btn btn-sm btn-outline-secondary collapse-toggle" (click)="toggleViewEdgesPanel()">
         <i class="bi" [ngClass]="viewEdgesPanelCollapsed ? 'bi-chevron-down' : 'bi-chevron-up'"></i>
       </button>
     </div>
     <div class="card-body" [class.d-none]="viewEdgesPanelCollapsed">
-      <app-view-edges></app-view-edges>
+      <app-view-edges #viewEdges (edgeSelected)="onEdgeSelected($event)"></app-view-edges>
     </div>
   </div>
+
+  <!-- Tools panel (collapsible sidebar) that includes creation tools -->
+  <div class="tools-panel-container" [class.collapsed]="toolsPanelCollapsed" *ngIf="hasSelectedGraph">
+    <button class="tools-panel-toggle" (click)="toggleToolsPanel()">
+      <i class="bi" [ngClass]="toolsPanelCollapsed ? 'bi-chevron-left' : 'bi-chevron-right'"></i>
+    </button>
+
+    <div class="tools-panel">
+      <!-- Tab navigation like in view-fancy -->
+      <ul ngbNav #nav="ngbNav" [(activeId)]="activeTab" (activeIdChange)="onTabChange($event)" class="nav-tabs">
+        <li [ngbNavItem]="1">
+          <a ngbNavLink>Nodes</a>
+          <ng-template ngbNavContent>
+            <app-create-node></app-create-node>
+          </ng-template>
+        </li>
+        <li [ngbNavItem]="2">
+          <a ngbNavLink>Connections</a>
+          <ng-template ngbNavContent>
+            <app-create-edge></app-create-edge>
+          </ng-template>
+        </li>
+      </ul>
+
+      <div [ngbNavOutlet]="nav" class="tab-content"></div>
+    </div>
+  </div>
+
+  <!-- Details Panel - Will be shown when a node or edge is selected -->
+  <app-details-panel [selectedElement]="selectedElement"
+                     [isDarkMode$]="isDarkMode$"
+                     [graphId]="currentGraphId"
+                     (closePanel)="closeDetailsPanel()">
+  </app-details-panel>
 </div>

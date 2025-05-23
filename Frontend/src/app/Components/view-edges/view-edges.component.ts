@@ -1,5 +1,5 @@
 // Frontend/src/app/Components/view-edges/view-edges.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { EdgeService } from '../../Services/Edge/edge.service';
 import { NodeService } from '../../Services/Node/node.service';
@@ -18,6 +18,8 @@ import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirm
   styleUrl: './view-edges.component.css'
 })
 export class ViewEdgesComponent implements OnInit, OnDestroy {
+  @Output() edgeSelected = new EventEmitter<any>();
+
   edgeData: any[] = [];
   nodeMap: Map<string, string> = new Map(); // Map to store node id -> node name
   loading: boolean = false;
@@ -82,6 +84,25 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
     this.edgeCreatedSubscription.unsubscribe();
     this.edgeDeletedSubscription.unsubscribe();
     this.nodeChangedSubscription.unsubscribe();
+  }
+
+  // Method to handle edge selection
+  selectEdge(edge: any): void {
+    // Stop propagation to prevent delete button from triggering selection
+    event?.stopPropagation();
+
+    // Add a visual indication of selection
+    const edgeRows = document.querySelectorAll('.edge-data table tbody tr');
+    edgeRows.forEach(row => row.classList.remove('selected-row'));
+
+    // Find the clicked row and add selected class
+    const edgeIndex = this.edgeData.findIndex(e => e.id === edge.id);
+    if (edgeIndex >= 0 && edgeIndex < edgeRows.length) {
+      edgeRows[edgeIndex].classList.add('selected-row');
+    }
+
+    // Emit the selected edge to parent component
+    this.edgeSelected.emit(edge);
   }
 
   loadData(): void {
@@ -168,7 +189,10 @@ export class ViewEdgesComponent implements OnInit, OnDestroy {
   }
 
   // Show delete confirmation modal
-  initiateDeleteEdge(id: string): void {
+  initiateDeleteEdge(id: string, event?: MouseEvent): void {
+    // Stop event propagation to prevent row selection when clicking delete
+    event?.stopPropagation();
+
     this.edgeToDelete = id;
     this.showDeleteModal = true;
     this.deleteError = null;

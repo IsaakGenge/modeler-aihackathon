@@ -30,7 +30,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let edge of edgeData">
+        <tr *ngFor="let edge of edgeData" class="clickable-row" (click)="selectEdge(edge)">
           <td>{{ getNodeName(edge.source) }}</td>
           <td>{{ getNodeName(edge.target) }}</td>
           <td>{{ edge.edgeType }}</td>

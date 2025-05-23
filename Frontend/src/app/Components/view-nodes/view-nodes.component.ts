@@ -1,5 +1,5 @@
 // Frontend/src/app/Components/view-nodes/view-nodes.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NodeService } from '../../Services/Node/node.service';
 import { GraphService } from '../../Services/Graph/graph.service';
@@ -16,6 +16,8 @@ import { ConfirmationModalComponent } from '../shared/confirmation-modal/confirm
   styleUrl: './view-nodes.component.css'
 })
 export class ViewNodesComponent implements OnInit, OnDestroy {
+  @Output() nodeSelected = new EventEmitter<any>();
+
   nodeData: any[] = [];
   loading: boolean = false;
   error: string | null = null;
@@ -72,6 +74,25 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
     this.graphChangeSubscription.unsubscribe();
   }
 
+  // Method to handle node selection
+  selectNode(node: any): void {
+    // Stop propagation to prevent delete button from triggering selection
+    event?.stopPropagation();
+
+    // Add a visual indication of selection
+    const nodeCards = document.querySelectorAll('.node-card');
+    nodeCards.forEach(card => card.classList.remove('selected-row'));
+
+    // Find the clicked card and add selected class
+    const nodeIndex = this.nodeData.findIndex(n => n.id === node.id);
+    if (nodeIndex >= 0 && nodeIndex < nodeCards.length) {
+      nodeCards[nodeIndex].classList.add('selected-row');
+    }
+
+    // Emit the selected node to parent component
+    this.nodeSelected.emit(node);
+  }
+
   getNodes(graphId?: string): void {
     this.loading = true;
     this.error = null;
@@ -120,7 +141,10 @@ export class ViewNodesComponent implements OnInit, OnDestroy {
   }
 
   // Show delete confirmation modal
-  initiateDeleteNode(id: string): void {
+  initiateDeleteNode(id: string, event?: MouseEvent): void {
+    // Stop event propagation to prevent card selection when clicking delete
+    event?.stopPropagation();
+
     this.nodeToDelete = id;
     this.showDeleteModal = true;
     this.deleteError = null;
