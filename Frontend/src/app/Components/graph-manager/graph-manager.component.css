@@ -226,3 +226,16 @@ table tbody tr.active {
 .graph-manager * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
+
+/* Tools Panel styles */
+.tools-panel-container {
+  position: fixed;
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%);
+  right: 0; /* Anchor to the right */
+  transition: all 0.3s ease;
+}
+
+  .tools-panel-container.collapsed {
+    right: -300px; /* Adjust based on panel width */
+  }

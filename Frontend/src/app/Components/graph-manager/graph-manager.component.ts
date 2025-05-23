@@ -42,7 +42,7 @@ export class GraphManagerComponent implements OnInit, OnDestroy {
   isDarkMode$: Observable<boolean>;
 
   // Collapsible section state
-  isCreateSectionOpen: boolean = false;
+  isCreateSectionOpen: boolean = true;
 
   // Delete confirmation modal properties
   showDeleteModal = false;

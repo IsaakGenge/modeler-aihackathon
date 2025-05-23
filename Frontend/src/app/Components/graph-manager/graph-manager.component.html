@@ -7,15 +7,14 @@
   </div>
 
   <!-- Tools Panel positioned to collapse from the right instead of bottom -->
-  <app-tools-panel [(collapsed)]="isCreateSectionOpen"
-                   [position]="'right'"
-                   [activeTab]="1"
-                   [tabs]="[{ id: 1, title: 'Create Graph' }]">
-    <!-- Graph Creation Tab -->
-    <div tabId="1">
-      <app-create-graph (graphCreated)="onGraphCreated($event)"></app-create-graph>
-    </div>
-  </app-tools-panel>
+  <<app-tools-panel [(collapsed)]="isCreateSectionOpen"
+                 [position]="'right'"
+                 [activeTab]="1"
+                 [tabs]="[{ id: 1, title: 'Create Graph' }]">
+  <div tabId="1">
+    <app-create-graph (graphCreated)="onGraphCreated($event)"></app-create-graph>
+  </div>
+</app-tools-panel>
 
   <!-- Graph List -->
   <div *ngIf="graphs.length > 0" class="row g-3">
