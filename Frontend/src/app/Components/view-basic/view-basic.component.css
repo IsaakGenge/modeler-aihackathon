@@ -326,6 +326,10 @@ body.modal-open {
   margin: 0;
 }
 
+body:not(.modal-open) {
+  overflow-y: auto; /* Ensure scrolling is enabled when modal is closed */
+}
+
   /* Fix for modal spacing */
   body.modal-open app-details-panel ::ng-deep .details-panel {
     box-sizing: border-box;

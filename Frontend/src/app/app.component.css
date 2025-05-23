@@ -146,12 +146,21 @@
     font-size: 1.2rem;
   }
 
+html, body {
+  height: 100%;
+  overflow-y: auto; /* Allow vertical scrolling */
+  margin: 0;
+  padding: 0;
+}
+
 /* Main Content Adjustments */
 .main-content {
   margin-left: 250px;
   padding: 1rem;
   transition: margin-left 0.3s ease;
   width: calc(100% - 250px);
+  height: 100vh; /* Ensure it takes the full viewport height */
+  overflow-y: auto; /* Enable scrolling */
 }
 
   .main-content.expanded {
@@ -175,5 +184,6 @@
   .main-content.expanded {
     margin-left: 0;
     width: 100%;
+    height: 100vh; /* Ensure scrolling works on smaller screens */
   }
 }
