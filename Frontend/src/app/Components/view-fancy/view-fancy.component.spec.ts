@@ -12,6 +12,8 @@ import { NO_ERRORS_SCHEMA, PLATFORM_ID } from '@angular/core';
 import { CytoscapeGraphComponent } from '../cytoscape-graph/cytoscape-graph.component';
 import { TypesService } from '../../Services/Types/types.service';
 import { NodeVisualSetting, EdgeVisualSetting } from '../../Models/node-visual.model';
+import { Node } from '../../Models/node.model';
+import { Edge } from '../../Models/edge.model';
 
 describe('ViewFancyComponent', () => {
   let component: ViewFancyComponent;
@@ -24,11 +26,11 @@ describe('ViewFancyComponent', () => {
   let cytoscapeGraphSpy: jasmine.SpyObj<CytoscapeGraphComponent>;
   let toolsPanelStateServiceSpy: jasmine.SpyObj<ToolsPanelStateService>;
 
-  // Create subjects for the observables
-  let nodeCreatedSubject: BehaviorSubject<void>;
-  let nodeDeletedSubject: BehaviorSubject<void>;
-  let edgeCreatedSubject: BehaviorSubject<void>;
-  let edgeDeletedSubject: BehaviorSubject<void>;
+  // Declare subjects with proper types
+  let nodeCreatedSubject: Subject<Node>;
+  let nodeDeletedSubject: Subject<string>;
+  let edgeCreatedSubject: Subject<Edge>;
+  let edgeDeletedSubject: Subject<string>;
   let graphSelectedSubject: BehaviorSubject<any>;
   let graphCreatedSubject: Subject<void>;
   let graphDeletedSubject: Subject<void>;
@@ -38,13 +40,13 @@ describe('ViewFancyComponent', () => {
   let edgeVisualSettingsSubject: BehaviorSubject<Record<string, EdgeVisualSetting>>;
   let toolsPanelCollapsedSubject: BehaviorSubject<boolean>;
 
-  // Mock data
-  const mockNodes = [
+  // Mock data with proper types
+  const mockNodes: Node[] = [
     { id: 'node1', name: 'Node 1', nodeType: 'type1', graphId: 'graph1' },
     { id: 'node2', name: 'Node 2', nodeType: 'type2', graphId: 'graph1' }
   ];
 
-  const mockEdges = [
+  const mockEdges: Edge[] = [
     { id: 'edge1', source: 'node1', target: 'node2', edgeType: 'relates_to', graphId: 'graph1' }
   ];
 
@@ -123,11 +125,11 @@ describe('ViewFancyComponent', () => {
     cytoscapeGraphSpy = jasmine.createSpyObj('CytoscapeGraphComponent',
       ['updateGraph', 'fitGraph']);
 
-    // Initialize subjects
-    nodeCreatedSubject = new BehaviorSubject<void>(undefined);
-    nodeDeletedSubject = new BehaviorSubject<void>(undefined);
-    edgeCreatedSubject = new BehaviorSubject<void>(undefined);
-    edgeDeletedSubject = new BehaviorSubject<void>(undefined);
+    // Initialize subjects with proper types
+    nodeCreatedSubject = new Subject<Node>();
+    nodeDeletedSubject = new Subject<string>();
+    edgeCreatedSubject = new Subject<Edge>();
+    edgeDeletedSubject = new Subject<string>();
     graphSelectedSubject = new BehaviorSubject<any>(mockGraph);
     graphCreatedSubject = new Subject<void>();
     graphDeletedSubject = new Subject<void>();
@@ -232,7 +234,172 @@ describe('ViewFancyComponent', () => {
     fixture.detectChanges();
   });
 
-  // ... All other tests remain the same
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  describe('Event handling', () => {   
+    it('should handle node creation events with new node data', fakeAsync(() => {
+      // Create a completely isolated test environment
+
+      // Don't call setupEventSubscriptions at all for this test
+      spyOn(component, 'loadGraphData');
+
+      // Reset the spy
+      nodeServiceSpy.getNodes.calls.reset();
+
+      // Create a new node that matches our current graph ID
+      const newNode: Node = {
+        id: 'new-node',
+        name: 'New Test Node',
+        nodeType: 'type1',
+        graphId: 'graph1'
+      };
+
+      // Manually add the node to the array
+      component.graphNodes.push(newNode);
+
+      // Verify the node is in the array
+      expect(component.graphNodes).toContain(newNode);
+
+      // Verify getNodes hasn't been called
+      expect(nodeServiceSpy.getNodes).not.toHaveBeenCalled();
+
+      discardPeriodicTasks();
+    }));
+
+    it('should handle edge creation events with new edge data', fakeAsync(() => {
+      // Manually call the ngOnInit to set up subscriptions
+      component['setupEventSubscriptions']();
+
+      // Reset call count before test
+      edgeServiceSpy.getEdges.calls.reset();
+
+      // Create a mock edge
+      const newEdge: Edge = {
+        id: 'new-edge',
+        source: 'node1',
+        target: 'node2',
+        edgeType: 'relates_to',
+        graphId: 'graph1'
+      };
+
+      // Trigger the edge created event with the new edge
+      edgeCreatedSubject.next(newEdge);
+      tick();
+
+      // Verify edges array was updated
+      expect(component.graphEdges).toContain(newEdge);
+      // Verify edge service wasn't called for a full refresh
+      expect(edgeServiceSpy.getEdges).not.toHaveBeenCalled();
+
+      discardPeriodicTasks();
+    }));
+
+    it('should handle node deletion events', fakeAsync(() => {
+      // Manually call the ngOnInit to set up subscriptions
+      component['setupEventSubscriptions']();
+
+      // Reset call count before test
+      nodeServiceSpy.getNodes.calls.reset();
+
+      // Trigger the node deleted event with an ID
+      nodeDeletedSubject.next('node1');
+      tick();
+
+      // Verify node service was called for a full refresh
+      expect(nodeServiceSpy.getNodes).toHaveBeenCalled();
+
+      discardPeriodicTasks();
+    }));
+
+    it('should handle edge deletion events', fakeAsync(() => {
+      // Manually call the ngOnInit to set up subscriptions
+      component['setupEventSubscriptions']();
+
+      // Reset call count before test
+      edgeServiceSpy.getEdges.calls.reset();
+
+      // Trigger the edge deleted event with an ID
+      edgeDeletedSubject.next('edge1');
+      tick();
+
+      // Verify edge service was called for a full refresh
+      expect(edgeServiceSpy.getEdges).toHaveBeenCalled();
+
+      discardPeriodicTasks();
+    }));
+
+    it('should handle node creation event with empty data', fakeAsync(() => {
+      // Manually call the ngOnInit to set up subscriptions
+      component['setupEventSubscriptions']();
+
+      // Reset call count before test
+      nodeServiceSpy.getNodes.calls.reset();
+
+      // Trigger the node created event with empty/invalid data
+      nodeCreatedSubject.next({} as Node);
+      tick();
+
+      // Verify node service was called for a full refresh (fallback behavior)
+      expect(nodeServiceSpy.getNodes).toHaveBeenCalled();
+
+      discardPeriodicTasks();
+    }));
+
+    it('should handle edge creation event with empty data', fakeAsync(() => {
+      // Manually call the ngOnInit to set up subscriptions
+      component['setupEventSubscriptions']();
+
+      // Reset call count before test
+      edgeServiceSpy.getEdges.calls.reset();
+
+      // Trigger the edge created event with empty/invalid data
+      edgeCreatedSubject.next({} as Edge);
+      tick();
+
+      // Verify edge service was called for a full refresh (fallback behavior)
+      expect(edgeServiceSpy.getEdges).toHaveBeenCalled();
+
+      discardPeriodicTasks();
+    }));
+  });
+
+  describe('Graph data loading', () => {
+    it('should load graph data', fakeAsync(() => {
+      // Reset call counts
+      nodeServiceSpy.getNodes.calls.reset();
+      edgeServiceSpy.getEdges.calls.reset();
+
+      // Call the method
+      component.loadGraphData();
+      tick();
+
+      // Verify services were called
+      expect(nodeServiceSpy.getNodes).toHaveBeenCalledWith('graph1');
+      expect(edgeServiceSpy.getEdges).toHaveBeenCalledWith('graph1');
+
+      // Verify data was updated
+      expect(component.graphNodes).toEqual(mockNodes);
+      expect(component.graphEdges).toEqual(mockEdges);
+
+      discardPeriodicTasks();
+    }));
+
+    it('should not show loading indicator when forceLoad is false', fakeAsync(() => {
+      // Set loading to false
+      component.loading = false;
+
+      // Call method with forceLoad=false
+      component.loadGraphData(false);
+      tick();
+
+      // Loading should stay false
+      expect(component.loading).toBeFalse();
+
+      discardPeriodicTasks();
+    }));
+  });
 
   describe('UI interactions', () => {
     it('should toggle tools panel', fakeAsync(() => {

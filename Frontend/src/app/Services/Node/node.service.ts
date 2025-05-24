@@ -1,20 +1,23 @@
 // Frontend/src/app/Services/Node/node.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { GraphService } from '../Graph/graph.service';
 import { Node } from '../../Models/node.model';
-import { map } from 'rxjs/operators'
+import { map, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NodeService {
   private apiUrl = `${environment.apiBaseUrl}/node`;
-  private nodeCreatedSubject = new Subject<void>();
-  private nodeDeletedSubject = new Subject<void>();
+  // Change to Subject<Node> to pass the actual node data
+  private nodeCreatedSubject = new Subject<Node>();
+  private nodeDeletedSubject = new Subject<string>(); // Pass node ID on deletion
 
+  // Update the observable types
   nodeCreated$ = this.nodeCreatedSubject.asObservable();
   nodeDeleted$ = this.nodeDeletedSubject.asObservable();
 
@@ -41,11 +44,23 @@ export class NodeService {
       node.graphId = this.graphService.currentGraphId;
     }
 
-    return this.http.post<Node>(this.apiUrl, node);
+    return this.http.post<Node>(this.apiUrl, node).pipe(
+      tap((createdNode: Node) => {
+        // Notify subscribers with the actual node data
+        this.notifyNodeCreated(createdNode);
+      })
+    );
   }
 
-  notifyNodeCreated(): void {
-    this.nodeCreatedSubject.next();
+  // Updated to pass the actual node
+  notifyNodeCreated(node?: Node): void {
+    if (node) {
+      // If we have node data, emit it
+      this.nodeCreatedSubject.next(node);
+    } else {
+      // For backward compatibility, emit an empty node
+      this.nodeCreatedSubject.next({} as Node);
+    }
   }
 
   updateNode(node: Node): Observable<Node> {
@@ -56,15 +71,24 @@ export class NodeService {
   }
 
   deleteNode(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`);
+    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(
+      tap(() => {
+        // Notify with the deleted node ID
+        this.notifyNodeDeleted(id);
+      })
+    );
   }
 
-  notifyNodeDeleted(): void {
-    this.nodeDeletedSubject.next();
+  // Updated to pass the deleted node id
+  notifyNodeDeleted(id?: string): void {
+    if (id) {
+      this.nodeDeletedSubject.next(id);
+    } else {
+      this.nodeDeletedSubject.next('');
+    }
   }
 
   // Get node positions for a graph
-  // Updated getNodePositions method to use the existing GetNodes endpoint
   getNodePositions(graphId: string, forceRefresh: boolean = false): Observable<any> {
     if (!graphId) {
       console.error('Graph ID is required to get node positions');
@@ -99,9 +123,6 @@ export class NodeService {
     );
   }
 
-
-
-
   // Save node positions
   saveNodePositions(graphId: string, positions: { [key: string]: { x: number, y: number } }): Observable<any> {
     return this.http.post(`${environment.apiBaseUrl}/node/positions`, {
@@ -109,5 +130,4 @@ export class NodeService {
       positions
     });
   }
-
 }

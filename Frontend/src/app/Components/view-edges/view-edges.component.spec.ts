@@ -24,10 +24,11 @@ describe('ViewEdgesComponent', () => {
   let typesServiceSpy: jasmine.SpyObj<TypesService>;
 
   // Create subjects for the observables - making them accessible for tests
-  let edgeCreatedSubject: BehaviorSubject<void>;
-  let edgeDeletedSubject: BehaviorSubject<void>;
-  let nodeCreatedSubject: BehaviorSubject<void>;
-  let nodeDeletedSubject: BehaviorSubject<void>;
+  let edgeCreatedSubject: BehaviorSubject<Edge>; // Change from void to Edge
+  let edgeDeletedSubject: BehaviorSubject<string>; // Change from void to string
+  let nodeCreatedSubject: BehaviorSubject<Node>; // Change from void to Node
+  let nodeDeletedSubject: BehaviorSubject<string>; // Change from void to string
+
 
   // Mock data - adding missing graphId property to fix Edge[] type error
   const mockEdges: Edge[] = [
@@ -117,10 +118,11 @@ describe('ViewEdgesComponent', () => {
     nodeServiceSpy.getNodes.and.returnValue(of(mockNodes));
 
     // Initialize subjects for the observables
-    edgeCreatedSubject = new BehaviorSubject<void>(undefined);
-    edgeDeletedSubject = new BehaviorSubject<void>(undefined);
-    nodeCreatedSubject = new BehaviorSubject<void>(undefined);
-    nodeDeletedSubject = new BehaviorSubject<void>(undefined);
+    edgeCreatedSubject = new BehaviorSubject<Edge>(mockEdges[0]); // Use first mock edge as initial value
+    edgeDeletedSubject = new BehaviorSubject<string>(''); // Empty string as initial value
+    nodeCreatedSubject = new BehaviorSubject<Node>(mockNodes[0]); // Use first mock node as initial value
+    nodeDeletedSubject = new BehaviorSubject<string>(''); // Empty string as initial value
+
 
     // Set up observables as properties on the service spies
     Object.defineProperty(edgeServiceSpy, 'edgeCreated$', {
@@ -193,8 +195,8 @@ describe('ViewEdgesComponent', () => {
       // Reset the spy to track new calls
       edgeServiceSpy.getEdges.calls.reset();
 
-      // Simulate an edge created event - using the subject directly
-      edgeCreatedSubject.next();
+      // Simulate an edge created event with actual Edge data
+      edgeCreatedSubject.next(mockEdges[0]);
       tick();
 
       expect(edgeServiceSpy.getEdges).toHaveBeenCalled();
@@ -204,8 +206,8 @@ describe('ViewEdgesComponent', () => {
       // Reset the spy to track new calls
       edgeServiceSpy.getEdges.calls.reset();
 
-      // Simulate an edge deleted event - using the subject directly
-      edgeDeletedSubject.next();
+      // Simulate an edge deleted event with an ID
+      edgeDeletedSubject.next('edge1');
       tick();
 
       expect(edgeServiceSpy.getEdges).toHaveBeenCalled();
@@ -215,8 +217,8 @@ describe('ViewEdgesComponent', () => {
       // Reset the spy to track new calls
       nodeServiceSpy.getNodes.calls.reset();
 
-      // Simulate a node created event - using the subject directly
-      nodeCreatedSubject.next();
+      // Simulate a node created event with actual Node data
+      nodeCreatedSubject.next(mockNodes[0]);
       tick();
 
       expect(nodeServiceSpy.getNodes).toHaveBeenCalled();
@@ -224,8 +226,8 @@ describe('ViewEdgesComponent', () => {
       // Reset the spy to track new calls
       nodeServiceSpy.getNodes.calls.reset();
 
-      // Simulate a node deleted event - using the subject directly
-      nodeDeletedSubject.next();
+      // Simulate a node deleted event with an ID
+      nodeDeletedSubject.next('node1');
       tick();
 
       expect(nodeServiceSpy.getNodes).toHaveBeenCalled();

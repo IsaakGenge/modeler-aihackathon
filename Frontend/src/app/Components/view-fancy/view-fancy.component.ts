@@ -121,9 +121,21 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   private setupEventSubscriptions(): void {
     // Subscribe to node creation events
     this.subscriptions.add(
-      this.nodeService.nodeCreated$.subscribe(() => {
+      this.nodeService.nodeCreated$.subscribe((newNode) => {
         console.log('Node created event received');
-        this.loadGraphData();
+
+        if (newNode && newNode.id && newNode.graphId === this.currentGraphId) {
+          console.log('New node received:', newNode);
+          // Add the new node to our local array if it doesn't exist already
+          const existingNode = this.graphNodes.find(n => n.id === newNode.id);
+          if (!existingNode) {
+            this.graphNodes.push(newNode);
+          }
+          // No need to call loadGraphData() as the cytoscape component will handle it
+        } else {
+          // Only load data if we didn't get a valid node
+          this.loadGraphData(false);
+        }
       })
     );
 
@@ -137,9 +149,20 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Subscribe to edge creation events
     this.subscriptions.add(
-      this.edgeService.edgeCreated$.subscribe(() => {
+      this.edgeService.edgeCreated$.subscribe((newEdge) => {
         console.log('Edge created event received');
-        this.loadGraphData();
+        if (newEdge && newEdge.id && newEdge.graphId === this.currentGraphId) {
+          console.log('New edge received:', newEdge);
+          // Add the new edge to our local array if it doesn't exist already
+          const existingEdge = this.graphEdges.find(e => e.id === newEdge.id);
+          if (!existingEdge) {
+            this.graphEdges.push(newEdge);
+          }
+          // No need to call loadGraphData()
+        } else {
+          // Only load data if we didn't get a valid edge
+          this.loadGraphData(false);
+        }
       })
     );
 
@@ -183,14 +206,16 @@ export class ViewFancyComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
 
-  loadGraphData(): void {
+  loadGraphData(forceLoad: boolean = true): void {
     // Don't load data if no graph is selected
     if (!this.graphService.currentGraphId) {
       this.warning = 'Please select a graph to view its data.';
       return;
     }
 
-    this.loading = true;
+    if (forceLoad) {
+      this.loading = true;
+    }
     this.error = null;
     this.clearWarningState(); // Reset warning state before loading new data
 

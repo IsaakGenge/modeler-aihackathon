@@ -177,7 +177,8 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.edgeService.createEdge(edgeData).subscribe({
       next: (edge) => {
         this.loading = false;
-        this.edgeService.notifyEdgeCreated();
+        // The service now handles notifying with the created edge
+        // No need to call notifyEdgeCreated() separately
         this.resetForm();
         this.showMessageWithTimeout('success');
       },
