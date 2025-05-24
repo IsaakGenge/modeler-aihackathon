@@ -137,6 +137,21 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
         this.nodes = nodes;
         this.loading = false;
 
+        // Set default values for source and target dropdowns if they have no current value
+        if (nodes.length >= 2 && this.edgeForm) {
+          const sourceControl = this.edgeForm.get('source');
+          const targetControl = this.edgeForm.get('target');
+
+          // Only set values if controls are empty
+          if (sourceControl && !sourceControl.value && nodes[0]) {
+            sourceControl.setValue(nodes[0].id);
+          }
+
+          if (targetControl && !targetControl.value && nodes[1]) {
+            targetControl.setValue(nodes[1].id);
+          }
+        }
+
         if (nodes.length === 0) {
           this.showMessageWithTimeout('warning', 'No nodes available. Please create at least two nodes to create a connection.');
         }
@@ -177,7 +192,8 @@ export class CreateEdgeComponent implements OnInit, OnDestroy {
     this.edgeService.createEdge(edgeData).subscribe({
       next: (edge) => {
         this.loading = false;
-        this.edgeService.notifyEdgeCreated();
+        // The service now handles notifying with the created edge
+        // No need to call notifyEdgeCreated() separately
         this.resetForm();
         this.showMessageWithTimeout('success');
       },

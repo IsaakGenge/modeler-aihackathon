@@ -111,22 +111,37 @@ export class CreateNodeComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Check if a graph is selected
+    if (!this.graphService.currentGraphId) {
+      this.showMessageWithTimeout('error', 'Please select a graph before creating a node.');
+      return;
+    }
+
     this.loading = true;
-    const nodeData = this.nodeForm.value;
+    const nodeData = {
+      ...this.nodeForm.value,
+      graphId: this.graphService.currentGraphId // Always explicitly set the graphId
+    };
 
     this.nodeService.createNode(nodeData).subscribe({
       next: (node) => {
         this.loading = false;
-        this.nodeService.notifyNodeCreated();
+        // The service now handles notifying with the created node
+        // No need to call notifyNodeCreated() separately
         this.resetForm();
         this.showMessageWithTimeout('success');
       },
       error: (error: HttpErrorResponse) => {
         this.loading = false;
         if (error.status === 400) {
-          this.showMessageWithTimeout('error', 'Invalid node data. Please check your inputs.');
+          // Check if it's a graphId validation error
+          if (error.error?.errors?.graphId) {
+            this.showMessageWithTimeout('error', 'Graph ID is required. Please select a graph first.');
+          } else {
+            this.showMessageWithTimeout('error', 'Invalid node data. Please check your inputs.');
+          }
         } else {
-          this.showMessageWithTimeout('error', error.message);
+          this.showMessageWithTimeout('error', error.message || 'An error occurred while creating the node.');
         }
       }
     });

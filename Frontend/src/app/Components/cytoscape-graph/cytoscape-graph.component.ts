@@ -92,6 +92,10 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
     // Subscribe to node and edge updates
     this.subscribeToNodeUpdates();
     this.subscribeToEdgeUpdates();
+
+    // Add subscriptions for deletions
+    this.subscribeToNodeDeletions();
+    this.subscribeToEdgeDeletions();
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -152,9 +156,33 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
    * Close the details panel and deselect any selected elements
    */
   public closeDetailsPanel(): void {
+    // Store current viewport state before making changes
+    const currentPan = this.cy ? { ...this.cy.pan() } : null;
+    const currentZoom = this.cy ? this.cy.zoom() : null;
+
+    // First update the selection state
     this.selectedElement = null;
+
+    // Then handle cytoscape operations with proper null checks
     if (this.cy) {
-      this.cy.$(':selected').unselect();
+      // Batch this operation to prevent multiple renders
+      this.cy.batch(() => {
+        // Clear selection
+        this.cy?.$(":selected").unselect(); // Optional chaining to handle null case
+      });
+
+      // Restore viewport exactly as it was before selection changes
+      if (currentPan && currentZoom) {
+        // Use requestAnimationFrame for smoother transition
+        requestAnimationFrame(() => {
+          if (this.cy) { // Double-check cy is still valid when animation frame executes
+            this.cy.viewport({
+              zoom: currentZoom,
+              pan: currentPan
+            });
+          }
+        });
+      }
     }
   }
 
@@ -212,18 +240,506 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   /**
    * Update graph with new data
    */
-  public async updateGraph(nodes: GraphNodeData[], edges: GraphEdgeData[]): Promise<void> {
-    console.log("Updating graph with new data:", { nodes, edges });
+  public async updateGraph(nodes: GraphNodeData[], edges: GraphEdgeData[], preservePositions: boolean = true): Promise<void> {
+    console.log("Updating graph with new data:", { nodes, edges, preservePositions });
 
-    // Clear any selected element when the graph is updated
-    this.closeDetailsPanel();
+    // If there's no cytoscape instance or we don't want to preserve positions, perform full initialization
+    if (!this.cy || !preservePositions) {
+      // Clear any selected element when the graph is updated
+      this.closeDetailsPanel();
 
-    // Make a deep copy to ensure we don't lose data
-    this.nodes = nodes.map(node => ({ ...node }));
-    this.edges = edges.map(edge => ({ ...edge }));
+      // Make a deep copy to ensure we don't lose data
+      this.nodes = nodes.map(node => ({ ...node }));
+      this.edges = edges.map(edge => ({ ...edge }));
 
-    await this.initializeCytoscape();
+      await this.initializeCytoscape();
+      return;
+    }
+
+    // Get current node positions to preserve them
+    const currentPositions = this.getNodePositions();
+
+    // Store viewport state
+    const currentPan = this.cy ? { ...this.cy.pan() } : null;
+    const currentZoom = this.cy ? this.cy.zoom() : null;
+
+    // Find new nodes (nodes that aren't already in the graph)
+    const existingNodeIds = this.nodes.map(n => String(n.id));
+    const newNodes = nodes.filter(n => !existingNodeIds.includes(String(n.id)));
+
+    // Find removed nodes (nodes that are in the graph but not in the new data)
+    const newNodeIds = nodes.map(n => String(n.id));
+    const removedNodes = this.nodes.filter(n => !newNodeIds.includes(String(n.id)));
+
+    // Find new edges (edges that aren't already in the graph)
+    const existingEdgeIds = this.edges.map(e => String(e.id));
+    const newEdges = edges.filter(e => !existingEdgeIds.includes(String(e.id)));
+
+    // Find removed edges (edges that are in the graph but not in the new data)
+    const newEdgeIds = edges.map(e => String(e.id));
+    const removedEdges = this.edges.filter(e => !newEdgeIds.includes(String(e.id)));
+
+    // Determine if we have significant changes that would require re-fitting
+    const hasSignificantChanges = newNodes.length > 3 || newEdges.length > 5 ||
+      removedNodes.length > 3 || removedEdges.length > 5;
+
+    // Temporarily disable auto-fitting
+    const oldAutoungrabify = this.cy ? this.cy.autoungrabify() : false;
+    if (this.cy) this.cy.autoungrabify(true);
+
+    // Use batching for better performance
+    this.cy.batch(() => {
+      // Handle removed nodes and edges
+      if (removedEdges.length > 0) {
+        removedEdges.forEach(edge => {
+          const idStr = String(edge.id);
+          const edgeElement = this.cy?.getElementById(idStr);
+          if (edgeElement) {
+            // If this edge was selected, close the details panel
+            if (this.selectedElement?.type === 'edge' && this.selectedElement.data.id === idStr) {
+              this.closeDetailsPanel();
+            }
+            edgeElement.remove();
+          }
+        });
+        // Update our local array in one operation
+        this.edges = this.edges.filter(e => !removedEdges.some(re => String(re.id) === String(e.id)));
+      }
+
+      if (removedNodes.length > 0) {
+        removedNodes.forEach(node => {
+          const idStr = String(node.id);
+          const nodeElement = this.cy?.getElementById(idStr);
+          if (nodeElement) {
+            // If this node was selected, close the details panel
+            if (this.selectedElement?.type === 'node' && this.selectedElement.data.id === idStr) {
+              this.closeDetailsPanel();
+            }
+            nodeElement.remove();
+          }
+        });
+        // Update our local array in one operation
+        this.nodes = this.nodes.filter(n => !removedNodes.some(rn => String(rn.id) === String(n.id)));
+        // Mark that positions have changed
+        this.positionsChanged = true;
+      }
+
+      // Update existing nodes (in case properties have changed)
+      nodes.filter(n => existingNodeIds.includes(String(n.id))).forEach(node => {
+        const cyNode = this.cy?.getElementById(String(node.id));
+        if (cyNode) {
+          cyNode.data('label', node.name || 'Unnamed Node');
+          cyNode.data('nodeType', node.nodeType || 'Default');
+
+          // Apply styles but maintain position
+          if (!cyNode.selected()) {
+            this.updateNodeTypeStyle(String(node.id), node.nodeType as string);
+          }
+        }
+      });
+
+      // Update existing edges (in case properties have changed)
+      edges.filter(e => existingEdgeIds.includes(String(e.id))).forEach(edge => {
+        const cyEdge = this.cy?.getElementById(String(edge.id));
+        if (cyEdge) {
+          cyEdge.data('edgeType', edge.edgeType);
+          cyEdge.data('label', edge.edgeType);
+
+          // Apply styles
+          if (edge.edgeType && this.edgeVisualSettings[edge.edgeType]) {
+            const typeStyle = this.edgeVisualSettings[edge.edgeType];
+            cyEdge.style({
+              'line-color': typeStyle.lineColor,
+              'target-arrow-color': typeStyle.lineColor,
+              'line-style': typeStyle.lineStyle,
+              'width': typeStyle.width,
+              'target-arrow-shape': typeStyle.targetArrowShape,
+              'curve-style': typeStyle.curveStyle,
+              'opacity': typeStyle.lineOpacity
+            });
+          }
+        }
+      });
+
+      // Add new nodes and edges
+      newNodes.forEach(node => {
+        // If the node has no specified position, check if it had a saved position previously
+        if (node.positionX === undefined && node.positionY === undefined &&
+          node.id !== undefined && currentPositions[String(node.id)]) {
+          node.positionX = currentPositions[String(node.id)].x;
+          node.positionY = currentPositions[String(node.id)].y;
+        }
+
+        // Ensure node has a valid id
+        if (node.id !== undefined) {
+          // Create a safe copy with required properties
+          const safeNode: GraphNodeData = {
+            id: String(node.id),
+            name: node.name,
+            nodeType: node.nodeType,
+            positionX: node.positionX,
+            positionY: node.positionY,
+            parent: node.parent
+          };
+          this.addSingleNode(safeNode);
+        }
+      });
+
+      newEdges.forEach(edge => {
+        if (edge.id !== undefined && edge.source !== undefined && edge.target !== undefined) {
+          // Create a safe copy with required properties
+          const safeEdge: GraphEdgeData = {
+            id: String(edge.id),
+            source: String(edge.source),
+            target: String(edge.target),
+            edgeType: edge.edgeType
+          };
+          this.addSingleEdge(safeEdge);
+        }
+      });
+    });
+
+    // Restore original autoungrabify setting
+    if (this.cy) this.cy.autoungrabify(oldAutoungrabify);
+
+    // Update the component's node and edge lists to ensure consistency
+    this.nodes = nodes
+      .filter(node => node.id !== undefined)
+      .map(node => ({
+        ...node,
+        id: node.id !== undefined ? String(node.id) : '0' // Fallback if somehow undefined
+      })) as GraphNodeData[];
+
+    this.edges = edges
+      .filter(edge => edge.id !== undefined)
+      .map(edge => ({
+        ...edge,
+        id: edge.id !== undefined ? String(edge.id) : '0', // Fallback
+        source: String(edge.source),
+        target: String(edge.target)
+      })) as GraphEdgeData[];
+
+    // Restore viewport for minor changes or fit graph for significant changes
+    if (!hasSignificantChanges && currentPan && currentZoom) {
+      // For minor changes, restore exactly the same viewport to prevent jiggle
+      this.cy.viewport({
+        zoom: currentZoom,
+        pan: currentPan
+      });
+    } else if (hasSignificantChanges) {
+      // For significant changes, use requestAnimationFrame for smoother transition
+      requestAnimationFrame(() => {
+        this.smartFitGraph();
+      });
+    }
   }
+
+  /**
+   * Add a single node to the graph without reinitializing
+   * @param newNode The node to add to the graph
+   */
+  public addSingleNode(newNode: GraphNodeData): void {
+    if (!this.cy) {
+      console.warn('Cannot add node: Cytoscape instance is not initialized');
+      return;
+    }
+
+    // Make sure we have a valid ID
+    const nodeId = String(newNode.id);
+
+    // Check if the node already exists to avoid duplicates
+    if (this.cy.getElementById(nodeId).length > 0) {
+      console.log(`Node with ID ${nodeId} already exists`);
+      return;
+    }
+
+    console.log(`Adding node to graph: ${newNode.name} (${nodeId})`);
+
+    // Create the node data
+    const nodeData: CytoscapeNodeData = {
+      data: {
+        id: nodeId,
+        label: newNode.name || 'Unnamed Node',
+        nodeType: newNode.nodeType || 'Default',
+        parent: newNode.parent ? String(newNode.parent) : undefined,
+      }
+    };
+
+    // Add position - use viewport center if not specified
+    if (newNode.positionX !== undefined && newNode.positionY !== undefined) {
+      const x = Number(newNode.positionX);
+      const y = Number(newNode.positionY);
+
+      if (!isNaN(x) && !isNaN(y)) {
+        nodeData.position = { x, y };
+      } else {
+        // Calculate viewport center if position is invalid
+        this.calculateViewportCenter(nodeData);
+      }
+    } else {
+      // Calculate viewport center
+      this.calculateViewportCenter(nodeData);
+    }
+
+    // Add the node without animation or batching
+    const newCyNode = this.cy.add({
+      group: 'nodes',
+      data: nodeData.data,
+      position: nodeData.position
+    });
+
+    // Apply styles immediately
+    const nodeType = newNode.nodeType || 'Default';
+    this.updateNodeTypeStyle(nodeId, nodeType);
+
+    // Mark positions changed
+    this.positionsChanged = true;
+
+    // Log success
+    console.log(`Node added successfully: ${newNode.name} (${nodeId})`);
+  }
+
+  // Helper method to calculate viewport center
+  private calculateViewportCenter(nodeData: CytoscapeNodeData): void {
+    if (!this.cy) return;
+
+    // Get pan and zoom to calculate center of current viewport
+    const pan = this.cy.pan();
+    const zoom = this.cy.zoom();
+    const width = this.cy.width();
+    const height = this.cy.height();
+
+    // Use center of viewport
+    nodeData.position = {
+      x: (pan.x * -1 + width / 2) / zoom,
+      y: (pan.y * -1 + height / 2) / zoom
+    };
+  }
+
+  /**
+   * Add a single edge to the graph without reinitializing
+   * @param newEdge The edge to add to the graph
+   */
+  public addSingleEdge(newEdge: GraphEdgeData): void {
+    if (!this.cy) {
+      console.warn('Cannot add edge: Cytoscape instance is not initialized');
+      return;
+    }
+
+    // Find source and target nodes to get their labels
+    const sourceNode = this.nodes.find(n => n.id === newEdge.source);
+    const targetNode = this.nodes.find(n => n.id === newEdge.target);
+
+    if (!sourceNode || !targetNode) {
+      console.warn('Cannot add edge: Source or target node not found');
+      return;
+    }
+
+    const edgeData: CytoscapeEdgeData = {
+      data: {
+        id: String(newEdge.id),
+        source: String(newEdge.source),
+        target: String(newEdge.target),
+        sourceLabel: sourceNode.name || 'Unnamed Node',
+        targetLabel: targetNode.name || 'Unnamed Node',
+        label: newEdge.edgeType || `${sourceNode.name} → ${targetNode.name}`,
+        edgeType: newEdge.edgeType
+      }
+    };
+
+    // Add the edge to the graph
+    this.cy.add({
+      group: 'edges',
+      data: edgeData.data
+    });
+
+    // Apply edge style
+    if (newEdge.edgeType && this.edgeVisualSettings[newEdge.edgeType]) {
+      const edge = this.cy.getElementById(String(newEdge.id));
+      const typeStyle = this.edgeVisualSettings[newEdge.edgeType];
+
+      edge.style({
+        'line-color': typeStyle.lineColor,
+        'target-arrow-color': typeStyle.lineColor,
+        'line-style': typeStyle.lineStyle,
+        'width': typeStyle.width,
+        'target-arrow-shape': typeStyle.targetArrowShape,
+        'curve-style': typeStyle.curveStyle,
+        'opacity': typeStyle.lineOpacity
+      });
+    }
+
+    // Add new edge to our local array for tracking
+    this.edges.push({ ...newEdge });
+  }
+
+  /**
+   * Remove a node from the graph
+   */
+  public removeNode(nodeId: string | number): void {
+    if (!this.cy) return;
+
+    const idStr = String(nodeId);
+    const node = this.cy.getElementById(idStr);
+
+    if (node) {
+      // Store the current viewport state before removal
+      const currentPan = { ...this.cy.pan() };
+      const currentZoom = this.cy.zoom();
+
+      // Store all other nodes' positions before the deletion
+      const allNodePositions: { [id: string]: { x: number, y: number } } = {};
+      this.cy.nodes().forEach((n: any) => {
+        if (n.id() !== idStr) {  // Skip the node being deleted
+          const pos = n.position();
+          allNodePositions[n.id()] = { x: pos.x, y: pos.y };
+        }
+      });
+
+      // Check if this node is selected before removal
+      const wasSelected = this.selectedElement?.type === 'node' &&
+        this.selectedElement.data.id === idStr;
+
+      // Clear the selection state to prevent details panel rerendering
+      if (wasSelected) {
+        this.selectedElement = null;
+      }
+
+      // Get connected edges to remove them from our local array too
+      const connectedEdges = node.connectedEdges();
+      if (connectedEdges.length > 0) {
+        const connectedEdgeIds = connectedEdges.map(edge => edge.id());
+        // Update our local edges array
+        this.edges = this.edges.filter(e => !connectedEdgeIds.includes(String(e.id)));
+      }
+
+      // Temporarily disable all automated layout adjustments
+      const oldAutoungrabify = this.cy.autoungrabify();
+      this.cy.autoungrabify(true);
+      const oldUserZoomingEnabled = this.cy.userZoomingEnabled();
+      this.cy.userZoomingEnabled(false);
+      const oldUserPanningEnabled = this.cy.userPanningEnabled();
+      this.cy.userPanningEnabled(false);
+
+      // Use batch operations for better performance
+      this.cy.batch(() => {
+        // If node was selected, unselect it within the batch operation
+        if (wasSelected) {
+          node.unselect();
+        }
+
+        // Remove the node
+        node.remove();
+
+        // Update our local array
+        this.nodes = this.nodes.filter(n => String(n.id) !== idStr);
+      });
+
+      // Apply the exact same positions to all remaining nodes to prevent any movement
+      if (this.cy) { // Add a null check here
+        Object.keys(allNodePositions).forEach(id => {
+          const n = this.cy?.getElementById(id); // Use optional chaining
+          if (n && n.length > 0) { // Check that n exists
+            n.position(allNodePositions[id]);
+          }
+        });
+      }
+
+      // Restore settings
+      this.cy.autoungrabify(oldAutoungrabify);
+      this.cy.userZoomingEnabled(oldUserZoomingEnabled);
+      this.cy.userPanningEnabled(oldUserPanningEnabled);
+
+      // Restore viewport exactly as it was before deletion to prevent jiggling
+      this.cy.viewport({
+        zoom: currentZoom,
+        pan: currentPan
+      });
+
+      // Mark that positions have changed
+      this.positionsChanged = true;
+
+      console.log(`Node ${idStr} removed successfully`);
+    }
+  }
+
+  /**
+   * Remove an edge from the graph
+   */
+  public removeEdge(edgeId: string | number): void {
+    if (!this.cy) return;
+
+    const idStr = String(edgeId);
+    const edge = this.cy.getElementById(idStr);
+
+    if (edge) {
+      // Store the current viewport state before removal
+      const currentPan = { ...this.cy.pan() };
+      const currentZoom = this.cy.zoom();
+
+      // Store all nodes' positions before the deletion
+      const allNodePositions: { [id: string]: { x: number, y: number } } = {};
+      this.cy.nodes().forEach((n: any) => {
+        const pos = n.position();
+        allNodePositions[n.id()] = { x: pos.x, y: pos.y };
+      });
+
+      // Check if this edge is selected before removal
+      const wasSelected = this.selectedElement?.type === 'edge' &&
+        this.selectedElement.data.id === idStr;
+
+      // Clear the selection state to prevent details panel rerendering
+      if (wasSelected) {
+        this.selectedElement = null;
+      }
+
+      // Temporarily disable all automated layout adjustments
+      const oldAutoungrabify = this.cy.autoungrabify();
+      this.cy.autoungrabify(true);
+      const oldUserZoomingEnabled = this.cy.userZoomingEnabled();
+      this.cy.userZoomingEnabled(false);
+      const oldUserPanningEnabled = this.cy.userPanningEnabled();
+      this.cy.userPanningEnabled(false);
+
+      // Use batch operations for better performance
+      this.cy.batch(() => {
+        // If edge was selected, unselect it within the batch operation
+        if (wasSelected) {
+          edge.unselect();
+        }
+
+        // Remove the edge
+        edge.remove();
+
+        // Update our local array
+        this.edges = this.edges.filter(e => String(e.id) !== idStr);
+      });
+
+      // Apply the exact same positions to all nodes to prevent any movement
+      if (this.cy) { // Add a null check here
+        Object.keys(allNodePositions).forEach(id => {
+          const n = this.cy?.getElementById(id); // Use optional chaining
+          if (n && n.length > 0) { // Check that n exists
+            n.position(allNodePositions[id]);
+          }
+        });
+      }
+
+      // Restore settings
+      this.cy.autoungrabify(oldAutoungrabify);
+      this.cy.userZoomingEnabled(oldUserZoomingEnabled);
+      this.cy.userPanningEnabled(oldUserPanningEnabled);
+
+      // Restore viewport exactly as it was before deletion to prevent jiggling
+      this.cy.viewport({
+        zoom: currentZoom,
+        pan: currentPan
+      });
+
+      console.log(`Edge ${idStr} removed successfully`);
+    }
+  }
+
 
   /**
  * Fit the graph to the view area with smart padding
@@ -476,28 +992,68 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   private subscribeToNodeUpdates(): void {
     this.nodeService.nodeCreated$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+      .subscribe((newNode: any) => {
         if (!this.graphId || !this.cy) return;
 
-        this.nodeService.getNodes(this.graphId).subscribe(nodes => {
-          nodes.forEach(node => {
-            const cyNode = this.cy?.getElementById(String(node.id));
-            if (cyNode) {
-              // Update data attributes
-              cyNode.data('nodeType', node.nodeType);
-              cyNode.data('label', node.name);
+        // Check if we received a node with actual data
+        if (newNode && newNode.id && newNode.graphId === this.graphId) {
+          console.log('Received new node:', newNode);
 
-              // Only update style if not selected
-              if (!cyNode.selected()) {
-                // Direct style update
-                this.updateNodeTypeStyle(String(node.id), node.nodeType as string);
-              }
+          // Check if node already exists in our graph
+          if (this.cy.getElementById(String(newNode.id)).length === 0) {
+            console.log('Adding new node to graph:', newNode.name);
+
+            // Create a safe node object
+            const safeNode: GraphNodeData = {
+              id: String(newNode.id),
+              name: newNode.name,
+              nodeType: newNode.nodeType,
+              positionX: newNode.positionX,
+              positionY: newNode.positionY
+            };
+
+            // Add just this single node to the graph
+            this.addSingleNode(safeNode);
+
+            // Update our internal nodes array - but avoid duplicates
+            const existingIndex = this.nodes.findIndex(n => String(n.id) === String(newNode.id));
+            if (existingIndex === -1) {
+              this.nodes.push(safeNode);
             }
-          });
+          }
+        } else {
+          // If we didn't get a valid node (old way), fetch latest node
+          console.log('Node created event without data, fetching latest nodes');
 
-          // Update styles
-          this.updateCytoscapeStyles();
-        });
+          // Get the latest node data from the service
+          this.nodeService.getNodes(this.graphId).subscribe(nodes => {
+            // Find any new nodes (nodes that aren't already in the graph)
+            const existingNodeIds = this.nodes.map(n => String(n.id));
+            const newNodes = nodes.filter(n => !existingNodeIds.includes(String(n.id)));
+
+            // Only add the new nodes to the graph
+            newNodes.forEach(node => {
+              if (node.id !== undefined) {
+                const safeNode: GraphNodeData = {
+                  id: String(node.id),
+                  name: node.name,
+                  nodeType: node.nodeType,
+                  positionX: node.positionX,
+                  positionY: node.positionY
+                };
+                this.addSingleNode(safeNode);
+              }
+            });
+
+            // Update our internal node list
+            this.nodes = nodes
+              .filter(node => node.id !== undefined)
+              .map(node => ({
+                ...node,
+                id: String(node.id)
+              })) as GraphNodeData[];
+          });
+        }
       });
   }
 
@@ -507,26 +1063,134 @@ export class CytoscapeGraphComponent implements OnInit, OnDestroy, AfterViewInit
   private subscribeToEdgeUpdates(): void {
     this.edgeService.edgeCreated$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+      .subscribe((newEdge: any) => {
         if (!this.graphId || !this.cy) return;
 
-        this.edgeService.getEdges(this.graphId).subscribe(edges => {
-          edges.forEach(edge => {
-            const cyEdge = this.cy?.getElementById(String(edge.id));
-            if (cyEdge) {
-              // Force a data update
-              cyEdge.removeData('edgeType');
-              cyEdge.data('edgeType', edge.edgeType);
-              cyEdge.data('label', edge.edgeType);
-            }
-          });
+        // Check if we received an edge with actual data
+        if (newEdge && newEdge.id && newEdge.graphId === this.graphId) {
+          console.log('Received new edge:', newEdge);
 
-          // Force a complete style update
-          this.updateCytoscapeStyles();
-        });
+          // Check if edge already exists in our graph
+          if (this.cy.getElementById(String(newEdge.id)).length === 0) {
+            console.log('Adding new edge to graph:', newEdge.edgeType);
+
+            // Create a safe edge object
+            const safeEdge: GraphEdgeData = {
+              id: String(newEdge.id),
+              source: String(newEdge.source),
+              target: String(newEdge.target),
+              edgeType: newEdge.edgeType
+            };
+
+            // Add just this single edge to the graph
+            this.addSingleEdge(safeEdge);
+
+            // Update our internal edges array - but avoid duplicates
+            const existingIndex = this.edges.findIndex(e => String(e.id) === String(newEdge.id));
+            if (existingIndex === -1) {
+              this.edges.push(safeEdge);
+            }
+          }
+        } else {
+          // If we didn't get a valid edge (old way), fetch latest edges
+          console.log('Edge created event without data, fetching latest edges');
+
+          // Get the latest edge data from the service
+          this.edgeService.getEdges(this.graphId).subscribe(edges => {
+            // Find any new edges (edges that aren't already in the graph)
+            const existingEdgeIds = this.edges.map(e => String(e.id));
+            const newEdges = edges.filter(e => e.id !== undefined && !existingEdgeIds.includes(String(e.id)));
+
+            // Only add the new edges to the graph
+            newEdges.forEach(edge => {
+              if (edge.id !== undefined) {
+                const safeEdge: GraphEdgeData = {
+                  id: String(edge.id),
+                  source: String(edge.source),
+                  target: String(edge.target),
+                  edgeType: edge.edgeType
+                };
+                this.addSingleEdge(safeEdge);
+              }
+            });
+
+            // Update our internal edge list
+            this.edges = edges
+              .filter(edge => edge.id !== undefined)
+              .map(edge => ({
+                ...edge,
+                id: String(edge.id),
+                source: String(edge.source),
+                target: String(edge.target)
+              })) as GraphEdgeData[];
+          });
+        }
       });
   }
 
+  /**
+ * Subscribe to node deletion events from service
+ */
+  private subscribeToNodeDeletions(): void {
+    // Check if nodeDeleted$ exists before subscribing to it
+    if (this.nodeService && this.nodeService.nodeDeleted$) {
+      this.nodeService.nodeDeleted$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((nodeId: string) => {
+          if (!this.graphId || !this.cy) return;
+
+          // nodeId is just a string containing the ID, not an object with properties
+          if (nodeId) {
+            console.log('Received node deletion:', nodeId);
+
+            // Store viewport before deletion
+            const currentPan = { ...this.cy.pan() };
+            const currentZoom = this.cy.zoom();
+
+            // Remove the node from the graph
+            this.removeNode(nodeId);
+
+            // Immediately restore viewport to prevent jiggle
+            this.cy.viewport({
+              zoom: currentZoom,
+              pan: currentPan
+            });
+          }
+        });
+    }
+  }
+
+  /**
+   * Subscribe to edge deletion events from service
+   */
+  private subscribeToEdgeDeletions(): void {
+    // Check if edgeDeleted$ exists before subscribing to it
+    if (this.edgeService && this.edgeService.edgeDeleted$) {
+      this.edgeService.edgeDeleted$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((deletedEdgeInfo: any) => {
+          if (!this.graphId || !this.cy) return;
+
+          // Check if we received edge data
+          if (deletedEdgeInfo && deletedEdgeInfo.id && deletedEdgeInfo.graphId === this.graphId) {
+            console.log('Received edge deletion:', deletedEdgeInfo);
+
+            // Store viewport before deletion
+            const currentPan = { ...this.cy.pan() };
+            const currentZoom = this.cy.zoom();
+
+            // Remove the edge from the graph
+            this.removeEdge(String(deletedEdgeInfo.id));
+
+            // Immediately restore viewport to prevent jiggle
+            this.cy.viewport({
+              zoom: currentZoom,
+              pan: currentPan
+            });
+          }
+        });
+    }  
+  }
   /**
    * Apply positions to nodes
    */

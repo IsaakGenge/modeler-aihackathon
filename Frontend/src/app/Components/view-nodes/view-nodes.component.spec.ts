@@ -20,8 +20,9 @@ describe('ViewNodesComponent', () => {
 
   // Event subjects for service mocks
   const graphChangedSubject = new Subject<any>();
-  const nodeCreatedSubject = new Subject<void>();
-  const nodeDeletedSubject = new Subject<void>();
+  const nodeCreatedSubject = new Subject<Node>();  // Change from void to Node
+  const nodeDeletedSubject = new Subject<string>(); // Change from void to string
+
 
   // Mock data - updated to match the Node interface
   const mockNodes: any[] = [
@@ -149,8 +150,14 @@ describe('ViewNodesComponent', () => {
       graphChangedSubject.next({ id: 'graph1', name: 'Test Graph' });
       nodeServiceSpy.getNodes.calls.reset(); // Reset again after the graph change
 
-      // Simulate node creation
-      nodeCreatedSubject.next();
+      // Simulate node creation with a mock node
+      const mockCreatedNode: Node = {
+        id: 'new-node',
+        name: 'New Test Node',
+        nodeType: 'person',
+        graphId: 'graph1'
+      };
+      nodeCreatedSubject.next(mockCreatedNode);
 
       expect(nodeServiceSpy.getNodes).toHaveBeenCalledWith('graph1');
     });
@@ -163,8 +170,8 @@ describe('ViewNodesComponent', () => {
       graphChangedSubject.next({ id: 'graph1', name: 'Test Graph' });
       nodeServiceSpy.getNodes.calls.reset(); // Reset again after the graph change
 
-      // Simulate node deletion
-      nodeDeletedSubject.next();
+      // Simulate node deletion with an ID
+      nodeDeletedSubject.next('node1');
 
       expect(nodeServiceSpy.getNodes).toHaveBeenCalledWith('graph1');
     });
